@@ -1,17 +1,603 @@
 ---
-
 ---
-
 <html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="generator" content={Astro.generator} />
+  <title>LASH — Stories That Were Never Meant to Exist</title>
+  <meta name="description" content="Lash — dark fantasy and epic fiction. Stories born from grief, light, and the weight of things unnamed." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Cormorant+SC:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:          #070604;
+      --surface:     #0f0d09;
+      --gold:        #c4952a;
+      --gold-light:  #e8c875;
+      --gold-pale:   #f2e4b8;
+      --text:        #c8bfa8;
+      --text-dim:    #7a7060;
+      --text-bright: #ede0c4;
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'EB Garamond', serif;
+      font-size: 18px;
+      line-height: 1.8;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* VIGNETTE */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(7,6,4,0.75) 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* CURSOR */
+    #cursor {
+      position: fixed;
+      width: 8px; height: 8px;
+      background: var(--gold);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 10px var(--gold), 0 0 28px rgba(196,149,42,0.5);
+      transition: transform 0.08s;
+    }
+    #cursor-ring {
+      position: fixed;
+      width: 34px; height: 34px;
+      border: 1px solid rgba(196,149,42,0.35);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+    }
+
+    /* CANVAS */
+    #ember-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.55;
+    }
+
+    /* ─── HERO ─── */
+    .hero {
+      position: relative;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 90% 60% at 50% 55%, rgba(196,149,42,0.07) 0%, transparent 70%);
+    }
+
+    .hero-eyebrow {
+      font-family: 'Cormorant SC', serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.42em;
+      color: var(--gold);
+      text-transform: uppercase;
+      opacity: 0;
+      animation: fadeUp 1s ease forwards 0.4s;
+      margin-bottom: 1.5rem;
+    }
+    .hero-name {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: clamp(5rem, 17vw, 15rem);
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: 0.06em;
+      background: linear-gradient(180deg, var(--gold-pale) 0%, var(--gold) 55%, rgba(196,149,42,0.3) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      opacity: 0;
+      animation: fadeUp 1.3s ease forwards 0.7s;
+    }
+    .hero-divider {
+      width: 130px; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      margin: 2rem auto;
+      opacity: 0;
+      animation: fadeIn 1s ease forwards 1.3s;
+    }
+    .hero-tagline {
+      font-family: 'EB Garamond', serif;
+      font-style: italic;
+      font-size: clamp(1rem, 2.2vw, 1.35rem);
+      color: var(--text);
+      text-align: center;
+      max-width: 480px;
+      padding: 0 2rem;
+      opacity: 0;
+      animation: fadeUp 1s ease forwards 1.6s;
+    }
+    .hero-scroll {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.6rem;
+      opacity: 0;
+      animation: fadeIn 1s ease forwards 2.8s;
+    }
+    .hero-scroll span {
+      font-family: 'Cormorant SC', serif;
+      font-size: 0.62rem;
+      letter-spacing: 0.35em;
+      color: var(--text-dim);
+    }
+    .scroll-line {
+      width: 1px; height: 48px;
+      background: linear-gradient(to bottom, var(--gold), transparent);
+      animation: scrollPulse 2.2s ease-in-out infinite;
+    }
+
+    /* ─── ABOUT ─── */
+    .about {
+      position: relative;
+      z-index: 1;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 9rem 2rem;
+      text-align: center;
+    }
+    .about-label {
+      font-family: 'Cormorant SC', serif;
+      font-size: 0.68rem;
+      letter-spacing: 0.38em;
+      color: var(--gold);
+      display: block;
+      margin-bottom: 2.2rem;
+    }
+    .about-text {
+      font-size: 1.28rem;
+      font-style: italic;
+      color: var(--text-bright);
+      line-height: 2.1;
+    }
+    .about-text strong {
+      font-style: normal;
+      color: var(--gold-light);
+      font-weight: 500;
+    }
+
+    /* ─── STORY SECTION ─── */
+    .story-section {
+      position: relative;
+      z-index: 1;
+      padding: 2rem 0 12rem;
+    }
+    .story-header {
+      text-align: center;
+      padding: 0 2rem 6rem;
+    }
+    .story-number {
+      font-family: 'Cinzel', serif;
+      font-size: 0.62rem;
+      letter-spacing: 0.55em;
+      color: var(--gold);
+      display: block;
+      margin-bottom: 2.5rem;
+    }
+    .story-title {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.3rem, 3.5vw, 2.6rem);
+      font-weight: 700;
+      color: var(--gold-pale);
+      line-height: 1.35;
+      letter-spacing: 0.1em;
+      max-width: 680px;
+      margin: 0 auto 3rem;
+    }
+    .ornament {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      color: var(--gold);
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+    }
+    .ornament::before, .ornament::after {
+      content: '';
+      width: 80px; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold));
+    }
+    .ornament::after {
+      background: linear-gradient(90deg, var(--gold), transparent);
+    }
+
+    /* ─── STORY BODY ─── */
+    .story-body {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+    .story-body p {
+      margin-bottom: 1.5rem;
+      color: var(--text);
+      font-size: 1.15rem;
+    }
+    .story-body p.first::first-letter {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 4.8em;
+      float: left;
+      line-height: 0.74;
+      padding-right: 0.1em;
+      padding-top: 0.06em;
+      color: var(--gold);
+    }
+    .story-body p.thought {
+      color: var(--text-dim);
+      font-style: italic;
+    }
+    .story-body p.action {
+      font-style: italic;
+      color: var(--text-bright);
+    }
+    .story-body p.lone {
+      font-style: italic;
+    }
+
+    .pull-quote {
+      border-left: 2px solid var(--gold);
+      margin: 3.5rem 0;
+      padding: 1.2rem 0 1.2rem 2rem;
+      font-size: 1.3rem;
+      font-style: italic;
+      color: var(--gold-light);
+      line-height: 1.75;
+    }
+
+    .section-break {
+      text-align: center;
+      color: var(--gold);
+      margin: 3.5rem 0;
+      letter-spacing: 0.6em;
+      font-size: 0.68rem;
+    }
+
+    .story-end {
+      margin-top: 6rem;
+      padding-top: 3rem;
+      border-top: 1px solid rgba(196,149,42,0.15);
+      text-align: center;
+    }
+    .story-end-text {
+      font-family: 'Cormorant SC', serif;
+      font-size: 0.68rem;
+      letter-spacing: 0.4em;
+      color: var(--text-dim);
+    }
+
+    /* ─── REVEAL ─── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.9s ease, transform 0.9s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ─── KEYFRAMES ─── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes scrollPulse {
+      0%, 100% { opacity: 0.25; }
+      50%       { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<canvas id="ember-canvas"></canvas>
+
+<!-- ─── HERO ─── -->
+<section class="hero">
+  <span class="hero-eyebrow">Tales from the space between</span>
+  <h1 class="hero-name">LASH</h1>
+  <div class="hero-divider"></div>
+  <p class="hero-tagline">I write worlds that were never meant to exist. Stories born from grief, light, and the weight of things unnamed.</p>
+  <div class="hero-scroll">
+    <span>Descend</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- ─── ABOUT ─── -->
+<section class="about reveal">
+  <span class="about-label">The Writer</span>
+  <p class="about-text">
+    My name is <strong>Lash</strong>. I write dark fantasy and epic fiction —
+    stories that live in the space between myth and memory.
+    I've always believed that the most powerful tales are the ones
+    that <strong>were never supposed to be told</strong>.
+  </p>
+</section>
+
+<!-- ─── STORY ─── -->
+<section class="story-section">
+
+  <div class="story-header reveal">
+    <span class="story-number">Story № 001</span>
+    <h2 class="story-title">The Spear That Was Not Meant to Exist</h2>
+    <div class="ornament">✦</div>
+  </div>
+
+  <div class="story-body">
+
+    <p class="first reveal">The clearing had been chosen for memory. That was Lazarus's first mistake.</p>
+
+    <p class="reveal">Adamas felt it the moment he stepped into the ring of stones. The ground dipped slightly toward the center, a natural bowl. The trees leaned inward, their roots thick and exposed beneath the soil. Wind did not cross it cleanly — it curled.</p>
+
+    <p class="action reveal">An arena disguised as neutrality.</p>
+
+    <p class="reveal">He did not turn when the first Gods Blood stepped from the treeline. He had counted their breathing already.</p>
+
+    <p class="lone reveal">Not dozens.</p>
+    <p class="lone reveal">Hundreds.</p>
+
+    <p class="reveal">White-and-gold armor moved in disciplined arcs, shields overlapping, spears angled not to charge but to compress. They did not rush him. They reduced space.</p>
+
+    <p class="thought reveal">Good, Adamas thought. They were disciplined. Disciplined men hesitate to break formation.</p>
+
+    <p class="reveal">Lazarus emerged last, calm as ever, cloak untouched by wind.</p>
+
+    <p class="reveal">"You came alone," Lazarus said, almost gently.</p>
+    <p class="reveal">"You asked me to," Adamas replied.</p>
+    <p class="reveal">A small nod. "I did."</p>
+
+    <div class="section-break reveal">— ✦ —</div>
+
+    <p class="reveal">The circle closed. Not a roar. Not a charge. A tightening.</p>
+
+    <p class="reveal">The first wave advanced with shields raised, five ranks deep, rotating pressure from three sides. They meant to exhaust him. Gods Blood did not need panic. They needed attrition.</p>
+
+    <p class="reveal">Adamas drew the Sword of Light. It did not flare theatrically. It burned steady, like a sun seen through thin cloud.</p>
+
+    <p class="reveal">He moved first. Not forward — sideways.</p>
+
+    <p class="reveal">He pivoted toward the shallowest slope of the clearing, forcing their compression to overextend. The first shield struck him; he let it. Let the momentum carry the wielder past him, and split the seam between shield and helm in a single vertical arc.</p>
+
+    <p class="lone reveal">One down.</p>
+    <p class="reveal">He stepped over the body before it hit the ground.</p>
+
+    <p class="reveal">Second rank spears thrust low, disciplined. He did not parry. He stepped into them. Took one across the thigh. Broke the shaft with his knee and drove his shoulder into the formation's hinge point.</p>
+
+    <p class="lone reveal">They staggered.</p>
+    <p class="reveal">He did not chase kills. He broke rhythm. That was his strategy.</p>
+
+    <div class="pull-quote reveal">A disciplined force becomes fragile when tempo shifts.</div>
+
+    <p class="lone reveal">Three fell. Five. Ten.</p>
+
+    <p class="reveal">The second ring tightened. This wave bore markings etched faintly into their armor — runes of alignment. The air around them felt heavier. They were not attacking him. They were stabilizing the ground beneath him.</p>
+
+    <p class="reveal">The earth hardened. Wind slowed. His footing dulled.</p>
+
+    <p class="reveal">Lazarus watched.</p>
+
+    <p class="reveal">"You are formidable," he said softly. "But you are still bound to surface."</p>
+    <p class="reveal">Adamas smiled despite the blood in his mouth. "So are you."</p>
+
+    <p class="reveal">He reversed his grip and drove the sword into the ground. Light spread in a thin radial pulse. Not explosive. Corrective. The hardened soil fractured — not outward, but downward. The bowl of the clearing deepened by inches. Enough. The formation faltered as footing shifted unevenly.</p>
+
+    <p class="reveal">He moved through them like a storm through reeds.</p>
+
+    <div class="section-break reveal">— ✦ —</div>
+
+    <p class="reveal">But numbers matter. They learned. They stopped compressing. They widened. Rotated fresh ranks. Bled him deliberately.</p>
+
+    <p class="reveal">A blade cut across his ribs. Another pierced his shoulder. A hammer blow caught his helm and cracked it down the center.</p>
+
+    <p class="reveal">He dropped to one knee. The clearing tightened again. Shields formed a dome. Spears angled downward.</p>
+
+    <p class="reveal">Lazarus stepped closer now, no longer distant. "This ends here," he said. Not cruelly. Confidently.</p>
+
+    <p class="reveal">"You were always the pillar," Lazarus continued. "Remove the pillar, and the structure adjusts."</p>
+
+    <p class="reveal">Adamas tried to stand. His leg failed. The Sword of Light flickered — not dimming, but thinning.</p>
+
+    <p class="reveal">He felt it then. The weight of mortality. The ache in his bones. The memory of sons.</p>
+
+    <p class="thought reveal">Cain. And Abel. Abel's blood on his hands. The first human death. The first time he had failed to protect.</p>
+
+    <p class="reveal">Lucifial had tried to claim that soul. Had reached. Had whispered. Adamas had refused. He had taken what remained — bone, blood, grief — and forged it into something the abyss could not swallow. Not holy. Not damned. <em>Bound.</em></p>
+
+    <div class="section-break reveal">— ✦ —</div>
+
+    <p class="reveal">The spears descended. And Adamas closed his eyes. Not in surrender. In summoning.</p>
+
+    <p class="reveal">The air split — not with thunder, but with recognition.</p>
+
+    <p class="reveal">Light did not descend from above. It erupted from within the earth beneath him. A shaft of gold and white tore upward through the stone, not breaking it but displacing it. The runes of alignment shattered like brittle glass.</p>
+
+    <div class="pull-quote reveal">The Divine Spear of Abel formed in his hand as if it had always been there. Its weight was wrong. Too balanced. Too alive.</div>
+
+    <p class="reveal">The Gods Blood nearest him recoiled — not from heat, but from something deeper. The spear did not glow with sanctity. It burned with anchored soul.</p>
+
+    <p class="reveal">Abel's presence did not speak. It endured.</p>
+
+    <p class="reveal">Adamas rose. The wound in his leg did not close. But it steadied.</p>
+
+    <div class="section-break reveal">— ✦ —</div>
+
+    <p class="reveal">The dome of shields descended again. He thrust upward. The spear did not strike metal. It ignored it. It passed through shield enchantments, through layered divine reinforcement, and pierced the captain's chest as though armor were memory.</p>
+
+    <p class="reveal">The man did not explode. He fell. Dead. Truly.</p>
+
+    <p class="reveal">The ring recoiled. Adamas moved before they could recalibrate. He used the spear not like a weapon, but like a fulcrum. Each thrust anchored him. Each withdrawal unbalanced them. Divine protections failed where Abel's grief touched.</p>
+
+    <p class="reveal">He fought not for dominance. But for fracture. Every ten he felled, he shifted position. Every formation that tightened, he destabilized with terrain, tempo, or terror.</p>
+
+    <p class="action reveal">The clearing was no longer an arena. It was a wound.</p>
+
+    <div class="section-break reveal">— ✦ —</div>
+
+    <p class="reveal">Hundreds fell. And still they came. Because they had been ordered to. Because they believed destiny outweighed fear.</p>
+
+    <p class="reveal">Lazarus stepped forward at last. Not hesitant. Not angry. Calculating.</p>
+
+    <p class="reveal">"You forged that from tragedy," Lazarus said. "Impressive."</p>
+
+    <p class="reveal">Adamas bled openly now. His breathing ragged. "Yes," he replied.</p>
+
+    <p class="reveal">"And tragedy," Lazarus continued, drawing his blade, "repeats."</p>
+
+    <p class="reveal">They met at the center of the ruined clearing. Lazarus moved with surgical precision — no wasted motion, no rage. He targeted the spear hand, forced Adamas to split attention between sword and relic.</p>
+
+    <p class="reveal">They circled once. Twice. Lazarus scored a deep cut across Adamas's side. Adamas feigned collapse. Let his knee buckle. Let Lazarus step in to finish.</p>
+
+    <p class="reveal">And then he reversed the grip of Abel. Not a thrust. A release.</p>
+
+    <p class="reveal">He drove the spear butt-first into the earth between them. Abel answered. Not with light. With anchoring.</p>
+
+    <p class="reveal">For a heartbeat, Lazarus could not move. Not bound by chains. But fixed by soul.</p>
+
+    <p class="reveal">And in that heartbeat, Adamas rose fully and drove the Sword of Light through Lazarus's chest. Not shallow. Not merciful. <em>Through.</em></p>
+
+    <div class="section-break reveal">— ✦ —</div>
+
+    <p class="reveal">The clearing fell silent. Lazarus looked down at the blade inside him. Not shocked. Understanding.</p>
+
+    <p class="reveal">"So," he whispered. "It required grief."</p>
+    <p class="reveal">"Yes," Adamas said.</p>
+    <p class="lone reveal">Lazarus fell.</p>
+
+    <p class="reveal">The remaining Gods Blood hesitated. That was all Adamas needed. He tore the sword free, lifted Abel high, and advanced. Not chasing. Not roaring. <em>Walking.</em> And they broke.</p>
+
+    <div class="section-break reveal">— ✦ —</div>
+
+    <p class="reveal">By the time the sun lowered, the clearing was a field of fallen white armor. Adamas stood alone at its center. Bleeding. Breathing. Mortal.</p>
+
+    <p class="reveal">Abel's light dimmed — not extinguished, but resting. He looked at the spear in his hand.</p>
+
+    <p class="reveal">"I will not let them take you," he murmured.</p>
+
+    <p class="reveal">And somewhere — not in heaven, not in abyss, but in the space between — something endured.</p>
+
+    <div class="story-end reveal">
+      <div class="ornament">✦</div>
+      <p class="story-end-text" style="margin-top: 2.5rem;">End of Story № 001</p>
+    </div>
+
+  </div>
+</section>
+
+<script>
+  // ─── CURSOR ───
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursor-ring');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx + 'px';
+    cursor.style.top  = my + 'px';
+  });
+
+  (function trackRing() {
+    rx += (mx - rx) * 0.12;
+    ry += (my - ry) * 0.12;
+    ring.style.left = rx + 'px';
+    ring.style.top  = ry + 'px';
+    requestAnimationFrame(trackRing);
+  })();
+
+  // ─── EMBERS ───
+  const canvas = document.getElementById('ember-canvas');
+  const ctx    = canvas.getContext('2d');
+  let W = canvas.width  = window.innerWidth;
+  let H = canvas.height = window.innerHeight;
+
+  window.addEventListener('resize', () => {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  });
+
+  function mkEmber() {
+    const maxLife = 150 + Math.random() * 180;
+    let life = Math.random() * maxLife;
+    return {
+      x: Math.random() * W,
+      y: H - Math.random() * H,
+      size:   0.5 + Math.random() * 2.2,
+      vx:     (Math.random() - 0.5) * 0.35,
+      vy:     0.2 + Math.random() * 0.7,
+      life,
+      maxLife,
+      hue:    22 + Math.random() * 28,
+    };
+  }
+
+  const embers = Array.from({ length: 90 }, mkEmber);
+
+  (function loop() {
+    ctx.clearRect(0, 0, W, H);
+    for (const e of embers) {
+      e.x  += e.vx + Math.sin(e.life * 0.025) * 0.28;
+      e.y  -= e.vy;
+      e.life++;
+      if (e.y < -10 || e.life > e.maxLife) Object.assign(e, mkEmber(), { y: H + 10, life: 0 });
+
+      const alpha = Math.sin((e.life / e.maxLife) * Math.PI) * 0.75;
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2);
+      ctx.shadowBlur  = 10;
+      ctx.shadowColor = `hsla(${e.hue},90%,60%,${alpha})`;
+      ctx.fillStyle   = `hsla(${e.hue},90%,65%,${alpha})`;
+      ctx.fill();
+    }
+    requestAnimationFrame(loop);
+  })();
+
+  // ─── SCROLL REVEAL ───
+  const io = new IntersectionObserver(
+    entries => entries.forEach(en => { if (en.isIntersecting) en.target.classList.add('visible'); }),
+    { threshold: 0.08, rootMargin: '0px 0px -40px 0px' }
+  );
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+
+</body>
 </html>
