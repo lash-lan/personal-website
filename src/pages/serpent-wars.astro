@@ -1,0 +1,637 @@
+---
+---
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Serpent Wars — Chapter I | LASH</title>
+  <meta name="description" content="The Serpent Wars: Chapter I — The First Wrongness. A story by Lash." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;0,9..144,900;1,9..144,300;1,9..144,400&family=Spectral:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Cormorant+SC:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:          #020704;
+      --deep:        #040e06;
+      --bio:         #5ab85c;
+      --bio-dim:     #3a6e3e;
+      --bio-pale:    #8fd48e;
+      --bio-glow:    rgba(90,184,92,0.18);
+      --text:        #9ebc96;
+      --text-dim:    #4e6e4a;
+      --text-bright: #cce0c2;
+      --murk:        #0d1c0e;
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Spectral', serif;
+      font-size: 18px;
+      line-height: 1.85;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* Pulsing swamp-breath background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 50% at 50% 100%, rgba(20,60,22,0.55) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 30% at 20% 60%, rgba(10,40,12,0.3) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 30% at 80% 40%, rgba(8,35,10,0.25) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+      animation: swampBreath 8s ease-in-out infinite;
+    }
+
+    /* Edge vignette */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 35%, rgba(2,7,4,0.85) 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* CURSOR */
+    #cursor {
+      position: fixed;
+      width: 7px; height: 7px;
+      background: var(--bio);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 8px var(--bio), 0 0 22px rgba(90,184,92,0.5);
+    }
+    #cursor-ring {
+      position: fixed;
+      width: 30px; height: 30px;
+      border: 1px solid rgba(90,184,92,0.3);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+    }
+
+    /* CANVAS */
+    #spore-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.7;
+    }
+
+    /* NAV */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      padding: 1.8rem 2.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(to bottom, rgba(2,7,4,0.9) 0%, transparent 100%);
+    }
+    .nav-back {
+      font-family: 'Cormorant SC', serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.4em;
+      color: var(--text-dim);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    .nav-back:hover { color: var(--bio); }
+    .nav-series {
+      font-family: 'Cormorant SC', serif;
+      font-size: 0.62rem;
+      letter-spacing: 0.35em;
+      color: var(--text-dim);
+    }
+
+    /* HERO */
+    .hero {
+      position: relative;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .hero-chapter {
+      font-family: 'Cormorant SC', serif;
+      font-size: 0.68rem;
+      letter-spacing: 0.5em;
+      color: var(--bio-dim);
+      margin-bottom: 2rem;
+      opacity: 0;
+      animation: fadeUp 1s ease forwards 0.5s;
+    }
+    .hero-title {
+      font-family: 'Fraunces', serif;
+      font-size: clamp(3rem, 12vw, 11rem);
+      font-weight: 900;
+      line-height: 0.95;
+      letter-spacing: 0.04em;
+      text-align: center;
+      background: linear-gradient(180deg, var(--bio-pale) 0%, var(--bio) 45%, rgba(30,80,32,0.5) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      opacity: 0;
+      animation: fadeUp 1.4s ease forwards 0.8s;
+      padding: 0 1rem;
+    }
+    .hero-sub {
+      font-family: 'Fraunces', serif;
+      font-style: italic;
+      font-size: clamp(1rem, 2.5vw, 1.5rem);
+      color: var(--text-dim);
+      margin-top: 1.5rem;
+      letter-spacing: 0.05em;
+      opacity: 0;
+      animation: fadeUp 1s ease forwards 1.4s;
+    }
+    .hero-divider {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 2.5rem;
+      opacity: 0;
+      animation: fadeIn 1s ease forwards 1.8s;
+    }
+    .hero-divider::before,
+    .hero-divider::after {
+      content: '';
+      width: 80px; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--bio-dim));
+    }
+    .hero-divider::after {
+      background: linear-gradient(90deg, var(--bio-dim), transparent);
+    }
+    .hero-divider span {
+      color: var(--bio-dim);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+    }
+    .hero-tagline {
+      font-family: 'Spectral', serif;
+      font-style: italic;
+      font-size: clamp(0.9rem, 1.8vw, 1.1rem);
+      color: var(--text-dim);
+      text-align: center;
+      max-width: 420px;
+      padding: 0 2rem;
+      margin-top: 1.8rem;
+      opacity: 0;
+      animation: fadeUp 1s ease forwards 2s;
+    }
+    .hero-scroll {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.6rem;
+      opacity: 0;
+      animation: fadeIn 1s ease forwards 3s;
+    }
+    .hero-scroll span {
+      font-family: 'Cormorant SC', serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.35em;
+      color: var(--text-dim);
+    }
+    .scroll-line {
+      width: 1px; height: 46px;
+      background: linear-gradient(to bottom, var(--bio-dim), transparent);
+      animation: scrollPulse 2.5s ease-in-out infinite;
+    }
+
+    /* STORY BODY */
+    .story-wrap {
+      position: relative;
+      z-index: 1;
+      padding: 6rem 0 12rem;
+    }
+
+    .story-body {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    .story-body p {
+      margin-bottom: 1.4rem;
+      font-size: 1.12rem;
+      color: var(--text);
+    }
+
+    /* Drop cap */
+    .story-body p.first::first-letter {
+      font-family: 'Fraunces', serif;
+      font-size: 5em;
+      font-weight: 900;
+      float: left;
+      line-height: 0.72;
+      padding-right: 0.1em;
+      padding-top: 0.06em;
+      color: var(--bio);
+      text-shadow: 0 0 30px rgba(90,184,92,0.4);
+    }
+
+    .story-body p.lone {
+      font-style: italic;
+      color: var(--text-dim);
+    }
+    .story-body p.action {
+      font-style: italic;
+      color: var(--text-bright);
+    }
+    .story-body p.thought {
+      color: var(--text-dim);
+      font-style: italic;
+      font-size: 1.05rem;
+    }
+
+    /* Pull quote */
+    .pull-quote {
+      border-left: 2px solid var(--bio-dim);
+      margin: 3.5rem 0;
+      padding: 1.2rem 0 1.2rem 2rem;
+      font-size: 1.28rem;
+      font-style: italic;
+      color: var(--bio-pale);
+      line-height: 1.75;
+      font-family: 'Spectral', serif;
+    }
+
+    /* Horror reveal - "You are being studied" */
+    .horror-line {
+      text-align: center;
+      font-family: 'Fraunces', serif;
+      font-style: italic;
+      font-size: clamp(1.2rem, 3vw, 1.7rem);
+      color: var(--bio-pale);
+      text-shadow: 0 0 40px rgba(90,184,92,0.5), 0 0 80px rgba(90,184,92,0.2);
+      margin: 4rem 0;
+      letter-spacing: 0.04em;
+      padding: 2rem 1rem;
+    }
+
+    /* Section break */
+    .section-break {
+      text-align: center;
+      color: var(--bio-dim);
+      margin: 3.5rem 0;
+      letter-spacing: 0.6em;
+      font-size: 0.66rem;
+    }
+
+    /* Final rhythm lines */
+    .rhythm-wrap {
+      text-align: center;
+      margin: 4rem 0;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+    .rhythm-line {
+      font-family: 'Fraunces', serif;
+      font-style: italic;
+      font-size: 1.4rem;
+      color: var(--text-dim);
+      opacity: 0;
+      transition: opacity 1.2s ease, color 1.2s ease;
+    }
+    .rhythm-line.r-active {
+      opacity: 1;
+    }
+    .rhythm-line.rising { color: var(--bio); text-shadow: 0 0 20px rgba(90,184,92,0.4); }
+    .rhythm-line.still  { color: var(--text-dim); }
+
+    /* Closing line */
+    .closing {
+      margin-top: 6rem;
+      padding-top: 4rem;
+      border-top: 1px solid rgba(90,184,92,0.1);
+    }
+    .closing p {
+      font-style: italic;
+      color: var(--text-dim);
+      text-align: center;
+      font-size: 1.05rem;
+    }
+    .closing-ornament {
+      text-align: center;
+      color: var(--bio-dim);
+      font-size: 0.72rem;
+      letter-spacing: 0.4em;
+      margin-top: 3rem;
+    }
+    .chapter-end {
+      font-family: 'Cormorant SC', serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.45em;
+      color: var(--text-dim);
+      text-align: center;
+      margin-top: 1.2rem;
+    }
+
+    /* REVEAL */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 1s ease, transform 1s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* KEYFRAMES */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes scrollPulse {
+      0%, 100% { opacity: 0.2; }
+      50%       { opacity: 1; }
+    }
+    @keyframes swampBreath {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.7; transform: scale(1.04); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<canvas id="spore-canvas"></canvas>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="/" class="nav-back">← LASH</a>
+  <span class="nav-series">The Serpent Wars</span>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <span class="hero-chapter">Chapter I</span>
+  <h1 class="hero-title">The Serpent<br/>Wars</h1>
+  <p class="hero-sub">The First Wrongness</p>
+  <div class="hero-divider"><span>∿</span></div>
+  <p class="hero-tagline">The swamp had always spoken in small ways. Not with words, but with pressure.</p>
+  <div class="hero-scroll">
+    <span>Enter</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- STORY -->
+<div class="story-wrap">
+  <div class="story-body">
+
+    <p class="first reveal">The swamp had always spoken in small ways. Not with words, but with pressure. With the way reeds leaned when no wind passed. With the tightening in the chest when a path looked open but was not meant to be taken. To the Elu, such things were not superstition. They were grammar.</p>
+
+    <p class="reveal">Aeralyn knelt where the forest shade surrendered to wetland and dipped two fingers into the dark water. The surface broke in a perfect circle. Too perfect. The ripple spread outward without tremor, smooth as polished glass.</p>
+
+    <p class="reveal">She drew her fingers back and touched them to her tongue.</p>
+
+    <p class="reveal">The magic was present. Alive. Flowing.</p>
+    <p class="lone reveal">But it was thin.</p>
+
+    <p class="reveal">Not poisoned. Not drained. Thinned, like wine stretched too far.</p>
+
+    <p class="reveal">Her jaw tightened. The swamp was never quiet. Even in stillness it hummed with insects, with wings and mating calls and the soft churn of decay. Today the sound came in waves. Rising. Pausing. Rising again.</p>
+
+    <p class="lone reveal">Like breath.</p>
+
+    <p class="reveal">She stepped forward, boots sinking into peat that felt softer than it should. Her staff brushed aside hanging vines alive with faint green light. They recoiled from her touch, then settled.</p>
+
+    <p class="reveal">They did not cling.</p>
+    <p class="lone reveal">They always clung.</p>
+
+    <p class="reveal">Aeralyn stilled and closed her eyes. She reached lightly for the Eternal circuit, careful not to draw too deeply. She was no shaper. Only a watcher.</p>
+
+    <p class="reveal">The circuit flowed through her without resistance. It did not greet her. It did not turn away. It slipped past like water around a stone.</p>
+
+    <p class="reveal">But ahead, where it touched the swamp, it faltered.</p>
+
+    <div class="pull-quote reveal">A stutter. As if it had forgotten what came next.</div>
+
+    <p class="reveal">Her breath slowed. To her left, a frog croaked. Then another answered. Then another. They did not call back and forth. They spoke together.</p>
+
+    <p class="reveal">Aeralyn opened her eyes. The frogs lined a half-submerged log, bodies angled the same way, throats swelling and collapsing in perfect rhythm. When one stopped, all stopped.</p>
+
+    <p class="reveal">She felt her mouth go dry. She tapped her staff once against the ground.</p>
+
+    <p class="lone reveal">The sound echoed too far.</p>
+    <p class="thought reveal">The swamp should have swallowed it.</p>
+
+    <div class="section-break reveal">— ∿ —</div>
+
+    <p class="reveal">Behind her, the Fae border stones stood as they had for centuries, runes carved deep and humming softly, holding the boundary between sanctuary and wild. Nothing crossed them without permission.</p>
+
+    <p class="action reveal">This was not a crossing. That was the unsettling part.</p>
+
+    <p class="reveal">She knelt again and brushed aside a mat of floating leaves. Beneath them, the water moved.</p>
+
+    <p class="lone reveal">Not with current.</p>
+    <p class="lone reveal">With intent.</p>
+
+    <p class="reveal">Something long passed beneath the surface. Smooth. Controlled. It did not hunt. It did not flee. It held itself as if waiting for instruction.</p>
+
+    <p class="reveal">A prickle ran along the base of her skull.</p>
+
+    <div class="horror-line reveal">You are being studied.</div>
+
+    <p class="reveal">She rose slowly. "Intrusion," she whispered, though the word felt uncertain.</p>
+    <p class="thought reveal">The swamp did not answer.</p>
+
+    <p class="reveal">A bird rose from the canopy above. Not startled. Not fleeing. It launched straight upward and vanished into the fog. A moment later, three more followed. Then five. All in the same direction.</p>
+
+    <p class="reveal">The clouds hung low and unmoving. No scent of storm. No shift in pressure.</p>
+    <p class="lone reveal">Yet the air felt occupied.</p>
+
+    <div class="section-break reveal">— ∿ —</div>
+
+    <p class="reveal">She stepped back toward the forest edge, and her boot caught on something.</p>
+
+    <p class="reveal">A deer lay half submerged in the mud, eyes open and dull. No wound marked its hide. Its legs were folded neatly beneath it, as if it had chosen to kneel and simply never rise.</p>
+
+    <p class="reveal">Insects crawled across its muzzle. They did not scatter when she approached.</p>
+    <p class="lone reveal">They adjusted.</p>
+
+    <p class="reveal">Aeralyn pressed her palm to the deer's brow and whispered the smallest rite she knew, a child's charm meant to ease passing.</p>
+
+    <p class="reveal">The magic answered. Too easily. The insects froze. Every one of them.</p>
+
+    <p class="reveal">Then, slowly, their bodies angled toward her hand.</p>
+    <p class="lone reveal">Not away.</p>
+    <p class="lone reveal">Toward.</p>
+
+    <p class="reveal">Heat flashed up her arm and she pulled back. The insects resumed their work.</p>
+    <p class="lone reveal">The swamp exhaled.</p>
+
+    <div class="section-break reveal">— ∿ —</div>
+
+    <p class="reveal">That was when she understood. It was not the creatures that had changed.</p>
+
+    <div class="pull-quote reveal">It was the agreements. The old paths between hunger and fear. Between decay and renewal. The invisible rules that allowed the world to move without constant correction.</div>
+
+    <p class="reveal">Something had touched them. Not broken them. <em>Shifted</em> them. As if a single cog in a vast mechanism had been turned just enough to misalign the rest.</p>
+
+    <p class="reveal">Aeralyn turned and moved quickly now, no longer careful of sound. Branches snapped beneath her boots. Moss tore free. She did not apologize. The forest parted for her all the same, roots shifting aside, leaves brushing her shoulders.</p>
+
+    <p class="reveal">The circuit strengthened with every step away from the water.</p>
+    <p class="thought reveal">Behind her, wings rose again. She did not look back.</p>
+
+    <div class="section-break reveal">— ∿ —</div>
+
+    <p class="reveal">When she reached the border stones, she pressed both hands against the nearest rune. Warmth steadied her breathing. The boundary had not failed.</p>
+
+    <p class="reveal">Which meant something had learned how to work around it.</p>
+
+    <p class="reveal">Aeralyn straightened.</p>
+    <p class="lone reveal">She was not a warrior.</p>
+    <p class="lone reveal">She was a witness.</p>
+    <p class="action reveal">And witnesses carried news that changed eras.</p>
+
+    <p class="reveal">She began running toward the inner groves, toward the places where councils gathered and ancient minds listened.</p>
+
+    <div class="section-break reveal">— ∿ —</div>
+
+    <p class="reveal">Behind her, the swamp resumed its rhythm.</p>
+
+    <div class="rhythm-wrap reveal" id="rhythm">
+      <span class="rhythm-line rising" id="r1">Rising.</span>
+      <span class="rhythm-line still"  id="r2">Stillness.</span>
+      <span class="rhythm-line rising" id="r3">Rising.</span>
+    </div>
+
+    <div class="closing reveal">
+      <p>And far beneath mud and root, something coiled in patience, waiting for the world to decide whether it had truly noticed.</p>
+      <div class="closing-ornament">∿</div>
+      <p class="chapter-end">End of Chapter I — The Serpent Wars</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // CURSOR
+  const cursor = document.getElementById('cursor');
+  const ring   = document.getElementById('cursor-ring');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx + 'px';
+    cursor.style.top  = my + 'px';
+  });
+  (function trackRing() {
+    rx += (mx - rx) * 0.1;
+    ry += (my - ry) * 0.1;
+    ring.style.left = rx + 'px';
+    ring.style.top  = ry + 'px';
+    requestAnimationFrame(trackRing);
+  })();
+
+  // SPORE PARTICLES
+  const canvas = document.getElementById('spore-canvas');
+  const ctx    = canvas.getContext('2d');
+  let W = canvas.width  = window.innerWidth;
+  let H = canvas.height = window.innerHeight;
+  window.addEventListener('resize', () => {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  });
+
+  function mkSpore() {
+    const maxLife = 220 + Math.random() * 260;
+    return {
+      x:       Math.random() * W,
+      y:       Math.random() * H,
+      size:    0.6 + Math.random() * 2.8,
+      vx:      (Math.random() - 0.5) * 0.22,
+      vy:      -(0.08 + Math.random() * 0.28),
+      life:    Math.random() * maxLife,
+      maxLife,
+      hue:     105 + Math.random() * 40,
+      sat:     55 + Math.random() * 30,
+    };
+  }
+
+  const spores = Array.from({ length: 70 }, mkSpore);
+
+  (function loop() {
+    ctx.clearRect(0, 0, W, H);
+    for (const s of spores) {
+      s.x  += s.vx + Math.sin(s.life * 0.018) * 0.18;
+      s.y  += s.vy;
+      s.life++;
+      if (s.y < -10 || s.life > s.maxLife) {
+        Object.assign(s, mkSpore(), { y: H + 10, life: 0 });
+      }
+      const alpha = Math.sin((s.life / s.maxLife) * Math.PI) * 0.65;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+      ctx.shadowBlur  = 14;
+      ctx.shadowColor = `hsla(${s.hue},${s.sat}%,55%,${alpha})`;
+      ctx.fillStyle   = `hsla(${s.hue},${s.sat}%,62%,${alpha})`;
+      ctx.fill();
+    }
+    requestAnimationFrame(loop);
+  })();
+
+  // SCROLL REVEAL
+  const io = new IntersectionObserver(
+    entries => entries.forEach(en => { if (en.isIntersecting) en.target.classList.add('visible'); }),
+    { threshold: 0.07, rootMargin: '0px 0px -40px 0px' }
+  );
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  // BREATHING RHYTHM ANIMATION
+  const r1 = document.getElementById('r1');
+  const r2 = document.getElementById('r2');
+  const r3 = document.getElementById('r3');
+
+  const rhythmObserver = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if (en.isIntersecting) {
+        setTimeout(() => r1.classList.add('r-active'), 200);
+        setTimeout(() => r2.classList.add('r-active'), 1400);
+        setTimeout(() => r3.classList.add('r-active'), 2600);
+        rhythmObserver.unobserve(en.target);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  const rhythmWrap = document.getElementById('rhythm');
+  if (rhythmWrap) rhythmObserver.observe(rhythmWrap);
+</script>
+
+</body>
+</html>
