@@ -30,7 +30,7 @@
   --sapphire:#4a8fd4;
   --ember:#c9873f;
 
-  /* mood-driven — every one of these is re-set per zone */
+  /* mood-driven, every one of these is re-set per zone */
   --wash:#0a1220;          /* the coloured breath behind the text */
   --wash-y:60%;            /* where that breath sits vertically */
   --wash-spread:70%;
@@ -144,7 +144,7 @@ p.struck{
   letter-spacing:.06em;
 }
 
-/* the arrival of each line — the only thing that animates in the text */
+/* the arrival of each line, the only thing that animates in the text */
 .line{
   opacity:0;
   transform:translateY(var(--line-rise));
@@ -1081,7 +1081,7 @@ p.struck{
 
   /* ---------------- MOOD DEFINITIONS ----------------
      Each mood is one object. Adding a seventh mood means
-     adding one entry here — nothing else changes.        */
+     adding one entry here, nothing else changes.        */
 
   var MOODS = {
     hearth:{
@@ -1154,7 +1154,7 @@ p.struck{
 
   /* ---------------- PARTICLE FIELD ----------------
      One canvas, one rAF loop, paused when the tab is hidden.
-     "frozen" doesn't stop the loop — it stops the movement,
+     "frozen" doesn't stop the loop, it stops the movement,
      which is the entire trick behind dread.                */
 
   var field = (function(){
