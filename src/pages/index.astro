@@ -415,41 +415,120 @@
     }
     .vol-here .vol-title { color: var(--text-dim); }
     .vol-here .vol-part { color: var(--text-dim); opacity: 0.6; }
+    .vol-codex { border-top-style: dashed; }
+    .vol-codex .vol-num { color: var(--gold); font-size: 1rem; }
 
-    /* ─── CORNER LINK TO THE LIBRARY ─── */
-    .to-library {
+    /* ─── CORNER PAGES MENU ─── */
+    .pages-menu {
       position: fixed;
       top: 1.5rem;
       right: 1.5rem;
       z-index: 60;
+    }
+    .to-library {
       font-family: 'Cormorant SC', Georgia, serif;
       font-size: 0.72rem;
       letter-spacing: 0.26em;
       text-transform: uppercase;
       color: var(--text-dim);
-      text-decoration: none;
-      padding: 0.55rem 0.9rem;
-      border: 1px solid rgba(196, 149, 42, 0.2);
       background: rgba(7, 6, 4, 0.7);
+      border: 1px solid rgba(196, 149, 42, 0.2);
+      cursor: pointer;
+      padding: 0.55rem 0.9rem;
       backdrop-filter: blur(6px);
       transition: color 0.4s ease, border-color 0.4s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
     .to-library:hover, .to-library:focus-visible {
       color: var(--gold-light);
       border-color: rgba(196, 149, 42, 0.55);
       outline: none;
     }
+    .pages-caret {
+      color: var(--gold);
+      font-size: 0.6rem;
+      transition: transform 0.3s ease;
+    }
+    .to-library[aria-expanded="true"] .pages-caret { transform: rotate(180deg); }
+    .pages-panel {
+      position: absolute;
+      top: calc(100% + 0.8rem);
+      right: 0;
+      min-width: 15rem;
+      background: rgba(7,6,4,0.97);
+      border: 1px solid rgba(196, 149, 42, 0.2);
+      border-radius: 2px;
+      padding: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-6px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      backdrop-filter: blur(10px);
+    }
+    .pages-panel.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    .pages-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      padding: 0.65rem 0.8rem;
+      text-decoration: none;
+      border-radius: 2px;
+      transition: background-color 0.2s ease;
+    }
+    .pages-item:hover, .pages-item:focus-visible { background: rgba(196,149,42,0.08); outline: none; }
+    .pages-item-num {
+      font-family: 'Cormorant SC', serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      opacity: 0.75;
+    }
+    .pages-item-title {
+      font-family: 'EB Garamond', serif;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    .pages-item:hover .pages-item-title, .pages-item:focus-visible .pages-item-title { color: var(--gold-light); }
 
     @media (max-width: 600px) {
       .library { padding: 4.5rem 1.3rem 6rem; }
       .vol { grid-template-columns: 3.4rem 1fr; gap: 1rem; }
-      .to-library { top: 0.85rem; right: 0.85rem; font-size: 0.66rem; padding: 0.45rem 0.7rem; }
+      .to-library { font-size: 0.66rem; padding: 0.45rem 0.7rem; }
+      .pages-menu { top: 0.85rem; right: 0.85rem; }
     }
   </style>
 </head>
 <body>
 
-<a class="to-library" href="#library">The Library</a>
+<div class="pages-menu">
+  <button class="to-library" id="pagesToggle" aria-expanded="false" aria-controls="pagesPanel">
+    Pages
+    <span class="pages-caret">▾</span>
+  </button>
+  <div class="pages-panel" id="pagesPanel">
+    <a href="#library" class="pages-item">
+      <span class="pages-item-num">Jump to</span>
+      <span class="pages-item-title">The Library</span>
+    </a>
+    <a href="/serpent-wars" class="pages-item">
+      <span class="pages-item-num">№ 002</span>
+      <span class="pages-item-title">The Serpent Wars</span>
+    </a>
+    <a href="/icetear" class="pages-item">
+      <span class="pages-item-num">№ 003</span>
+      <span class="pages-item-title">The Icetear Legacy</span>
+    </a>
+    <a href="/codex" class="pages-item">
+      <span class="pages-item-num">Reference</span>
+      <span class="pages-item-title">The Codex</span>
+    </a>
+  </div>
+</div>
 
 <div id="cursor"></div>
 <div id="cursor-ring"></div>
@@ -682,6 +761,15 @@
         <p class="vol-blurb">A gift arrives from the north. A scout dies of a cold that should not exist. Beneath the mountain, something finishes sleeping.</p>
       </div>
     </a>
+
+    <a class="vol vol-codex reveal" href="/codex">
+      <div class="vol-num">✦</div>
+      <div class="vol-body">
+        <div class="vol-part">Reference · Titans, Mortals, Realms, Relics</div>
+        <div class="vol-title">The Codex</div>
+        <p class="vol-blurb">The Foundation Age itself: the myth, the register of who shaped it, and what endured.</p>
+      </div>
+    </a>
   </div>
 </section>
 
@@ -751,6 +839,29 @@
     }
     requestAnimationFrame(loop);
   })();
+
+  // ─── PAGES MENU ───
+  const pagesToggle = document.getElementById('pagesToggle');
+  const pagesPanel  = document.getElementById('pagesPanel');
+  if (pagesToggle && pagesPanel) {
+    pagesToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = pagesPanel.classList.toggle('open');
+      pagesToggle.setAttribute('aria-expanded', String(open));
+    });
+    document.addEventListener('click', (e) => {
+      if (!pagesPanel.contains(e.target) && e.target !== pagesToggle) {
+        pagesPanel.classList.remove('open');
+        pagesToggle.setAttribute('aria-expanded', 'false');
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        pagesPanel.classList.remove('open');
+        pagesToggle.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
 
   // ─── SCROLL REVEAL ───
   const io = new IntersectionObserver(
