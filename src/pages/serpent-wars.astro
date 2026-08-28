@@ -133,6 +133,58 @@
       overflow: hidden;
     }
 
+    /* HERO BACKGROUND IMAGE */
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .hero-bg-parallax {
+      position: absolute;
+      inset: -12% 0;
+      will-change: transform;
+    }
+    .hero-bg-image {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 50% 38%;
+      filter: saturate(0.7) brightness(0.6) contrast(1.08);
+      animation: heroDrift 46s ease-in-out infinite alternate;
+      will-change: transform;
+    }
+    .hero-bg-shade {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(2,7,4,0.8) 0%, rgba(2,7,4,0.35) 24%, rgba(2,7,4,0.5) 78%, var(--bg) 100%),
+        rgba(2,7,4,0.22);
+    }
+    .hero-bg-glow {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 32% 28% at 27% 32%, rgba(120,220,120,0.35) 0%, transparent 70%);
+      mix-blend-mode: screen;
+      animation: swampBreath 8s ease-in-out infinite;
+    }
+    .hero-bg-fog {
+      position: absolute;
+      left: -20%;
+      right: -20%;
+      bottom: -5%;
+      height: 45%;
+      background: radial-gradient(ellipse 60% 100% at 50% 100%, rgba(140,200,140,0.28) 0%, transparent 75%);
+      filter: blur(18px);
+      mix-blend-mode: screen;
+      animation: fogDrift 34s ease-in-out infinite alternate;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .hero-bg-image, .hero-bg-glow, .hero-bg-fog { animation: none; }
+    }
+
     .hero-chapter {
       font-family: 'Cormorant SC', serif;
       font-size: 0.68rem;
@@ -383,6 +435,14 @@
       0%, 100% { opacity: 1; transform: scale(1); }
       50%       { opacity: 0.7; transform: scale(1.04); }
     }
+    @keyframes heroDrift {
+      0%   { transform: scale(1.06) translate(0, 0); }
+      100% { transform: scale(1.14) translate(-1.5%, -1%); }
+    }
+    @keyframes fogDrift {
+      0%   { transform: translateX(-4%); opacity: 0.6; }
+      100% { transform: translateX(4%); opacity: 0.95; }
+    }
   </style>
 </head>
 <body>
@@ -399,6 +459,21 @@
 
 <!-- HERO -->
 <section class="hero">
+  <div class="hero-bg">
+    <div class="hero-bg-parallax">
+      <img
+        class="hero-bg-image"
+        src="/images/serpent-wars-swamp.jpg"
+        width="1186"
+        height="663"
+        alt="A hooded figure holds a glowing staff over still dark swamp water beside a fallen deer, mist rising through ancient trees"
+        fetchpriority="high"
+      />
+    </div>
+    <div class="hero-bg-glow"></div>
+    <div class="hero-bg-fog"></div>
+    <div class="hero-bg-shade"></div>
+  </div>
   <span class="hero-chapter">Chapter I</span>
   <h1 class="hero-title">The Serpent<br/>Wars</h1>
   <p class="hero-sub">The First Wrongness</p>
@@ -558,6 +633,18 @@
     ring.style.top  = ry + 'px';
     requestAnimationFrame(trackRing);
   })();
+
+  // HERO PARALLAX
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const heroParallax = document.querySelector('.hero-bg-parallax');
+  if (heroParallax && !reduceMotion) {
+    window.addEventListener('scroll', () => {
+      const y = window.scrollY;
+      if (y < window.innerHeight * 1.2) {
+        heroParallax.style.transform = `translateY(${y * 0.22}px)`;
+      }
+    }, { passive: true });
+  }
 
   // SPORE PARTICLES
   const canvas = document.getElementById('spore-canvas');
