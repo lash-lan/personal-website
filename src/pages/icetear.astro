@@ -1,0 +1,1385 @@
+---
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="generator" content={Astro.generator} />
+  <title>The Icetear Legacy — Part I | LASH</title>
+  <meta name="description" content="The Icetear Legacy, Part I: a boy, a frost amulet, and the thing sleeping beneath the northern mountains. A story by Lash." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=Cormorant+SC:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+/* ============================================================
+   THE ICETEAR READER
+   A deliberately single-world dark design: this is a night-time
+   reading surface, so every colour is painted explicitly and no
+   light theme is offered. Nothing inherits from the host.
+   ============================================================ */
+
+:root{
+  /* fixed identity */
+  --ground:#05070c;
+  --bone:#d8dde6;
+  --ash:#8b94a3;
+  --dim:#4a5262;
+  --frost:#7fb3d5;
+  --sapphire:#4a8fd4;
+  --ember:#c9873f;
+
+  /* mood-driven — every one of these is re-set per zone */
+  --wash:#0a1220;          /* the coloured breath behind the text */
+  --wash-y:60%;            /* where that breath sits vertically */
+  --wash-spread:70%;
+  --vignette:0.55;         /* how hard the dark closes in */
+  --text:#8b94a3;
+  --text-bright:#d8dde6;
+  --accent:#7fb3d5;
+  --track:0.005em;         /* letter-spacing: opens under dread */
+  --line-rise:14px;        /* how far a line travels as it arrives */
+  --line-dur:1100ms;       /* how slowly it arrives */
+  --grain:0.035;
+}
+
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+body{
+  background:var(--ground);
+  color:var(--text);
+  font-family:'Newsreader',Georgia,'Times New Roman',serif;
+  font-size:19px;
+  line-height:1.85;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+  transition:background-color 2400ms ease,color 2400ms ease;
+}
+
+/* ---------- ATMOSPHERE LAYERS (fixed, behind everything) ---------- */
+
+#atmos{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+#wash{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse 120% 90% at 50% var(--wash-y),
+              var(--wash) 0%, transparent var(--wash-spread));
+  transition:background 2400ms ease;
+}
+
+#particles{position:absolute;inset:0;display:block}
+
+#vignette{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse at center,
+              transparent 30%, rgba(3,4,8,0.95) 100%);
+  opacity:var(--vignette);
+  transition:opacity 2400ms ease;
+}
+
+#grain{
+  position:absolute;inset:-50%;
+  opacity:var(--grain);
+  transition:opacity 2400ms ease;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  animation:grainshift 6s steps(5) infinite;
+}
+@keyframes grainshift{
+  0%{transform:translate(0,0)}20%{transform:translate(-3%,2%)}
+  40%{transform:translate(2%,-3%)}60%{transform:translate(-2%,-2%)}
+  80%{transform:translate(3%,1%)}100%{transform:translate(0,0)}
+}
+
+/* ---------- READING COLUMN ---------- */
+
+main{position:relative;z-index:1}
+
+.zone{
+  max-width:38rem;
+  margin:0 auto;
+  padding:7rem 1.75rem;
+  display:flex;
+  flex-direction:column;
+  gap:1.15rem;
+}
+
+.eyebrow{
+  font-family:'Cormorant SC',Georgia,serif;
+  font-size:.82rem;
+  font-weight:400;
+  letter-spacing:.34em;
+  text-transform:uppercase;
+  color:var(--accent);
+  opacity:.62;
+  transition:color 2400ms ease;
+}
+
+h2{
+  font-family:'Marcellus',Georgia,serif;
+  font-size:clamp(1.6rem,4.6vw,2.3rem);
+  font-weight:400;
+  line-height:1.2;
+  letter-spacing:.02em;
+  color:var(--text-bright);
+  text-wrap:balance;
+  transition:color 2400ms ease;
+  margin-bottom:.6rem;
+}
+
+p{
+  color:var(--text);
+  letter-spacing:var(--track);
+  text-wrap:pretty;
+  transition:color 2400ms ease,letter-spacing 2400ms ease;
+}
+
+p.beat{font-size:1.06em}
+p.hushed{color:var(--text);opacity:.7;font-style:italic}
+p.struck{
+  font-family:'Marcellus',Georgia,serif;
+  font-size:1.35em;
+  line-height:1.4;
+  color:var(--text-bright);
+  letter-spacing:.06em;
+}
+
+/* the arrival of each line — the only thing that animates in the text */
+.line{
+  opacity:0;
+  transform:translateY(var(--line-rise));
+  transition:opacity var(--line-dur) ease, transform var(--line-dur) cubic-bezier(.2,.7,.3,1);
+  will-change:opacity,transform;
+}
+.line.seen{opacity:1;transform:none}
+
+/* ---------- TITLE + CLOSING CARDS ---------- */
+
+.card{
+  min-height:100svh;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  gap:1.4rem;
+  padding:4rem 1.75rem;
+  max-width:42rem;
+  margin:0 auto;
+  position:relative;
+  z-index:1;
+}
+.card h1{
+  font-family:'Marcellus',Georgia,serif;
+  font-size:clamp(2.1rem,7.5vw,3.6rem);
+  font-weight:400;
+  letter-spacing:.14em;
+  line-height:1.15;
+  color:var(--bone);
+  text-transform:uppercase;
+  text-wrap:balance;
+}
+.card .byline{
+  font-family:'Cormorant SC',Georgia,serif;
+  letter-spacing:.3em;
+  text-transform:uppercase;
+  font-size:.8rem;
+  color:var(--frost);
+  opacity:.7;
+}
+.rule{
+  width:5rem;height:1px;
+  background:linear-gradient(90deg,transparent,var(--frost),transparent);
+  opacity:.5;
+}
+.card p{max-width:32rem;color:var(--ash)}
+
+.scroll-cue{
+  margin-top:2.5rem;
+  font-family:'Cormorant SC',Georgia,serif;
+  font-size:.75rem;letter-spacing:.3em;text-transform:uppercase;
+  color:var(--dim);
+  animation:breathe 3.4s ease-in-out infinite;
+}
+@keyframes breathe{0%,100%{opacity:.35}50%{opacity:.85}}
+
+/* ---------- PROGRESS RAIL ---------- */
+
+#rail{
+  position:fixed;left:0;top:0;bottom:0;width:2px;z-index:3;
+  background:rgba(127,179,213,0.09);
+}
+#railfill{
+  position:absolute;top:0;left:0;width:100%;height:0;
+  background:linear-gradient(180deg,var(--accent),var(--sapphire));
+  opacity:.75;
+  transition:background 2400ms ease;
+}
+.tick{
+  position:absolute;left:0;width:8px;height:1px;
+  background:rgba(216,221,230,0.28);
+}
+
+/* ---------- CONTROLS ---------- */
+
+#controls{
+  position:fixed;right:1rem;bottom:1rem;z-index:5;
+  display:flex;flex-direction:column;gap:.5rem;align-items:flex-end;
+}
+.btn{
+  font-family:'Cormorant SC',Georgia,serif;
+  font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ash);
+  background:rgba(10,14,23,0.82);
+  border:1px solid rgba(127,179,213,0.22);
+  border-radius:2px;
+  padding:.5rem .8rem;
+  cursor:pointer;
+  backdrop-filter:blur(6px);
+  transition:color 220ms ease,border-color 220ms ease,background-color 220ms ease;
+}
+.btn:hover{color:var(--bone);border-color:rgba(127,179,213,0.5)}
+.btn:focus-visible{outline:2px solid var(--frost);outline-offset:2px}
+.btn[aria-pressed="true"]{color:var(--frost);border-color:rgba(127,179,213,0.55)}
+
+
+/* ---------- CHAPTER INDEX ---------- */
+
+#indexbtn{
+  position:fixed;left:1rem;top:1rem;z-index:6;
+}
+#index{
+  position:fixed;inset:0 auto 0 0;width:min(20rem,84vw);z-index:7;
+  background:rgba(5,7,12,0.97);
+  border-right:1px solid rgba(127,179,213,0.16);
+  backdrop-filter:blur(14px);
+  transform:translateX(-101%);
+  transition:transform 420ms cubic-bezier(.4,0,.2,1);
+  padding:4.5rem 1.5rem 2rem;
+  overflow-y:auto;
+  display:flex;flex-direction:column;gap:.2rem;
+}
+#index.open{transform:none}
+#index h3{
+  font-family:'Cormorant SC',Georgia,serif;
+  font-size:.75rem;letter-spacing:.3em;text-transform:uppercase;
+  color:var(--dim);font-weight:400;margin-bottom:1rem;
+}
+#index a{
+  font-family:'Newsreader',Georgia,serif;
+  font-size:.95rem;color:var(--ash);text-decoration:none;
+  padding:.55rem .4rem;border-left:2px solid transparent;
+  transition:color 200ms ease,border-color 200ms ease;
+}
+#index a:hover,#index a:focus-visible{color:var(--bone);border-left-color:var(--frost);outline:none}
+#index a small{
+  display:block;
+  font-family:'Cormorant SC',Georgia,serif;
+  font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);
+}
+
+/* ---------- THE LEGEND (author-facing, at the end) ---------- */
+
+#legend{position:relative;z-index:1;max-width:44rem;margin:0 auto;padding:5rem 1.75rem 8rem}
+#legend h2{margin-bottom:1.4rem}
+.moodtable{display:flex;flex-direction:column;gap:.1rem;margin-top:1.6rem}
+.moodrow{
+  display:grid;grid-template-columns:7.5rem 1fr;gap:1rem;
+  padding:.95rem .9rem;
+  border-left:2px solid var(--swatch,var(--dim));
+  background:rgba(255,255,255,0.014);
+}
+.moodrow dt{
+  font-family:'Cormorant SC',Georgia,serif;
+  letter-spacing:.22em;text-transform:uppercase;font-size:.78rem;
+  color:var(--swatch,var(--ash));
+  padding-top:.15rem;
+}
+.moodrow dd{font-size:.94rem;color:var(--ash);line-height:1.7}
+.moodrow dd em{color:var(--bone);font-style:normal}
+
+@media (max-width:640px){
+  body{font-size:17.5px}
+  .zone{padding:5rem 1.4rem}
+  #controls{right:.7rem;bottom:.7rem}
+  .moodrow{grid-template-columns:1fr;gap:.3rem}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .line{opacity:1;transform:none;transition:none}
+  #grain{animation:none}
+  .scroll-cue{animation:none;opacity:.6}
+  body,#wash,#vignette,p,h2,.eyebrow{transition-duration:1ms}
+}
+
+/* --- page-specific --- */
+.sep{
+  text-align:center;color:var(--accent);opacity:.4;
+  font-size:.9rem;letter-spacing:.5em;padding:1.6rem 0;
+  transition:color 2400ms ease;
+}
+#home{position:fixed;left:1rem;top:1rem;z-index:6;text-decoration:none}
+#indexbtn{left:auto;right:1rem;top:1rem}
+.colophon{
+  position:relative;z-index:1;max-width:38rem;margin:0 auto;
+  padding:2rem 1.75rem 7rem;text-align:center;
+  display:flex;flex-direction:column;gap:1.1rem;align-items:center;
+}
+.colophon .byline{
+  font-family:'Cormorant SC',Georgia,serif;letter-spacing:.28em;
+  text-transform:uppercase;font-size:.74rem;color:var(--dim);
+}
+.colophon a{color:var(--frost);text-decoration:none;border-bottom:1px solid rgba(127,179,213,.3)}
+.colophon a:hover{color:var(--bone)}
+@media (max-width:640px){#home{left:.7rem;top:.7rem}#indexbtn{right:.7rem;top:.7rem}}
+</style>
+</head>
+<body>
+
+<div id="atmos" aria-hidden="true">
+  <div id="wash"></div>
+  <canvas id="particles"></canvas>
+  <div id="vignette"></div>
+  <div id="grain"></div>
+</div>
+
+<div id="rail" aria-hidden="true"><div id="railfill"></div></div>
+
+<a class="btn" id="home" href="/">Lash</a>
+<button class="btn" id="indexbtn" aria-expanded="false" aria-controls="index">Chapters</button>
+
+<nav id="index" aria-label="Chapters">
+  <h3>The Icetear Legacy · Part I</h3>
+</nav>
+
+<div id="controls">
+  <button class="btn" id="soundbtn" aria-pressed="false">Sound off</button>
+</div>
+
+<main>
+
+<section class="card" data-mood="frost" data-skip-index>
+  <div class="byline">Hadrian Sedrick</div>
+  <h1>The Icetear Legacy</h1>
+  <div class="rule"></div>
+  <p>Part One — in which a gift arrives from the north, a scout dies of a cold that should not exist, and something under the mountain finishes sleeping.</p>
+  <div class="scroll-cue">Scroll</div>
+</section>
+
+<section class="zone" data-mood="hearth" data-title="The Boy Who Dreamed of Winter" data-num="Prologue">
+  <div class="eyebrow line">Prologue</div>
+  <h2 class="line">The Boy Who Dreamed of Winter</h2>
+  <p class="line beat">Hadrian Sedrick woke because someone was breathing on his face.</p>
+  <p class="line">He opened one eye.</p>
+  <p class="line">Marie was approximately three inches from his nose.</p>
+  <p class="line">Hadrian screamed.</p>
+  <p class="line">Marie screamed louder.</p>
+  <p class="line">Then she slapped a hand over his mouth.</p>
+  <p class="line">&quot;Quiet!&quot;</p>
+  <p class="line">Hadrian stared at her.</p>
+  <p class="line">She stared back.</p>
+  <p class="line">Her dark hair was loose around her shoulders, her boots were muddy, and judging from the pink morning light barely beginning to crawl through his shutters, she had broken into his bedroom before sunrise.</p>
+  <p class="line">Again.</p>
+  <p class="line">Hadrian pulled her hand away.</p>
+  <p class="line">&quot;What in all the frozen hells are you doing?&quot;</p>
+  <p class="line">Marie ignored the question.</p>
+  <p class="line">She was staring at his chest.</p>
+  <p class="line">More specifically, at the amulet resting against it.</p>
+  <p class="line">A pale blue stone sat inside a silver frame, no larger than the end of his thumb. Thin white veins ran through its centre like cracks trapped beneath frozen water.</p>
+  <p class="line">Marie reached toward it.</p>
+  <p class="line">Hadrian slapped her fingers away.</p>
+  <p class="line">&quot;Don't.&quot;</p>
+  <p class="line">She looked offended.</p>
+  <p class="line">&quot;I wasn't going to touch it.&quot;</p>
+  <p class="line">&quot;You were touching it.&quot;</p>
+  <p class="line">&quot;I was examining it.&quot;</p>
+  <p class="line">&quot;With your fingers.&quot;</p>
+  <p class="line">&quot;That's generally how examining works.&quot;</p>
+  <p class="line">Hadrian pulled the blanket higher.</p>
+  <p class="line">&quot;You broke into my room.&quot;</p>
+  <p class="line">&quot;The window was unlocked.&quot;</p>
+  <p class="line">&quot;That doesn't make it an invitation.&quot;</p>
+  <p class="line">&quot;It does if you're careless.&quot;</p>
+  <p class="line">Hadrian considered throwing something at her.</p>
+  <p class="line">Unfortunately, most of the objects within reach belonged to his mother.</p>
+  <p class="line">He valued continued existence.</p>
+  <p class="line">Marie leaned closer again.</p>
+  <p class="line">&quot;So that's the one?&quot;</p>
+  <p class="line">Hadrian looked down at the amulet.</p>
+  <p class="line">His irritation softened.</p>
+  <p class="line">&quot;My father brought it yesterday.&quot;</p>
+  <p class="line">&quot;From your brother?&quot;</p>
+  <p class="line">Hadrian nodded.</p>
+  <p class="line">His younger brother had been travelling with their father's retainers along the northern roads and had apparently purchased it from a merchant near the old mountain settlements.</p>
+  <p class="line">Hadrian had expected a letter.</p>
+  <p class="line">Instead, his father had returned carrying a little wooden box.</p>
+  <p class="line">Inside had been the amulet.</p>
+  <p class="line">No explanation beyond:</p>
+  <p class="line">He thought you'd like it.</p>
+  <p class="line">Hadrian had.</p>
+  <p class="line">More than he intended to admit.</p>
+  <p class="line">Marie tilted her head.</p>
+  <p class="line">&quot;Is it magical?&quot;</p>
+  <p class="line">&quot;Apparently.&quot;</p>
+  <p class="line">&quot;What does it do?&quot;</p>
+  <p class="line">Hadrian hesitated.</p>
+  <p class="line">&quot;I don't know.&quot;</p>
+  <p class="line">Marie stared at him.</p>
+  <p class="line">Hadrian stared back.</p>
+  <p class="line">&quot;You've been wearing an unidentified magical object around your neck?&quot;</p>
+  <p class="line">&quot;It was a gift.&quot;</p>
+  <p class="line">&quot;That's how curses work.&quot;</p>
+  <p class="line">&quot;It's not cursed.&quot;</p>
+  <p class="line">&quot;How do you know?&quot;</p>
+  <p class="line">Hadrian opened his mouth.</p>
+  <p class="line">Nothing useful arrived.</p>
+  <p class="line">Marie smiled triumphantly.</p>
+  <p class="line">Hadrian hated her before breakfast.</p>
+  <p class="line">Her eyes moved toward the table beside his bed.</p>
+  <p class="line">There, folded shut, lay his other treasure.</p>
+  <p class="line">Black metal.</p>
+  <p class="line">Eight narrow blades arranged around a central hinge, fashioned into something between a dagger and a war fan.</p>
+  <p class="line">His elder brother's gift.</p>
+  <p class="line">Marie pointed.</p>
+  <p class="line">&quot;And that?&quot;</p>
+  <p class="line">&quot;You've seen that.&quot;</p>
+  <p class="line">&quot;I still think it's prettier.&quot;</p>
+  <p class="line">&quot;It's a weapon.&quot;</p>
+  <p class="line">&quot;Those aren't mutually exclusive.&quot;</p>
+  <p class="line">Hadrian finally climbed out of bed.</p>
+  <p class="line">&quot;Get out.&quot;</p>
+  <p class="line">Marie grinned.</p>
+  <p class="line">&quot;You're welcome.&quot;</p>
+  <p class="line">&quot;For what?&quot;</p>
+  <p class="line">&quot;Waking you.&quot;</p>
+  <p class="line">&quot;I didn't ask you to.&quot;</p>
+  <p class="line">&quot;You would have slept through training.&quot;</p>
+  <p class="line">Hadrian froze.</p>
+  <p class="line">Marie grinned wider.</p>
+  <p class="line">Hadrian looked toward the window.</p>
+  <p class="line">The sun was rising.</p>
+  <p class="line">&quot;Oh, shit.&quot;</p>
+  <div class="sep line">— ✦ —</div>
+</section>
+
+<section class="zone" data-mood="hearth" data-title="The Last Year" data-num="Chapter I">
+  <div class="eyebrow line">Chapter I</div>
+  <h2 class="line">The Last Year</h2>
+  <p class="line beat">Tashi was already training when they reached the lower courtyard.</p>
+  <p class="line">Naturally.</p>
+  <p class="line">Tashi was always already training.</p>
+  <p class="line">Hadrian suspected she slept standing upright with a sword in her hand purely to make everyone else feel inadequate.</p>
+  <p class="line">Morning mist still clung to the grass surrounding the Sedrick estate. Beyond its old stone walls, the distant roofs of Hearthwinter were only beginning to smoke as ovens and hearths awakened across the kingdom.</p>
+  <p class="line">Tashi moved alone inside the training circle.</p>
+  <p class="line">Step.</p>
+  <p class="line">Turn.</p>
+  <p class="line">Strike.</p>
+  <p class="line">Recover.</p>
+  <p class="line">Her practice blade cut through the cold air.</p>
+  <p class="line">Marie leaned against the fence.</p>
+  <p class="line">&quot;You're showing off.&quot;</p>
+  <p class="line">Tashi stopped immediately.</p>
+  <p class="line">&quot;Marie!&quot;</p>
+  <p class="line">The sword dropped.</p>
+  <p class="line">Her entire expression brightened.</p>
+  <p class="line">She crossed the yard and embraced her.</p>
+  <p class="line">Hadrian approached behind them.</p>
+  <p class="line">Tashi noticed him.</p>
+  <p class="line">Her smile disappeared.</p>
+  <p class="line">&quot;Oh.&quot;</p>
+  <p class="line">Hadrian stopped.</p>
+  <p class="line">&quot;Good morning to you too.&quot;</p>
+  <p class="line">&quot;I thought I smelled something.&quot;</p>
+  <p class="line">Marie laughed.</p>
+  <p class="line">Hadrian looked toward the heavens, where the gods continued refusing to intervene in his suffering.</p>
+  <p class="line">They had trained together for years.</p>
+  <p class="line">This was supposed to be their last.</p>
+  <p class="line">One more winter.</p>
+  <p class="line">One more examination before the three of them could formally enter service beneath House Sedrick.</p>
+  <p class="line">Marie wanted the royal scouts.</p>
+  <p class="line">Tashi wanted the knights.</p>
+  <p class="line">Hadrian still had absolutely no idea what he wanted.</p>
+  <p class="line">His father found this concerning.</p>
+  <p class="line">His mother found it extremely concerning.</p>
+  <p class="line">Hadrian considered uncertainty a perfectly respectable career plan.</p>
+  <p class="line">Tashi picked up another wooden sword and threw it toward him.</p>
+  <p class="line">Hadrian barely caught it.</p>
+  <p class="line">&quot;Come on.&quot;</p>
+  <p class="line">&quot;I haven't eaten.&quot;</p>
+  <p class="line">&quot;Neither have I.&quot;</p>
+  <p class="line">&quot;That's because you're deranged.&quot;</p>
+  <p class="line">&quot;Defend yourself.&quot;</p>
+  <p class="line">&quot;Tashi.&quot;</p>
+  <p class="line">She attacked.</p>
+  <p class="line">Hadrian yelped and barely caught the first strike.</p>
+  <p class="line">Marie sat comfortably on the fence to watch him suffer.</p>
+  <p class="line">This, Hadrian thought, was friendship.</p>
+  <div class="sep line">— ✦ —</div>
+  <p class="line beat">The sound of hooves interrupted them.</p>
+  <p class="line">Not one horse.</p>
+</section>
+
+<section class="zone" data-mood="frost">
+  <p class="line beat">Several.</p>
+  <p class="line">Tashi lowered her sword.</p>
+  <p class="line">Hadrian turned.</p>
+  <p class="line">A rider passed beneath the old stone archway at speed.</p>
+  <p class="line">Lord Gareth Sedrick pulled hard on the reins.</p>
+  <p class="line">The horse stopped violently enough to scatter frost from the grass.</p>
+  <p class="line">Hadrian immediately knew something was wrong.</p>
+  <p class="line">His uncle never mistreated horses.</p>
+  <p class="line">Never rushed them unnecessarily.</p>
+  <p class="line">And certainly never rode through the family courtyard as though something were chasing him.</p>
+  <p class="line">Gareth dismounted.</p>
+  <p class="line">He was already dressed for travel.</p>
+  <p class="line">Sword.</p>
+  <p class="line">Winter cloak.</p>
+  <p class="line">Mail beneath dark riding leathers.</p>
+  <p class="line">The silver stag of House Sedrick rested at his shoulder.</p>
+  <p class="line">&quot;Hadrian.&quot;</p>
+  <p class="line">Hadrian straightened.</p>
+  <p class="line">&quot;Uncle.&quot;</p>
+  <p class="line">Gareth looked toward Marie and Tashi.</p>
+  <p class="line">&quot;You two as well.&quot;</p>
+  <p class="line">Tashi stepped forward.</p>
+  <p class="line">&quot;What happened?&quot;</p>
+  <p class="line">&quot;The King has given us a task.&quot;</p>
+  <p class="line">Hadrian blinked.</p>
+  <p class="line">&quot;Us?&quot;</p>
+  <p class="line">Gareth looked at him.</p>
+  <p class="line">&quot;Try not to sound so disappointed.&quot;</p>
+  <p class="line">&quot;I was aiming for surprised.&quot;</p>
+</section>
+
+<section class="zone" data-mood="dread">
+  <p class="line beat">&quot;You missed.&quot;</p>
+  <p class="line">Marie hopped down from the fence.</p>
+  <p class="line">&quot;What task?&quot;</p>
+  <p class="line">Gareth hesitated.</p>
+  <p class="line">Just slightly.</p>
+  <p class="line">Hadrian noticed.</p>
+  <p class="line">&quot;Something has been found north of the kingdom.&quot;</p>
+  <div class="sep line">— ✦ —</div>
+</section>
+
+<section class="zone" data-mood="frost" data-title="The Cave" data-num="Chapter II">
+  <div class="eyebrow line">Chapter II</div>
+  <h2 class="line">The Cave</h2>
+  <p class="line beat">They rode for nearly four hours.</p>
+  <p class="line">Hearthwinter slowly disappeared behind them.</p>
+  <p class="line">First the city walls.</p>
+  <p class="line">Then farms.</p>
+  <p class="line">Then the little villages clustered along the northern road.</p>
+  <p class="line">Eventually there was only wilderness.</p>
+  <p class="line">Snow thickened beneath the horses.</p>
+  <p class="line">The trees became taller.</p>
+  <p class="line">Older.</p>
+  <p class="line">Quieter.</p>
+</section>
+
+<section class="zone" data-mood="dread">
+  <p class="line beat">Hadrian had travelled north before.</p>
+  <p class="line">Never this far.</p>
+  <p class="line">There were stories about these mountains.</p>
+  <p class="line">Most were nonsense designed to frighten children.</p>
+  <p class="line">Ancient Fae ruins.</p>
+  <p class="line">Buried kingdoms.</p>
+  <p class="line">Sleeping giants.</p>
+  <p class="line struck">White dragons.</p>
+  <p class="line">Hadrian had believed exactly none of them.</p>
+  <p class="line">Then they reached the cave.</p>
+  <p class="line">He stopped believing quite so confidently.</p>
+  <p class="line">It lay beneath the side of a mountain, almost invisible beneath accumulated snow.</p>
+  <p class="line">Or what had once been a cave.</p>
+</section>
+
+<section class="zone" data-mood="dread">
+  <p class="line beat">The entrance had collapsed.</p>
+  <p class="line">Thousands of tonnes of rock sealed it completely.</p>
+  <p class="line">Royal scouts stood around the site beside several soldiers wearing King Putrous Puto's colours.</p>
+  <p class="line">Gareth dismounted.</p>
+  <p class="line">A captain approached him.</p>
+  <p class="line">&quot;My lord.&quot;</p>
+  <p class="line">&quot;Report.&quot;</p>
+  <p class="line">&quot;Same as yesterday.&quot;</p>
+  <p class="line">&quot;No movement?&quot;</p>
+  <p class="line">&quot;None.&quot;</p>
+  <p class="line">&quot;Sound?&quot;</p>
+  <p class="line">&quot;Nothing.&quot;</p>
+  <p class="line">Gareth looked toward the collapsed entrance.</p>
+  <p class="line">&quot;What exactly did the miners hear?&quot;</p>
+  <p class="line">The captain hesitated.</p>
+  <p class="line">&quot;Breathing.&quot;</p>
+  <p class="line">Marie looked at Hadrian.</p>
+  <p class="line">Hadrian pretended not to notice.</p>
+  <p class="line">&quot;From inside the mountain?&quot;</p>
+  <p class="line">&quot;That's what they claimed.&quot;</p>
+  <p class="line">Gareth's expression revealed precisely how much patience he possessed for frightened miners.</p>
+  <p class="line">&quot;Anything else?&quot;</p>
+  <p class="line">&quot;One claimed the stone was... cold.&quot;</p>
+  <p class="line">Hadrian frowned.</p>
+  <p class="line">They were standing in snow.</p>
+  <p class="line">Gareth apparently shared this observation.</p>
+  <p class="line">&quot;It's winter.&quot;</p>
+  <p class="line">&quot;Colder than winter.&quot;</p>
+  <p class="line">Nobody spoke for a moment.</p>
+  <p class="line">Gareth walked toward the collapse.</p>
+  <p class="line">He inspected the stone carefully.</p>
+  <p class="line">Hadrian followed.</p>
+  <p class="line">The frost amulet beneath his coat suddenly touched his skin.</p>
+  <p class="line">Cold.</p>
+  <p class="line">Hadrian flinched.</p>
+  <p class="line">He reached beneath his collar.</p>
+  <p class="line">The stone was freezing.</p>
+  <p class="line">Not cool.</p>
+  <p class="line">Freezing.</p>
+  <p class="line">He looked toward the cave.</p>
+  <p class="line">For the strangest instant, Hadrian felt something impossible.</p>
+  <p class="line">Not heard.</p>
+  <p class="line">Not saw.</p>
+  <p class="line">Felt.</p>
+  <p class="line">Something beneath them.</p>
+  <p class="line">Sleeping.</p>
+  <p class="line">He blinked.</p>
+  <p class="line">The sensation disappeared.</p>
+  <p class="line">&quot;Hadrian?&quot;</p>
+  <p class="line">He looked up.</p>
+  <p class="line">Gareth was watching him.</p>
+  <p class="line">&quot;Nothing.&quot;</p>
+  <p class="line">His uncle studied him for another moment.</p>
+  <p class="line">Then returned to the cave.</p>
+  <p class="line">They spent nearly an hour searching the collapse.</p>
+  <p class="line">No openings.</p>
+  <p class="line">No tracks.</p>
+  <p class="line">No sign that anything had entered or escaped.</p>
+  <p class="line">Eventually Gareth stepped backward.</p>
+  <p class="line">&quot;The entrance is sealed.&quot;</p>
+  <p class="line">The royal captain nodded.</p>
+  <p class="line">&quot;Then the King's concern?&quot;</p>
+  <p class="line">&quot;Resolved.&quot;</p>
+  <p class="line">Hadrian looked toward the mountain.</p>
+  <p class="line">Something about those words bothered him.</p>
+  <p class="line">Resolved.</p>
+  <p class="line">As though sealing a door proved there was nothing behind it.</p>
+  <div class="sep line">— ✦ —</div>
+</section>
+
+<section class="zone" data-mood="dread" data-title="The Scout" data-num="Chapter III">
+  <div class="eyebrow line">Chapter III</div>
+  <h2 class="line">The Scout</h2>
+  <p class="line beat">They saw the wounded man before they reached Hearthwinter.</p>
+  <p class="line">A horse stumbled along the southern road.</p>
+  <p class="line">At first Hadrian thought its rider was drunk.</p>
+  <p class="line">Then the man fell.</p>
+  <p class="line">Gareth was moving before anyone else understood.</p>
+  <p class="line">He leapt from his horse and ran.</p>
+  <p class="line">Hadrian followed.</p>
+  <p class="line">The scout lay beside the road.</p>
+  <p class="line">His uniform was torn.</p>
+  <p class="line">His face was pale.</p>
+  <p class="line">Not pale from blood loss.</p>
+  <p class="line">White.</p>
+  <p class="line">Frost covered his beard.</p>
+  <p class="line">Ice clung to his eyelashes.</p>
+  <p class="line">His fingers were blackening.</p>
+  <p class="line">Hadrian stopped.</p>
+  <p class="line">It wasn't cold enough.</p>
+  <p class="line">Not even close.</p>
+  <p class="line">Gareth knelt beside him.</p>
+  <p class="line">&quot;Who did this?&quot;</p>
+  <p class="line">The scout's lips moved.</p>
+  <p class="line">Nothing came.</p>
+  <p class="line">Gareth leaned closer.</p>
+  <p class="line">The man whispered.</p>
+  <p class="line">Hadrian heard only pieces.</p>
+  <p class="line hushed">&quot;...north...&quot;</p>
+  <p class="line">Gareth's face changed.</p>
+  <p class="line hushed">&quot;...patrol...&quot;</p>
+  <p class="line">Then something Hadrian could not understand.</p>
+  <p class="line">A name, perhaps.</p>
+  <p class="line">The scout grabbed Gareth's cloak.</p>
+  <p class="line">His frozen fingers cracked.</p>
+  <p class="line">Hadrian heard it.</p>
+  <p class="line">A tiny, brittle sound.</p>
+  <p class="line">Like breaking twigs.</p>
+  <p class="line">Then the man whispered one final thing into Gareth's ear.</p>
+  <p class="line">Gareth went completely still.</p>
+  <p class="line">The scout died holding him.</p>
+  <p class="line">For several seconds nobody moved.</p>
+  <p class="line">Then Gareth gently lowered the man's hand.</p>
+  <p class="line">He stood.</p>
+  <p class="line">His expression had become unreadable.</p>
+  <p class="line">Tashi stepped forward.</p>
+</section>
+
+<section class="zone" data-mood="abyss">
+  <p class="line beat">&quot;What did he say?&quot;</p>
+  <p class="line">Gareth looked toward the distant walls of Hearthwinter.</p>
+  <p class="line">&quot;Nothing you need to concern yourself with.&quot;</p>
+  <p class="line">That frightened Hadrian more than an answer would have.</p>
+  <p class="line">&quot;Uncle.&quot;</p>
+  <p class="line">Gareth turned.</p>
+  <p class="line">&quot;Go home.&quot;</p>
+  <p class="line">&quot;What?&quot;</p>
+  <p class="line">&quot;All three of you.&quot;</p>
+  <p class="line">&quot;You said we were supposed to report to the King.&quot;</p>
+  <p class="line">&quot;I will report.&quot;</p>
+  <p class="line">Tashi frowned.</p>
+  <p class="line">&quot;We can come.&quot;</p>
+  <p class="line">&quot;No.&quot;</p>
+  <p class="line">The word ended the discussion.</p>
+  <p class="line">Gareth mounted.</p>
+  <p class="line">&quot;I'll return to the estate tomorrow morning.&quot;</p>
+  <p class="line">Hadrian looked at the dead scout.</p>
+  <p class="line">Frost still covered his face.</p>
+  <p class="line">Then at his uncle.</p>
+  <p class="line">&quot;What happened out there?&quot;</p>
+  <p class="line">For one moment Gareth looked less like Lord Sedrick.</p>
+  <p class="line">Less like a knight.</p>
+  <p class="line">He looked frightened.</p>
+  <p class="line">&quot;I don't know.&quot;</p>
+  <p class="line">Then he rode toward Hearthwinter.</p>
+  <div class="sep line">— ✦ —</div>
+</section>
+
+<section class="zone" data-mood="wonder" data-title="The Frozen Dream" data-num="Chapter IV">
+  <div class="eyebrow line">Chapter IV</div>
+  <h2 class="line">The Frozen Dream</h2>
+  <p class="line beat">Hadrian dreamed of the cave.</p>
+  <p class="line">He knew it was a dream immediately.</p>
+  <p class="line">Mostly because he was standing barefoot in the snow without complaining.</p>
+  <p class="line">The mountain rose before him.</p>
+  <p class="line">The collapsed entrance remained exactly as he remembered.</p>
+  <p class="line">Broken stone.</p>
+  <p class="line">Ice.</p>
+  <p class="line">Snow.</p>
+  <p class="line">Silence.</p>
+  <p class="line">Then Hadrian noticed something they had missed.</p>
+  <p class="line">A hole.</p>
+  <p class="line">Tiny.</p>
+  <p class="line">Hidden beneath two overlapping rocks.</p>
+  <p class="line">Barely large enough for a thin child to crawl through.</p>
+  <p class="line">Hadrian knelt.</p>
+  <p class="line">Darkness waited beyond it.</p>
+  <p class="line">He should have been frightened.</p>
+  <p class="line">Instead he felt something pulling him forward.</p>
+  <p class="line">So he crawled.</p>
+  <p class="line">Stone pressed against his shoulders.</p>
+  <p class="line">Then his hand passed through the rock.</p>
+  <p class="line">Hadrian jerked backward.</p>
+  <p class="line">He stared.</p>
+  <p class="line">Slowly, cautiously, he pushed his fingers forward again.</p>
+  <p class="line">They disappeared through solid stone.</p>
+  <p class="line">He withdrew them.</p>
+  <p class="line">Pushed again.</p>
+  <p class="line">Nothing.</p>
+  <p class="line">No resistance.</p>
+  <p class="line">Hadrian looked down at himself.</p>
+  <p class="line">&quot;Well.&quot;</p>
+  <p class="line">Apparently dreams had advantages.</p>
+  <p class="line">He stepped through the mountain.</p>
+</section>
+
+<section class="zone" data-mood="wonder">
+  <div class="sep line">— ✦ —</div>
+  <p class="line beat">The cave beyond was beautiful.</p>
+  <p class="line">Not beautiful in the pleasant way gardens were beautiful.</p>
+  <p class="line">Beautiful in the way lightning was.</p>
+  <p class="line">Dangerous enough that admiration felt inappropriate.</p>
+  <p class="line">Blue ice climbed the walls in enormous frozen sheets.</p>
+  <p class="line">Ancient pillars of frost reached toward the ceiling.</p>
+  <p class="line">Tiny crystals shimmered beneath the surface like imprisoned stars.</p>
+  <p class="line">Hadrian walked deeper.</p>
+  <p class="line">His footsteps made no sound.</p>
+  <p class="line">There were no torches.</p>
+  <p class="line">Yet pale blue light seemed to exist everywhere.</p>
+  <p class="line">The amulet around his neck glowed.</p>
+  <p class="line">Hadrian touched it.</p>
+  <p class="line">Something answered.</p>
+  <p class="line">Far below.</p>
+  <p class="line">A heartbeat.</p>
+  <p class="line">Hadrian stopped.</p>
+</section>
+
+<section class="zone" data-mood="dread">
+  <p class="line struck">Thump.</p>
+  <p class="line">The cave trembled.</p>
+  <p class="line">Silence.</p>
+  <p class="line">Then:</p>
+  <p class="line struck">Thump.</p>
+  <p class="line">Hadrian should have turned around.</p>
+  <p class="line">Human beings had survived for thousands of years because occasionally one of them recognised an obviously terrible idea.</p>
+  <p class="line">Hadrian continued forward.</p>
+  <div class="sep line">— ✦ —</div>
+</section>
+
+<section class="zone" data-mood="wonder" data-title="The Woman Beneath the Snow" data-num="Chapter V">
+  <div class="eyebrow line">Chapter V</div>
+  <h2 class="line">The Woman Beneath the Snow</h2>
+  <p class="line beat">The tunnel opened into an enormous cavern.</p>
+  <p class="line">Hadrian stopped breathing.</p>
+  <p class="line">Snow filled it.</p>
+  <p class="line">Not a layer.</p>
+  <p class="line">A mountain.</p>
+  <p class="line">A vast white mound rose through the centre of the chamber, stretching almost to the distant walls.</p>
+  <p class="line">And somewhere beneath it...</p>
+  <p class="line hushed">light.</p>
+  <p class="line">Pale blue.</p>
+  <p class="line">Faint.</p>
+  <p class="line">Pulsing.</p>
+  <p class="line">Hadrian climbed.</p>
+  <p class="line">His feet sank into soft snow.</p>
+  <p class="line">The light grew brighter.</p>
+  <p class="line">Eventually he found its source.</p>
+  <p class="line">Something protruded from beneath the surface.</p>
+  <p class="line">Ice.</p>
+  <p class="line">Clear ice.</p>
+  <p class="line">Too clear.</p>
+  <p class="line">Hadrian knelt and brushed away the snow.</p>
+  <p class="line">More appeared.</p>
+  <p class="line">A smooth frozen surface.</p>
+  <p class="line">Not natural.</p>
+  <p class="line">A block.</p>
+  <p class="line">He dug.</p>
+  <p class="line">At first slowly.</p>
+  <p class="line">Then faster.</p>
+  <p class="line">His hands moved through snow that somehow felt both solid and weightless beneath his dream fingers.</p>
+  <p class="line">A shape appeared.</p>
+  <p class="line">Hadrian stopped.</p>
+  <p class="line">Skin.</p>
+  <p class="line">He dug again.</p>
+  <p class="line">A shoulder.</p>
+  <p class="line">White hair.</p>
+  <p class="line">A face.</p>
+  <p class="line">A woman was trapped inside the ice.</p>
+  <p class="line">Hadrian stared.</p>
+  <p class="line">She appeared young.</p>
+  <p class="line">Perhaps his age.</p>
+  <p class="line">Perhaps older.</p>
+  <p class="line">There was something about her face that made age difficult to judge.</p>
+  <p class="line">Long white hair floated around her inside the frozen prison.</p>
+  <p class="line">Only remnants of some ancient pale garment covered her, thin and damaged enough that Hadrian immediately felt embarrassed for staring.</p>
+  <p class="line">Yet she did not look dead.</p>
+  <p class="line">That was the impossible part.</p>
+  <p class="line">Her cheeks still possessed colour.</p>
+  <p class="line">Her hands rested peacefully against her stomach.</p>
+  <p class="line">And she was smiling.</p>
+  <p class="line">Not broadly.</p>
+  <p class="line">Just slightly.</p>
+  <p class="line">As though whatever dream held her was kinder than the world outside.</p>
+  <p class="line">Hadrian placed his palm against the ice.</p>
+  <p class="line">&quot;Who are you?&quot;</p>
+  <p class="line">Her eyes remained closed.</p>
+  <p class="line">Then the mountain moved.</p>
+  <div class="sep line">— ✦ —</div>
+</section>
+
+<section class="zone" data-mood="dread" data-title="What Slept Beneath Her" data-num="Chapter VI">
+  <div class="eyebrow line">Chapter VI</div>
+  <h2 class="line">What Slept Beneath Her</h2>
+  <p class="line beat">The first tremor knocked Hadrian onto his knees.</p>
+  <p class="line">The second split the snow.</p>
+  <p class="line">A sound rolled through the cavern.</p>
+  <p class="line">Deep.</p>
+  <p class="line">Ancient.</p>
+  <p class="line">Not stone.</p>
+  <p class="line struck">Breathing.</p>
+  <p class="line">Hadrian slowly turned.</p>
+  <p class="line">The mound behind him rose.</p>
+</section>
+
+<section class="zone" data-mood="wonder">
+  <p class="line beat">Snow cascaded downward.</p>
+  <p class="line">Something enormous shifted beneath it.</p>
+  <p class="line">Hadrian forgot how to move.</p>
+  <p class="line">A shape emerged.</p>
+  <p class="line">White.</p>
+  <p class="line">At first he thought it was another ridge of ice.</p>
+  <p class="line">Then the ridge opened an eye.</p>
+  <p class="line struck">Blue.</p>
+  <p class="line">Hadrian's mind simply stopped.</p>
+  <p class="line">A dragon's head rose from beneath the snow.</p>
+  <p class="line">Not merely large.</p>
+  <p class="line">Impossible.</p>
+  <p class="line">Its skull alone dwarfed the room in Hadrian's father's estate.</p>
+  <p class="line">Great ivory horns swept backward from its head.</p>
+  <p class="line">Frost clung between its scales.</p>
+  <p class="line">Its breath rolled through the cavern as glittering mist.</p>
+  <p class="line">The creature had been beneath him.</p>
+  <p class="line">Beneath the woman.</p>
+</section>
+
+<section class="zone" data-mood="wrath">
+  <p class="line beat">Beneath the entire mountain of snow.</p>
+  <p class="line">Sleeping.</p>
+  <p class="line">Hadrian tried to crawl backward.</p>
+  <p class="line">His hand slipped.</p>
+  <p class="line">The block containing the woman shifted.</p>
+  <p class="line">&quot;Oh, no.&quot;</p>
+  <p class="line">It slid.</p>
+  <p class="line">Hadrian scrambled.</p>
+  <p class="line struck">&quot;NO.&quot;</p>
+  <p class="line">The ice crashed toward him.</p>
+  <p class="line">It struck.</p>
+  <p class="line">He threw up his arms.</p>
+  <p class="line">Nothing happened.</p>
+  <p class="line">Then Hadrian remembered.</p>
+  <p class="line">Dream.</p>
+  <p class="line">He opened his eyes.</p>
+  <p class="line">The block lay over him.</p>
+  <p class="line">He could see through it.</p>
+</section>
+
+<section class="zone" data-mood="wonder">
+  <p class="line beat">See her.</p>
+  <p class="line">The woman.</p>
+  <p class="line">Her face was inches from his own.</p>
+  <p class="line">Hadrian stopped struggling.</p>
+  <p class="line">Her eyes were open.</p>
+  <p class="line">Pale blue.</p>
+  <p class="line">Watching him.</p>
+  <p class="line">His heart hammered.</p>
+  <p class="line">&quot;No.&quot;</p>
+  <p class="line">The woman smiled.</p>
+  <p class="line">Hadrian began pushing uselessly against the ice.</p>
+  <p class="line">&quot;No, no, no.&quot;</p>
+  <p class="line">Behind them, the dragon lowered its enormous head.</p>
+  <p class="line">One blue eye fixed upon him.</p>
+  <p class="line">Hadrian decided waking up would be an excellent development.</p>
+  <p class="line">Nothing happened.</p>
+  <p class="line">The woman moved.</p>
+  <p class="line">Hadrian froze.</p>
+  <p class="line">Her hand rose inside the solid ice.</p>
+  <p class="line">Not breaking it.</p>
+  <p class="line">Moving through it.</p>
+  <p class="line">Her fingers reached toward him.</p>
+  <p class="line">Hadrian tried to pull away.</p>
+  <p class="line">The ice beneath him became soft.</p>
+  <p class="line">Her hand closed around his wrist.</p>
+  <p class="line">Cold exploded through his body.</p>
+  <p class="line">She pulled.</p>
+  <p class="line">Hadrian fell into the ice.</p>
+  <div class="sep line">— ✦ —</div>
+</section>
+
+<section class="zone" data-mood="wonder" data-title="The Embrace" data-num="Chapter VII">
+  <div class="eyebrow line">Chapter VII</div>
+  <h2 class="line">The Embrace</h2>
+  <p class="line beat">He expected agony.</p>
+  <p class="line">Instead he fell against her.</p>
+  <p class="line">The frozen prison was impossibly large inside.</p>
+  <p class="line">Darkness surrounded them.</p>
+  <p class="line">Snow drifted through nothing.</p>
+  <p class="line">The woman's arms wrapped around him.</p>
+  <p class="line">Hadrian could not move.</p>
+  <p class="line">Could not speak.</p>
+  <p class="line">Could barely breathe.</p>
+  <p class="line">Half of her body was freezing.</p>
+  <p class="line">The other half...</p>
+  <p class="line hushed">warm.</p>
+  <p class="line">Not human warmth.</p>
+  <p class="line">Something deeper.</p>
+  <p class="line">Like lying beside a fire while freezing to death.</p>
+  <p class="line">Hadrian's cheek rested against her shoulder.</p>
+  <p class="line">Her white hair moved around them despite the absence of wind.</p>
+  <p class="line">The dragon watched from beyond the ice.</p>
+  <p class="line">Hadrian's heartbeat became deafening.</p>
+  <p class="line">The woman placed one hand against the back of his head.</p>
+  <p class="line">Then she whispered into his ear.</p>
+  <p class="line">Words he did not understand.</p>
+  <p class="line">An old language.</p>
+  <p class="line">Older than Hearthwinter.</p>
+  <p class="line">Older than House Sedrick.</p>
+  <p class="line">Perhaps older than mankind.</p>
+</section>
+
+<section class="zone" data-mood="dread">
+  <p class="line beat">Yet somehow...</p>
+  <p class="line">he understood one thing.</p>
+  <p class="line">Not the words.</p>
+  <p class="line">The warning beneath them.</p>
+  <p class="line struck">Winter was coming home.</p>
+  <p class="line">Hadrian's eyes widened.</p>
+  <p class="line">Images struck him.</p>
+  <p class="line">A scaffold.</p>
+  <p class="line">A human man kneeling before King Putrous.</p>
+  <p class="line">Silver-haired women fleeing through snow.</p>
+  <p class="line">A girl screaming for her father.</p>
+  <p class="line">A white dragon lowering its head.</p>
+  <p class="line">Three years of ice.</p>
+  <p class="line">Then Hearthwinter.</p>
+  <p class="line">Its walls.</p>
+  <p class="line">Its towers.</p>
+  <p class="line">Its palace.</p>
+  <p class="line">Its streets.</p>
+  <p class="line">Frozen.</p>
+  <p class="line">Thousands of people running.</p>
+  <p class="line">Soldiers breaking beneath storms.</p>
+  <p class="line">And standing before the palace...</p>
+  <p class="line">a woman with silver hair.</p>
+  <p class="line">Her eyes burned pale blue.</p>
+  <p class="line">Hadrian had never seen her before.</p>
+  <p class="line">But somehow he knew her name.</p>
+  <p class="line struck">Seneal Icetear.</p>
+  <p class="line">The woman holding him whispered again.</p>
+  <p class="line">This time Hadrian understood.</p>
+  <p class="line">&quot;She remembers.&quot;</p>
+  <p class="line">His blood went cold.</p>
+</section>
+
+<section class="zone" data-mood="frost">
+  <p class="line beat">The dragon opened its mouth.</p>
+  <p class="line">Blue-white light filled the cavern.</p>
+  <p class="line">The woman tightened her embrace.</p>
+  <p class="line">And whispered one final sentence.</p>
+  <p class="line struck">&quot;Will you?&quot;</p>
+  <p class="line">Hadrian woke screaming.</p>
+  <p class="line">The room was dark.</p>
+  <p class="line">His sheets were soaked with sweat.</p>
+  <p class="line">His heart slammed against his ribs.</p>
+  <p class="line">For several seconds he could not remember where he was.</p>
+  <p class="line">Then he felt something against his chest.</p>
+  <p class="line">Cold.</p>
+  <p class="line">Hadrian slowly looked down.</p>
+  <p class="line">The frost amulet was glowing.</p>
+  <p class="line">Blue light crawled through its crystalline veins.</p>
+  <p class="line">And across his bedroom floor, beginning beneath his bed and stretching toward the door...</p>
+  <p class="line">was a thin layer of frost.</p>
+  <p class="line">Hadrian stared at it.</p>
+  <p class="line">This had not been a dream.</p>
+  <p class="line">And somewhere beyond the northern walls of Hearthwinter, something that his kingdom had tried very hard to forget...</p>
+  <p class="line struck">had begun remembering them.</p>
+  <div class="sep line">— ✦ —</div>
+</section>
+
+</main>
+
+<div class="colophon">
+  <div class="rule"></div>
+  <div class="byline">End of Part One</div>
+  <p><a href="/">Return to Lash</a> · <a href="/serpent-wars">The Serpent Wars</a></p>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------------- MOOD DEFINITIONS ----------------
+     Each mood is one object. Adding a seventh mood means
+     adding one entry here — nothing else changes.        */
+
+  var MOODS = {
+    hearth:{
+      ground:"#0a0805", wash:"#2a1a0c", washY:"72%", spread:"66%",
+      vignette:.42, text:"#a89478", bright:"#ecdcc0", accent:"#c9873f",
+      track:".005em", rise:"14px", dur:"1200ms", grain:.03,
+      p:{count:.55, speed:.16, dir:-1, drift:.4, size:1.7, color:"201,135,63", alpha:.5, frozen:false},
+      audio:{cut:420, noise:.05, drone:.05, hz:82.41}
+    },
+    frost:{
+      ground:"#05070c", wash:"#0d2036", washY:"58%", spread:"72%",
+      vignette:.55, text:"#8b94a3", bright:"#d8dde6", accent:"#7fb3d5",
+      track:".005em", rise:"14px", dur:"1100ms", grain:.035,
+      p:{count:1, speed:.34, dir:1, drift:.5, size:1.5, color:"200,220,240", alpha:.45, frozen:false},
+      audio:{cut:900, noise:.09, drone:.035, hz:65.41}
+    },
+    dread:{
+      ground:"#070809", wash:"#14171c", washY:"48%", spread:"55%",
+      vignette:.8, text:"#7a8088", bright:"#b9bfc7", accent:"#5a6470",
+      track:".045em", rise:"18px", dur:"1900ms", grain:.055,
+      p:{count:.8, speed:0, dir:1, drift:0, size:1.5, color:"170,178,188", alpha:.3, frozen:true},
+      audio:{cut:180, noise:.045, drone:.075, hz:49}
+    },
+    wonder:{
+      ground:"#04080f", wash:"#10386e", washY:"52%", spread:"88%",
+      vignette:.34, text:"#9fb4c9", bright:"#e6f0fb", accent:"#4a8fd4",
+      track:".012em", rise:"20px", dur:"1700ms", grain:.025,
+      p:{count:1.3, speed:.2, dir:-1, drift:.75, size:2.1, color:"120,180,240", alpha:.62, frozen:false},
+      audio:{cut:1500, noise:.05, drone:.085, hz:98}
+    },
+    wrath:{
+      ground:"#0a0608", wash:"#3a1116", washY:"50%", spread:"62%",
+      vignette:.66, text:"#b6a3a3", bright:"#f4e9e6", accent:"#b8443a",
+      track:".005em", rise:"6px", dur:"200ms", grain:.075,
+      p:{count:1.5, speed:1.9, dir:1, drift:2.6, size:1.2, color:"235,205,200", alpha:.42, frozen:false},
+      audio:{cut:2400, noise:.13, drone:.06, hz:58.27}
+    },
+    abyss:{
+      ground:"#020304", wash:"#080a0d", washY:"46%", spread:"40%",
+      vignette:.94, text:"#5c636d", bright:"#8f97a2", accent:"#2b2f38",
+      track:".02em", rise:"10px", dur:"2400ms", grain:.02,
+      p:{count:0, speed:0, dir:1, drift:0, size:1, color:"90,96,105", alpha:.2, frozen:false},
+      audio:{cut:90, noise:.02, drone:.05, hz:41.2}
+    }
+  };
+
+  var root = document.documentElement;
+  var current = null;
+
+  function applyMood(name){
+    var m = MOODS[name];
+    if(!m || name === current) return;
+    current = name;
+    var s = root.style;
+    s.setProperty("--ground", m.ground);
+    s.setProperty("--wash", m.wash);
+    s.setProperty("--wash-y", m.washY);
+    s.setProperty("--wash-spread", m.spread);
+    s.setProperty("--vignette", m.vignette);
+    s.setProperty("--text", m.text);
+    s.setProperty("--text-bright", m.bright);
+    s.setProperty("--accent", m.accent);
+    s.setProperty("--track", m.track);
+    s.setProperty("--line-rise", m.rise);
+    s.setProperty("--line-dur", m.dur);
+    s.setProperty("--grain", m.grain);
+    field.retune(m.p);
+    Ambient.retune(m.audio);
+  }
+
+  /* ---------------- PARTICLE FIELD ----------------
+     One canvas, one rAF loop, paused when the tab is hidden.
+     "frozen" doesn't stop the loop — it stops the movement,
+     which is the entire trick behind dread.                */
+
+  var field = (function(){
+    var cv = document.getElementById("particles");
+    var ctx = cv.getContext("2d");
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var w = 0, h = 0, parts = [], cfg = MOODS.frost.p, base = 0, raf = null;
+
+    function resize(){
+      w = window.innerWidth; h = window.innerHeight;
+      cv.width = w * dpr; cv.height = h * dpr;
+      cv.style.width = w + "px"; cv.style.height = h + "px";
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      base = Math.round(Math.min(90, (w * h) / 16000));
+      build();
+    }
+    function mk(){
+      return {x:Math.random()*w, y:Math.random()*h,
+              vx:(Math.random()-.5), vy:(Math.random()*.6+.4),
+              r:Math.random()*.8+.5, a:Math.random()*.6+.4};
+    }
+    function build(){
+      var want = Math.round(base * (cfg.count||0));
+      while(parts.length < want) parts.push(mk());
+      if(parts.length > want) parts.length = want;
+    }
+    function frame(){
+      ctx.clearRect(0,0,w,h);
+      for(var i=0;i<parts.length;i++){
+        var p = parts[i];
+        if(!cfg.frozen){
+          p.y += p.vy * cfg.speed * cfg.dir * 3;
+          p.x += p.vx * cfg.drift;
+          if(p.y > h + 12){ p.y = -12; p.x = Math.random()*w; }
+          if(p.y < -12){ p.y = h + 12; p.x = Math.random()*w; }
+          if(p.x > w + 12) p.x = -12;
+          if(p.x < -12) p.x = w + 12;
+        }
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * cfg.size, 0, 6.283);
+        ctx.fillStyle = "rgba(" + cfg.color + "," + (p.a * cfg.alpha) + ")";
+        ctx.fill();
+      }
+      raf = requestAnimationFrame(frame);
+    }
+    function start(){ if(!raf && !reduced) raf = requestAnimationFrame(frame); }
+    function stop(){ if(raf){ cancelAnimationFrame(raf); raf = null; } }
+
+    if(!reduced){
+      resize();
+      var rt; window.addEventListener("resize", function(){
+        clearTimeout(rt); rt = setTimeout(resize, 180);
+      });
+      document.addEventListener("visibilitychange", function(){
+        document.hidden ? stop() : start();
+      });
+      start();
+    } else { cv.style.display = "none"; }
+
+    return { retune:function(next){ cfg = next; if(!reduced) build(); } };
+  })();
+
+  /* ---------------- AMBIENT SOUND ----------------
+     Synthesised, not loaded: filtered noise for wind plus two
+     detuned oscillators for the drone. No audio files exist,
+     so nothing to host and nothing to download.              */
+
+  var Ambient = (function(){
+    var ctxA = null, on = false, pending = null;
+    var noiseGain, droneGain, filter, osc1, osc2, master;
+
+    function build(){
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return false;
+      ctxA = new AC();
+
+      var len = ctxA.sampleRate * 4;
+      var buf = ctxA.createBuffer(1, len, ctxA.sampleRate);
+      var d = buf.getChannelData(0), last = 0;
+      for(var i=0;i<len;i++){
+        var white = Math.random()*2-1;
+        last = (last + 0.02*white)/1.02;
+        d[i] = last * 3.2;
+      }
+      var src = ctxA.createBufferSource();
+      src.buffer = buf; src.loop = true;
+
+      filter = ctxA.createBiquadFilter();
+      filter.type = "lowpass"; filter.frequency.value = 900; filter.Q.value = .6;
+
+      noiseGain = ctxA.createGain(); noiseGain.gain.value = 0;
+      droneGain = ctxA.createGain(); droneGain.gain.value = 0;
+      master = ctxA.createGain(); master.gain.value = 0;
+
+      osc1 = ctxA.createOscillator(); osc1.type = "sine"; osc1.frequency.value = 65.41;
+      osc2 = ctxA.createOscillator(); osc2.type = "sine"; osc2.frequency.value = 65.85;
+
+      src.connect(filter); filter.connect(noiseGain); noiseGain.connect(master);
+      osc1.connect(droneGain); osc2.connect(droneGain); droneGain.connect(master);
+      master.connect(ctxA.destination);
+
+      src.start(); osc1.start(); osc2.start();
+      return true;
+    }
+
+    function glide(param, value, secs){
+      if(!ctxA) return;
+      param.cancelScheduledValues(ctxA.currentTime);
+      param.setValueAtTime(param.value, ctxA.currentTime);
+      param.linearRampToValueAtTime(value, ctxA.currentTime + (secs || 2.4));
+    }
+
+    return {
+      toggle:function(){
+        if(!ctxA && !build()) return false;
+        if(ctxA.state === "suspended") ctxA.resume();
+        on = !on;
+        glide(master.gain, on ? 1 : 0, on ? 2.5 : 1.2);
+        if(on && pending) this.retune(pending);
+        return on;
+      },
+      retune:function(a){
+        pending = a;
+        if(!ctxA || !on) return;
+        glide(filter.frequency, a.cut, 3);
+        glide(noiseGain.gain, a.noise, 3);
+        glide(droneGain.gain, a.drone, 3);
+        glide(osc1.frequency, a.hz, 3);
+        glide(osc2.frequency, a.hz * 1.006, 3);
+      }
+    };
+  })();
+
+  /* ---------------- OBSERVERS ----------------
+     Two, not three thousand. Sections drive the mood; lines
+     reveal once and immediately stop being watched.        */
+
+  var zones = Array.prototype.slice.call(document.querySelectorAll("[data-mood]"));
+
+  var moodObs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting) applyMood(e.target.getAttribute("data-mood"));
+    });
+  }, { rootMargin:"-45% 0px -45% 0px", threshold:0 });
+  zones.forEach(function(z){ moodObs.observe(z); });
+
+  var lines = document.querySelectorAll(".line");
+  if(reduced){
+    Array.prototype.forEach.call(lines, function(l){ l.classList.add("seen"); });
+  } else {
+    var lineObs = new IntersectionObserver(function(entries, obs){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          e.target.classList.add("seen");
+          obs.unobserve(e.target);          /* released immediately */
+        }
+      });
+    }, { rootMargin:"0px 0px -12% 0px", threshold:0.1 });
+    Array.prototype.forEach.call(lines, function(l){ lineObs.observe(l); });
+  }
+
+  /* ---------------- PROGRESS RAIL ---------------- */
+
+  var railfill = document.getElementById("railfill");
+  var rail = document.getElementById("rail");
+  var ticking = false;
+
+  function drawTicks(){
+    var docH = document.body.scrollHeight;
+    zones.forEach(function(z){
+      if(z.hasAttribute("data-skip-index")) return;
+      var t = document.createElement("div");
+      t.className = "tick";
+      t.style.top = ((z.offsetTop / docH) * 100) + "%";
+      rail.appendChild(t);
+    });
+  }
+
+  function onScroll(){
+    if(ticking) return;
+    ticking = true;
+    requestAnimationFrame(function(){
+      var max = document.body.scrollHeight - window.innerHeight;
+      var pct = max > 0 ? (window.scrollY / max) * 100 : 0;
+      railfill.style.height = pct + "%";
+      ticking = false;
+    });
+  }
+  window.addEventListener("scroll", onScroll, {passive:true});
+
+  /* ---------------- CHAPTER INDEX ---------------- */
+
+  var index = document.getElementById("index");
+  var indexbtn = document.getElementById("indexbtn");
+
+  zones.forEach(function(z, i){
+    if(!z.getAttribute("data-title")) return;
+    var id = "z" + i;
+    z.id = id;
+    var a = document.createElement("a");
+    a.href = "#" + id;
+    a.innerHTML = "<small>" + (z.getAttribute("data-num") || "") + "</small>" +
+                  z.getAttribute("data-title");
+    a.addEventListener("click", function(){ setIndex(false); });
+    index.appendChild(a);
+  });
+
+  function setIndex(open){
+    index.classList.toggle("open", open);
+    indexbtn.setAttribute("aria-expanded", String(open));
+    indexbtn.textContent = open ? "Close" : "Chapters";
+  }
+  indexbtn.addEventListener("click", function(){
+    setIndex(!index.classList.contains("open"));
+  });
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape") setIndex(false);
+  });
+  document.addEventListener("click", function(e){
+    if(index.classList.contains("open") &&
+       !index.contains(e.target) && e.target !== indexbtn) setIndex(false);
+  });
+
+  /* ---------------- CONTROLS ---------------- */
+
+  var soundbtn = document.getElementById("soundbtn");
+  soundbtn.addEventListener("click", function(){
+    var playing = Ambient.toggle();
+    soundbtn.setAttribute("aria-pressed", String(playing));
+    soundbtn.textContent = playing ? "Sound on" : "Sound off";
+  });
+
+  /* ---------------- GO ---------------- */
+
+  drawTicks();
+  onScroll();
+  applyMood("frost");
+})();
+</script>
+</body>
+</html>

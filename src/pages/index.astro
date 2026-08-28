@@ -324,9 +324,132 @@
       0%, 100% { opacity: 0.25; }
       50%       { opacity: 1; }
     }
+
+    /* ─── LIBRARY ─── */
+    .library {
+      max-width: 46rem;
+      margin: 0 auto;
+      padding: 7rem 1.75rem 9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+      position: relative;
+      z-index: 2;
+    }
+    .library-head {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.1rem;
+      text-align: center;
+    }
+    .library-label {
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.34em;
+      text-transform: uppercase;
+      color: var(--gold);
+      opacity: 0.75;
+    }
+    .library-title {
+      font-family: 'Cinzel', Georgia, serif;
+      font-weight: 400;
+      font-size: clamp(1.5rem, 4.5vw, 2.1rem);
+      letter-spacing: 0.06em;
+      color: var(--text-bright);
+    }
+    .library-note {
+      font-family: 'EB Garamond', Georgia, serif;
+      font-size: 1rem;
+      color: var(--text-dim);
+      max-width: 30rem;
+    }
+    .shelf { display: flex; flex-direction: column; }
+    .vol {
+      display: grid;
+      grid-template-columns: 4.5rem 1fr;
+      gap: 1.5rem;
+      padding: 1.9rem 0.5rem;
+      border-top: 1px solid rgba(196, 149, 42, 0.16);
+      text-decoration: none;
+      transition: background-color 0.5s ease, padding-left 0.5s ease;
+    }
+    .shelf .vol:last-child { border-bottom: 1px solid rgba(196, 149, 42, 0.16); }
+    a.vol:hover, a.vol:focus-visible {
+      background: rgba(196, 149, 42, 0.05);
+      padding-left: 1.1rem;
+      outline: none;
+    }
+    a.vol:focus-visible { box-shadow: inset 3px 0 0 var(--gold); }
+    .vol-num {
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.2em;
+      color: var(--text-dim);
+      padding-top: 0.55rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .vol-body { display: flex; flex-direction: column; gap: 0.45rem; }
+    .vol-title {
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 1.16rem;
+      font-weight: 400;
+      letter-spacing: 0.03em;
+      color: var(--text-bright);
+      transition: color 0.4s ease;
+    }
+    a.vol:hover .vol-title, a.vol:focus-visible .vol-title { color: var(--gold-light); }
+    .vol-part {
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      opacity: 0.72;
+    }
+    .vol-blurb {
+      font-family: 'EB Garamond', Georgia, serif;
+      font-size: 0.98rem;
+      line-height: 1.7;
+      color: var(--text-dim);
+    }
+    .vol-here .vol-title { color: var(--text-dim); }
+    .vol-here .vol-part { color: var(--text-dim); opacity: 0.6; }
+
+    /* ─── CORNER LINK TO THE LIBRARY ─── */
+    .to-library {
+      position: fixed;
+      top: 1.5rem;
+      right: 1.5rem;
+      z-index: 60;
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.26em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      text-decoration: none;
+      padding: 0.55rem 0.9rem;
+      border: 1px solid rgba(196, 149, 42, 0.2);
+      background: rgba(7, 6, 4, 0.7);
+      backdrop-filter: blur(6px);
+      transition: color 0.4s ease, border-color 0.4s ease;
+    }
+    .to-library:hover, .to-library:focus-visible {
+      color: var(--gold-light);
+      border-color: rgba(196, 149, 42, 0.55);
+      outline: none;
+    }
+
+    @media (max-width: 600px) {
+      .library { padding: 4.5rem 1.3rem 6rem; }
+      .vol { grid-template-columns: 3.4rem 1fr; gap: 1rem; }
+      .to-library { top: 0.85rem; right: 0.85rem; font-size: 0.66rem; padding: 0.45rem 0.7rem; }
+    }
   </style>
 </head>
 <body>
+
+<a class="to-library" href="#library">The Library</a>
 
 <div id="cursor"></div>
 <div id="cursor-ring"></div>
@@ -521,6 +644,44 @@
       <p class="story-end-text" style="margin-top: 2.5rem;">End of Story № 001</p>
     </div>
 
+  </div>
+</section>
+
+<!-- ─── LIBRARY ─── -->
+<section class="library" id="library">
+  <div class="library-head reveal">
+    <span class="library-label">The Library</span>
+    <h2 class="library-title">Everything written so far</h2>
+    <p class="library-note">Three tales, none of them finished with me yet.</p>
+  </div>
+
+  <div class="shelf">
+    <div class="vol vol-here reveal">
+      <div class="vol-num">№ 001</div>
+      <div class="vol-body">
+        <div class="vol-part">You are reading this</div>
+        <div class="vol-title">The Spear That Was Not Meant to Exist</div>
+        <p class="vol-blurb">Adamas walks alone into a clearing chosen for memory, carrying the Sword of Light and a spear forged from his brother's soul.</p>
+      </div>
+    </div>
+
+    <a class="vol reveal" href="/serpent-wars">
+      <div class="vol-num">№ 002</div>
+      <div class="vol-body">
+        <div class="vol-part">Chapter I · The First Wrongness</div>
+        <div class="vol-title">The Serpent Wars</div>
+        <p class="vol-blurb">Aeralyn of the Elu finds the swamp altered — not broken, shifted, as though one cog in a vast mechanism had been turned.</p>
+      </div>
+    </a>
+
+    <a class="vol reveal" href="/icetear">
+      <div class="vol-num">№ 003</div>
+      <div class="vol-body">
+        <div class="vol-part">Part One · The Boy Who Dreamed of Winter</div>
+        <div class="vol-title">The Icetear Legacy</div>
+        <p class="vol-blurb">A gift arrives from the north. A scout dies of a cold that should not exist. Beneath the mountain, something finishes sleeping.</p>
+      </div>
+    </a>
   </div>
 </section>
 
