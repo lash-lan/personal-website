@@ -1,0 +1,42 @@
+---
+import SectionLayout from '../../layouts/SectionLayout.astro';
+import { SAGA_RACES, SAGAS } from '../../data/content.js';
+
+export function getStaticPaths() {
+  return SAGA_RACES.map((race) => ({ params: { race: race.slug }, props: { race } }));
+}
+
+const { race } = Astro.props;
+const sagas = SAGAS.filter((s) => s.race === race.slug);
+---
+<SectionLayout
+  title={`${race.name} | The Great Sagas | LASH`}
+  description={race.blurb}
+  theme="sagas"
+  current="sagas"
+  compact={true}
+  eyebrow="The Great Sagas"
+  heading={race.name}
+  tagline={race.blurb}
+>
+  <div class="wrap">
+    <a class="backlink" href="/sagas">← All sagas</a>
+
+    {sagas.length > 0 ? (
+      <div class="grid grid-3">
+        {sagas.map((s) => (
+          <a href={s.href} class="tile reveal">
+            <span class="tile-eyebrow">{s.eyebrow}</span>
+            <span class="tile-title">{s.title}</span>
+            <p class="tile-blurb">{s.blurb}</p>
+          </a>
+        ))}
+      </div>
+    ) : (
+      <div class="empty reveal">
+        <strong>Still being written</strong>
+        The saga of the {race.name.toLowerCase()} is underway. Its first chapters will appear here.
+      </div>
+    )}
+  </div>
+</SectionLayout>

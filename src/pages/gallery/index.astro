@@ -1,0 +1,65 @@
+---
+import SectionLayout from '../../layouts/SectionLayout.astro';
+import { GALLERY_CATEGORIES } from '../../data/content.js';
+---
+<SectionLayout
+  title="Hall of Memories | LASH"
+  description="An image gallery of the LASH universe: titans, mortals, realms, and relics."
+  theme="gallery"
+  current="gallery"
+  eyebrow="Image Gallery"
+  heading="Hall of Memories"
+  tagline="Faces and places of the world, kept somewhere they can still be looked at."
+>
+  <div class="wrap">
+    <div class="grid grid-3">
+      {GALLERY_CATEGORIES.map((cat) => {
+        const n = cat.items.length;
+        const cover = cat.items[0];
+        return (
+          <a
+            href={`/gallery/${cat.slug}`}
+            class:list={['tile', 'cat', 'reveal', { 'is-soon': n === 0 }]}
+          >
+            {cover && (
+              <span class="cat-cover">
+                <img src={`/images/codex/${cover.img}.jpg`} alt="" loading="lazy" width="480" height="720" />
+              </span>
+            )}
+            <span class="tile-eyebrow">Gallery</span>
+            <span class="tile-title">{cat.name}</span>
+            <p class="tile-blurb">{cat.blurb}</p>
+            <span class="tile-meta">{n === 0 ? 'Awaiting images' : n === 1 ? '1 image' : `${n} images`}</span>
+          </a>
+        );
+      })}
+    </div>
+  </div>
+</SectionLayout>
+
+<style>
+  .cat { padding-top: 0; overflow: hidden; }
+  .cat-cover {
+    display: block;
+    margin: 0 -1.4rem 0.9rem;
+    height: 9.5rem;
+    position: relative;
+    overflow: hidden;
+    background: #050403;
+  }
+  .cat-cover img {
+    width: 100%; height: 100%;
+    object-fit: cover; object-position: 50% 22%;
+    display: block;
+    filter: saturate(0.8) brightness(0.7);
+    transition: transform 6s ease, filter 0.5s ease;
+  }
+  .cat:hover .cat-cover img { transform: scale(1.07); filter: saturate(0.95) brightness(0.85); }
+  .cat-cover::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 40%, var(--card) 100%);
+  }
+  .cat { padding-top: 0 !important; }
+  .cat .tile-eyebrow { padding-top: 0; }
+</style>

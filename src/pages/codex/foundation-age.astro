@@ -1,4 +1,5 @@
 ---
+import SiteHeader from '../../components/SiteHeader.astro';
 const myth = [
   {
     heading: "The Ordering of the Realms",
@@ -191,7 +192,7 @@ const artifactGroups = [
     note: "Never meant to exist, yet tolerated",
     entries: [
       { img: "vial-of-severed-immortality", name: "The Vial of Severed Immortality", bearer: "Lucifial's Avatar", origin: "Formed when Evalon surrendered humanity's immortality through blood and prayer.", nature: "Abyssal containment relic.", bullets: ["Stores stripped divine longevity", "Cannot be destroyed without unraveling the soul bound to it"], significance: "The price of freedom." },
-      { img: null, name: "The Black Codex of the Hsal Eraklah", bearer: "Exiled Soul Elves", origin: "Compiled from teachings given by Lucifial's Avatar.", nature: "Necromantic grimoire.", bullets: ["Enables soul binding, memory theft, and corpse manipulation", "Corrupts its reader gradually"], significance: "Knowledge without reverence becomes rot." },
+      { img: "black-codex", name: "The Black Codex of the Hsal Eraklah", bearer: "Exiled Soul Elves", origin: "Compiled from teachings given by Lucifial's Avatar.", nature: "Necromantic grimoire.", bullets: ["Enables soul binding, memory theft, and corpse manipulation", "Corrupts its reader gradually"], significance: "Knowledge without reverence becomes rot." },
     ],
   },
 ];
@@ -201,7 +202,7 @@ const artifactGroups = [
   <meta charset="utf-8" />
   <link rel="icon" href="/favicon.ico" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>The Codex | LASH</title>
+  <title>The Foundation Age | Codex | LASH</title>
   <meta name="description" content="The Foundation Age Codex: Titans, mortals, realms, and relics of the LASH universe." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -270,93 +271,6 @@ const artifactGroups = [
       z-index: 0;
       opacity: 0.55;
     }
-
-    .nav {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 10;
-      padding: 1.6rem 2.2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: linear-gradient(to bottom, rgba(10,7,4,0.9) 0%, transparent 100%);
-    }
-    .nav-back {
-      font-family: 'Cormorant SC', serif;
-      font-size: 0.65rem;
-      letter-spacing: 0.4em;
-      color: var(--text-dim);
-      text-decoration: none;
-      transition: color 0.3s;
-    }
-    .nav-back:hover { color: var(--gold); }
-    .nav-series {
-      font-family: 'Cormorant SC', serif;
-      font-size: 0.62rem;
-      letter-spacing: 0.35em;
-      color: var(--text-dim);
-    }
-
-    /* PAGES MENU */
-    .pages-menu { position: relative; }
-    .pages-toggle {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: none;
-      border: none;
-      cursor: pointer;
-      font: inherit;
-      padding: 0;
-    }
-    .pages-caret {
-      color: var(--gold);
-      font-size: 0.6rem;
-      transition: transform 0.3s ease;
-    }
-    .pages-toggle[aria-expanded="true"] .pages-caret { transform: rotate(180deg); }
-    .pages-panel {
-      position: absolute;
-      top: calc(100% + 1rem);
-      right: 0;
-      min-width: 15rem;
-      background: rgba(10,7,4,0.97);
-      border: 1px solid var(--line);
-      border-radius: 2px;
-      padding: 0.5rem;
-      display: flex;
-      flex-direction: column;
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(-6px);
-      transition: opacity 0.25s ease, transform 0.25s ease;
-      backdrop-filter: blur(10px);
-    }
-    .pages-panel.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
-    .pages-item {
-      display: flex;
-      flex-direction: column;
-      gap: 0.15rem;
-      padding: 0.65rem 0.8rem;
-      text-decoration: none;
-      border-radius: 2px;
-      transition: background-color 0.2s ease;
-    }
-    .pages-item:hover, .pages-item:focus-visible { background: rgba(196,149,42,0.08); outline: none; }
-    .pages-item-num {
-      font-family: 'Cormorant SC', serif;
-      font-size: 0.6rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--bronze);
-    }
-    .pages-item-title {
-      font-family: 'EB Garamond', serif;
-      font-size: 0.9rem;
-      color: var(--text);
-    }
-    .pages-item:hover .pages-item-title, .pages-item:focus-visible .pages-item-title { color: var(--gold-light); }
-    .pages-item.is-current .pages-item-title { color: var(--gold); }
 
     /* HERO */
     .hero {
@@ -699,37 +613,12 @@ const artifactGroups = [
 </head>
 <body>
 
+<SiteHeader current="codex" accent="#b8863b" dim="#7a6a54" bright="#ede0c4" bg="rgba(10,7,4,0.94)" />
+
 <div id="cursor"></div>
 <div id="cursor-ring"></div>
 <canvas id="dust-canvas"></canvas>
 
-<nav class="nav">
-  <a href="/" class="nav-back">← LASH</a>
-  <div class="pages-menu">
-    <button class="pages-toggle" id="pagesToggle" aria-expanded="false" aria-controls="pagesPanel">
-      <span class="nav-series">The Codex</span>
-      <span class="pages-caret">▾</span>
-    </button>
-    <div class="pages-panel" id="pagesPanel">
-      <a href="/" class="pages-item">
-        <span class="pages-item-num">№ 001</span>
-        <span class="pages-item-title">The Spear That Was Not Meant to Exist</span>
-      </a>
-      <a href="/serpent-wars" class="pages-item">
-        <span class="pages-item-num">№ 002</span>
-        <span class="pages-item-title">The Serpent Wars</span>
-      </a>
-      <a href="/icetear" class="pages-item">
-        <span class="pages-item-num">№ 003</span>
-        <span class="pages-item-title">The Icetear Legacy</span>
-      </a>
-      <a href="/codex" class="pages-item is-current">
-        <span class="pages-item-num">Reference</span>
-        <span class="pages-item-title">The Codex</span>
-      </a>
-    </div>
-  </div>
-</nav>
 
 <!-- HERO -->
 <section class="hero">
@@ -859,7 +748,7 @@ const artifactGroups = [
 <div class="closing reveal">
   <div class="ornament">✦</div>
   <p>More chronicles remain sealed, historical accounts and untold chapters of the Foundation Age, kept for another day.</p>
-  <a href="/" class="closing-back">Return to LASH</a>
+  <a href="/codex" class="closing-back">All books of the Codex</a>
 </div>
 
 <script>
@@ -879,29 +768,6 @@ const artifactGroups = [
     ring.style.top  = ry + 'px';
     requestAnimationFrame(trackRing);
   })();
-
-  // PAGES MENU
-  const pagesToggle = document.getElementById('pagesToggle');
-  const pagesPanel  = document.getElementById('pagesPanel');
-  if (pagesToggle && pagesPanel) {
-    pagesToggle.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const open = pagesPanel.classList.toggle('open');
-      pagesToggle.setAttribute('aria-expanded', String(open));
-    });
-    document.addEventListener('click', (e) => {
-      if (!pagesPanel.contains(e.target) && e.target !== pagesToggle) {
-        pagesPanel.classList.remove('open');
-        pagesToggle.setAttribute('aria-expanded', 'false');
-      }
-    });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        pagesPanel.classList.remove('open');
-        pagesToggle.setAttribute('aria-expanded', 'false');
-      }
-    });
-  }
 
   // DUST MOTES
   const canvas = document.getElementById('dust-canvas');

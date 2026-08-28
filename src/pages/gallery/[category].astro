@@ -1,0 +1,145 @@
+---
+import SectionLayout from '../../layouts/SectionLayout.astro';
+import { GALLERY_CATEGORIES } from '../../data/content.js';
+
+export function getStaticPaths() {
+  return GALLERY_CATEGORIES.map((cat) => ({ params: { category: cat.slug }, props: { cat } }));
+}
+
+const { cat } = Astro.props;
+---
+<SectionLayout
+  title={`${cat.name} | Hall of Memories | LASH`}
+  description={cat.blurb}
+  theme="gallery"
+  current="gallery"
+  compact={true}
+  eyebrow="Hall of Memories"
+  heading={cat.name}
+  tagline={cat.blurb}
+>
+  <div class="wrap">
+    <a class="backlink" href="/gallery">← All halls</a>
+
+    {cat.items.length > 0 ? (
+      <div class="plates">
+        {cat.items.map((item) => (
+          <figure class="plate reveal">
+            <button class="plate-btn" data-full={`/images/codex/${item.img}.jpg`} data-name={item.name}>
+              <img src={`/images/codex/${item.img}.jpg`} alt={item.name} loading="lazy" width="480" height="720" />
+            </button>
+            <figcaption>
+              <span class="plate-name">{item.name}</span>
+              {item.note && <span class="plate-note">{item.note}</span>}
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    ) : (
+      <div class="empty reveal">
+        <strong>No images yet</strong>
+        Nothing has been hung in this hall so far. It will fill as the artwork is made.
+      </div>
+    )}
+  </div>
+
+  <div class="lightbox" id="lightbox" hidden>
+    <button class="lightbox-close" id="lightboxClose" aria-label="Close">✕</button>
+    <img id="lightboxImg" src="" alt="" />
+    <p class="lightbox-caption" id="lightboxCaption"></p>
+  </div>
+</SectionLayout>
+
+<style>
+  .plates {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+    gap: 1.4rem;
+  }
+  .plate { display: flex; flex-direction: column; gap: 0.7rem; }
+  .plate-btn {
+    display: block; padding: 0; border: 1px solid var(--line);
+    background: #05070a; cursor: zoom-in; overflow: hidden;
+    border-radius: 3px; aspect-ratio: 2 / 3;
+    transition: border-color 0.4s ease, transform 0.4s ease;
+  }
+  .plate-btn img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    filter: saturate(0.85) brightness(0.8);
+    transition: transform 6s ease, filter 0.5s ease;
+  }
+  .plate-btn:hover, .plate-btn:focus-visible {
+    border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+    transform: translateY(-3px);
+    outline: none;
+  }
+  .plate-btn:hover img, .plate-btn:focus-visible img {
+    transform: scale(1.05);
+    filter: saturate(1) brightness(0.95);
+  }
+  figcaption { display: flex; flex-direction: column; gap: 0.2rem; text-align: center; }
+  .plate-name {
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 0.95rem; color: var(--textBright);
+  }
+  .plate-note {
+    font-family: 'Cormorant SC', Georgia, serif;
+    font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--textDim);
+  }
+
+  /* ─── LIGHTBOX ─── */
+  .lightbox {
+    position: fixed; inset: 0; z-index: 200;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 1.2rem; padding: 3rem 1.5rem;
+    background: color-mix(in srgb, var(--bg) 92%, black);
+    backdrop-filter: blur(10px);
+  }
+  .lightbox[hidden] { display: none; }
+  .lightbox img {
+    max-width: min(92vw, 40rem);
+    max-height: 76vh;
+    object-fit: contain;
+    border: 1px solid var(--line);
+  }
+  .lightbox-caption {
+    font-family: 'Cinzel', Georgia, serif;
+    color: var(--textBright); font-size: 1rem; text-align: center;
+  }
+  .lightbox-close {
+    position: absolute; top: 1.4rem; right: 1.6rem;
+    background: none; border: 1px solid var(--line);
+    color: var(--text); cursor: pointer;
+    width: 2.4rem; height: 2.4rem; border-radius: 50%;
+    font-size: 0.85rem; line-height: 1;
+    transition: color 0.3s ease, border-color 0.3s ease;
+  }
+  .lightbox-close:hover { color: var(--accentLight); border-color: var(--accent); }
+</style>
+
+<script>
+  const box = document.getElementById('lightbox');
+  const boxImg = document.getElementById('lightboxImg') as HTMLImageElement | null;
+  const boxCap = document.getElementById('lightboxCaption');
+  const boxClose = document.getElementById('lightboxClose');
+
+  if (box && boxImg && boxCap && boxClose) {
+    const close = () => { box.hidden = true; document.body.style.overflow = ''; };
+
+    document.querySelectorAll<HTMLButtonElement>('.plate-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        boxImg.src = btn.dataset.full ?? '';
+        boxImg.alt = btn.dataset.name ?? '';
+        boxCap.textContent = btn.dataset.name ?? '';
+        box.hidden = false;
+        document.body.style.overflow = 'hidden';
+      });
+    });
+
+    boxClose.addEventListener('click', close);
+    box.addEventListener('click', (e) => { if (e.target === box) close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !box.hidden) close(); });
+  }
+</script>

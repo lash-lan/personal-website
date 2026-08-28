@@ -1,0 +1,46 @@
+---
+import SectionLayout from '../../layouts/SectionLayout.astro';
+import { AGES, storiesInAge, storyHref } from '../../data/content.js';
+
+export function getStaticPaths() {
+  return AGES.map((age) => ({ params: { age: age.slug }, props: { age } }));
+}
+
+const { age } = Astro.props;
+const stories = storiesInAge(age.slug);
+---
+<SectionLayout
+  title={`${age.name} | Library | LASH`}
+  description={age.blurb ?? `Short stories of ${age.name}.`}
+  theme="library"
+  current="library"
+  compact={true}
+  eyebrow={`Library · Age ${age.numeral}`}
+  heading={age.name}
+  tagline={age.blurb ?? ''}
+  note={age.comingSoon ? 'This age has not been written yet' : ''}
+>
+  <div class="wrap">
+    <a class="backlink" href="/library">← All ages</a>
+
+    {stories.length > 0 ? (
+      <div class="grid grid-3">
+        {stories.map((s) => (
+          <a href={storyHref(s)} class="tile reveal">
+            <span class="tile-eyebrow">№ {s.number}</span>
+            <span class="tile-title">{s.title}</span>
+            <p class="tile-blurb">{s.blurb}</p>
+            <span class="tile-meta">{s.part}</span>
+          </a>
+        ))}
+      </div>
+    ) : (
+      <div class="empty reveal">
+        <strong>{age.comingSoon ? 'Not yet written' : 'Nothing here yet'}</strong>
+        {age.comingSoon
+          ? 'This age is still ahead of the pen. Its stories will arrive in time.'
+          : 'No short stories have been placed in this age yet.'}
+      </div>
+    )}
+  </div>
+</SectionLayout>

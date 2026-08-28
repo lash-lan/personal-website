@@ -1,0 +1,38 @@
+---
+import SectionLayout from '../../layouts/SectionLayout.astro';
+import { AGES, storiesInAge } from '../../data/content.js';
+---
+<SectionLayout
+  title="Library | LASH"
+  description="Short stories of the LASH universe, gathered by the age they belong to."
+  theme="library"
+  current="library"
+  eyebrow="Short Stories"
+  heading="Library"
+  tagline="Shorter tales, each one belonging to an age of the world. Begin anywhere."
+>
+  <div class="wrap">
+    <div class="grid grid-3">
+      {AGES.map((age) => {
+        const count = storiesInAge(age.slug).length;
+        return (
+          <a
+            href={`/library/${age.slug}`}
+            class:list={['tile', 'reveal', { 'is-soon': age.comingSoon }]}
+          >
+            <span class="tile-eyebrow">Age {age.numeral}</span>
+            <span class="tile-title">{age.name}</span>
+            {age.blurb && <p class="tile-blurb">{age.blurb}</p>}
+            <span class="tile-meta">
+              {age.comingSoon
+                ? 'Coming Soon'
+                : count === 0
+                  ? 'No stories yet'
+                  : count === 1 ? '1 story' : `${count} stories`}
+            </span>
+          </a>
+        );
+      })}
+    </div>
+  </div>
+</SectionLayout>

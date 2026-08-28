@@ -1,0 +1,31 @@
+---
+import SectionLayout from '../../layouts/SectionLayout.astro';
+import { SAGA_RACES, SAGAS } from '../../data/content.js';
+---
+<SectionLayout
+  title="The Great Sagas | LASH"
+  description="Long-form sagas of the LASH universe, followed through the peoples who live them."
+  theme="sagas"
+  current="sagas"
+  eyebrow="Full Stories"
+  heading="The Great Sagas"
+  tagline="The long tellings. Whole lives, whole wars, followed through the peoples who carry them."
+>
+  <div class="wrap">
+    <div class="grid grid-3">
+      {SAGA_RACES.map((race) => {
+        const count = SAGAS.filter((s) => s.race === race.slug).length;
+        return (
+          <a href={`/sagas/${race.slug}`} class="tile reveal">
+            <span class="tile-eyebrow">Saga</span>
+            <span class="tile-title">{race.name}</span>
+            <p class="tile-blurb">{race.blurb}</p>
+            <span class="tile-meta">
+              {count === 0 ? 'In progress' : count === 1 ? '1 saga' : `${count} sagas`}
+            </span>
+          </a>
+        );
+      })}
+    </div>
+  </div>
+</SectionLayout>

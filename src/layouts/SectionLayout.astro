@@ -1,0 +1,283 @@
+---
+import SiteHeader from '../components/SiteHeader.astro';
+import { THEMES } from '../data/content.js';
+
+const {
+  title,
+  description = '',
+  theme = 'library',
+  current = null,
+  eyebrow = '',
+  heading = '',
+  tagline = '',
+  note = '',
+  compact = false,
+} = Astro.props;
+
+const t = THEMES[theme] ?? THEMES.library;
+---
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Cormorant+SC:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style define:vars={{
+    bg: t.bg, card: t.card, accent: t.accent, accentLight: t.accentLight,
+    accentDim: t.accentDim, text: t.text, textDim: t.textDim,
+    textBright: t.textBright, line: t.line,
+  }}>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'EB Garamond', Georgia, serif;
+      font-size: 17px;
+      line-height: 1.75;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background: radial-gradient(ellipse at center, transparent 42%, color-mix(in srgb, var(--bg) 88%, black) 100%);
+      pointer-events: none; z-index: 0;
+    }
+    #dust {
+      position: fixed; inset: 0;
+      width: 100%; height: 100%;
+      pointer-events: none; z-index: 0; opacity: 0.5;
+    }
+    main { position: relative; z-index: 1; }
+
+    /* ─── HERO ─── */
+    .hero {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      padding: var(--heroPad) 1.5rem 3rem;
+      position: relative;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 85% 60% at 50% 45%, color-mix(in srgb, var(--accent) 9%, transparent) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-eyebrow {
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.7rem; letter-spacing: 0.4em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 1.4rem;
+      opacity: 0; animation: fadeUp 0.9s ease forwards 0.25s;
+    }
+    .hero-title {
+      font-family: 'Cinzel Decorative', Georgia, serif;
+      font-weight: 700; letter-spacing: 0.04em; line-height: 1.08;
+      font-size: clamp(2.2rem, 7vw, 4.6rem);
+      background: linear-gradient(180deg, var(--textBright) 0%, var(--accent) 60%, color-mix(in srgb, var(--accentDim) 70%, transparent) 100%);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      opacity: 0; animation: fadeUp 1.2s ease forwards 0.5s;
+    }
+    .hero-rule {
+      width: 130px; height: 1px; margin: 1.8rem auto;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0; animation: fadeIn 0.9s ease forwards 1s;
+    }
+    .hero-tagline {
+      font-style: italic; font-size: clamp(0.98rem, 2vw, 1.22rem);
+      color: var(--text); max-width: 34rem;
+      opacity: 0; animation: fadeUp 0.9s ease forwards 1.2s;
+    }
+    .hero-note {
+      margin-top: 2rem;
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.68rem; letter-spacing: 0.26em; text-transform: uppercase;
+      color: var(--textDim);
+      opacity: 0; animation: fadeIn 0.9s ease forwards 1.5s;
+    }
+
+    .wrap { max-width: 74rem; margin: 0 auto; padding: 0 clamp(1rem, 3vw, 2rem) 7rem; }
+
+    /* ─── SHARED CARD GRID ─── */
+    .grid { display: grid; gap: 1.3rem; }
+    .grid-3 { grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); }
+    .grid-4 { grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); }
+
+    .tile {
+      display: flex; flex-direction: column; gap: 0.6rem;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      padding: 1.5rem 1.4rem;
+      text-decoration: none;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.4s ease, transform 0.4s ease, background-color 0.4s ease;
+    }
+    a.tile:hover, a.tile:focus-visible {
+      border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+      background: color-mix(in srgb, var(--accent) 5%, var(--card));
+      transform: translateY(-3px);
+      outline: none;
+    }
+    .tile-eyebrow {
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.62rem; letter-spacing: 0.24em; text-transform: uppercase;
+      color: var(--accent); opacity: 0.85;
+    }
+    .tile-title {
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 1.12rem; color: var(--textBright); letter-spacing: 0.02em;
+      transition: color 0.35s ease;
+    }
+    a.tile:hover .tile-title { color: var(--accentLight); }
+    .tile-blurb { font-size: 0.95rem; color: var(--textDim); line-height: 1.65; }
+    .tile-meta {
+      margin-top: auto; padding-top: 0.9rem;
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--textDim);
+    }
+    .tile.is-soon { opacity: 0.58; }
+    .tile.is-soon .tile-title { color: var(--textDim); }
+
+    /* ─── SECTION HEADS ─── */
+    .band { padding-top: 3.5rem; }
+    .band-head { text-align: center; margin-bottom: 2.5rem; }
+    .band-label {
+      display: block;
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.68rem; letter-spacing: 0.36em; text-transform: uppercase;
+      color: var(--accent); opacity: 0.85; margin-bottom: 0.8rem;
+    }
+    .band-title {
+      font-family: 'Cinzel', Georgia, serif; font-weight: 600;
+      font-size: clamp(1.4rem, 3.4vw, 2.1rem); color: var(--textBright);
+    }
+    .band-note { margin-top: 0.8rem; font-style: italic; color: var(--textDim); }
+
+    .ornament {
+      display: flex; align-items: center; justify-content: center;
+      gap: 1.1rem; color: var(--accent); font-size: 0.7rem; margin: 3rem 0;
+    }
+    .ornament::before, .ornament::after {
+      content: ''; width: 58px; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent));
+    }
+    .ornament::after { background: linear-gradient(90deg, var(--accent), transparent); }
+
+    /* ─── EMPTY STATE ─── */
+    .empty {
+      text-align: center; padding: 4rem 1.5rem;
+      border: 1px dashed var(--line); border-radius: 3px;
+      color: var(--textDim); font-style: italic;
+    }
+    .empty strong {
+      display: block; margin-bottom: 0.6rem;
+      font-family: 'Cinzel', Georgia, serif; font-style: normal;
+      color: var(--text); font-weight: 400; letter-spacing: 0.04em;
+    }
+
+    /* ─── BACK LINK ─── */
+    .backlink {
+      display: inline-block; margin-bottom: 2.5rem;
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.66rem; letter-spacing: 0.28em; text-transform: uppercase;
+      color: var(--textDim); text-decoration: none;
+      transition: color 0.3s ease;
+    }
+    .backlink:hover, .backlink:focus-visible { color: var(--accent); outline: none; }
+
+    .reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.85s ease, transform 0.85s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { opacity: 1; transform: none; transition: none; }
+      .hero-eyebrow, .hero-title, .hero-rule, .hero-tagline, .hero-note { animation: none; opacity: 1; }
+    }
+  </style>
+</head>
+<body style={`--heroPad:${compact ? '7.5rem' : '9.5rem'}`}>
+  <canvas id="dust"></canvas>
+  <SiteHeader
+    current={current}
+    accent={t.accent}
+    dim={t.textDim}
+    bright={t.textBright}
+    bg={`color-mix(in srgb, ${t.bg} 94%, black)`}
+  />
+
+  <main>
+    <section class="hero">
+      {eyebrow && <span class="hero-eyebrow">{eyebrow}</span>}
+      <h1 class="hero-title">{heading || title}</h1>
+      <div class="hero-rule"></div>
+      {tagline && <p class="hero-tagline">{tagline}</p>}
+      {note && <p class="hero-note">{note}</p>}
+    </section>
+
+    <slot />
+  </main>
+
+  <script define:vars={{ particle: t.particle }}>
+    // ─── DRIFTING MOTES ───
+    const canvas = document.getElementById('dust');
+    const ctx = canvas.getContext('2d');
+    let W = (canvas.width = window.innerWidth);
+    let H = (canvas.height = window.innerHeight);
+    window.addEventListener('resize', () => {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    });
+
+    function mkMote() {
+      const maxLife = 260 + Math.random() * 300;
+      return {
+        x: Math.random() * W,
+        y: Math.random() * H,
+        size: 0.4 + Math.random() * 1.7,
+        vx: (Math.random() - 0.5) * 0.16,
+        vy: -(0.03 + Math.random() * 0.13),
+        life: Math.random() * maxLife,
+        maxLife,
+      };
+    }
+
+    const motes = Array.from({ length: 55 }, mkMote);
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (!reduce) {
+      (function loop() {
+        ctx.clearRect(0, 0, W, H);
+        for (const m of motes) {
+          m.x += m.vx + Math.sin(m.life * 0.02) * 0.11;
+          m.y += m.vy;
+          m.life++;
+          if (m.y < -10 || m.life > m.maxLife) Object.assign(m, mkMote(), { y: H + 10, life: 0 });
+          const alpha = Math.sin((m.life / m.maxLife) * Math.PI) * 0.5;
+          ctx.beginPath();
+          ctx.arc(m.x, m.y, m.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${particle},${alpha})`;
+          ctx.fill();
+        }
+        requestAnimationFrame(loop);
+      })();
+    }
+
+    // ─── SCROLL REVEAL ───
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((en) => { if (en.isIntersecting) en.target.classList.add('visible'); }),
+      { threshold: 0.05, rootMargin: '0px 0px -30px 0px' }
+    );
+    document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+  </script>
+</body>
+</html>

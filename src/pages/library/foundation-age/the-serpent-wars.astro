@@ -1,4 +1,5 @@
 ---
+import SiteHeader from '../../../components/SiteHeader.astro';
 ---
 <html lang="en">
 <head>
@@ -91,96 +92,6 @@
       z-index: 0;
       opacity: 0.7;
     }
-
-    /* NAV */
-    .nav {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 10;
-      padding: 1.8rem 2.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: linear-gradient(to bottom, rgba(2,7,4,0.9) 0%, transparent 100%);
-    }
-    .nav-back {
-      font-family: 'Cormorant SC', serif;
-      font-size: 0.65rem;
-      letter-spacing: 0.4em;
-      color: var(--text-dim);
-      text-decoration: none;
-      transition: color 0.3s;
-    }
-    .nav-back:hover { color: var(--bio); }
-    .nav-series {
-      font-family: 'Cormorant SC', serif;
-      font-size: 0.62rem;
-      letter-spacing: 0.35em;
-      color: var(--text-dim);
-    }
-
-    /* PAGES MENU */
-    .pages-menu { position: relative; }
-    .pages-toggle {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: none;
-      border: none;
-      cursor: pointer;
-      font: inherit;
-      padding: 0;
-    }
-    .pages-caret {
-      color: var(--bio-dim);
-      font-size: 0.6rem;
-      transition: transform 0.3s ease;
-    }
-    .pages-toggle[aria-expanded="true"] .pages-caret { transform: rotate(180deg); }
-    .pages-panel {
-      position: absolute;
-      top: calc(100% + 1rem);
-      right: 0;
-      min-width: 15rem;
-      background: rgba(4,10,6,0.97);
-      border: 1px solid rgba(90,184,92,0.2);
-      border-radius: 2px;
-      padding: 0.5rem;
-      display: flex;
-      flex-direction: column;
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(-6px);
-      transition: opacity 0.25s ease, transform 0.25s ease;
-      backdrop-filter: blur(10px);
-    }
-    .pages-panel.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
-    .pages-item {
-      display: flex;
-      flex-direction: column;
-      gap: 0.15rem;
-      padding: 0.65rem 0.8rem;
-      text-decoration: none;
-      border-radius: 2px;
-      transition: background-color 0.2s ease;
-    }
-    .pages-item:hover, .pages-item:focus-visible { background: rgba(90,184,92,0.08); outline: none; }
-    .pages-item-num {
-      font-family: 'Cormorant SC', serif;
-      font-size: 0.6rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--bio-dim);
-    }
-    .pages-item-title {
-      font-family: 'Spectral', serif;
-      font-size: 0.9rem;
-      color: var(--text);
-    }
-    .pages-item:hover .pages-item-title, .pages-item:focus-visible .pages-item-title { color: var(--bio-pale); }
-    .pages-item.is-current .pages-item-title { color: var(--bio); }
 
     /* HERO */
     .hero {
@@ -484,42 +395,34 @@
     @media (prefers-reduced-motion: reduce) {
       .story-image img { animation: none; }
     }
+
+    .story-back {
+      display: block;
+      max-width: 640px;
+      margin: 7rem auto -3rem;
+      padding: 0 2rem;
+      position: relative;
+      z-index: 2;
+      font-family: 'Cormorant SC', serif;
+      font-size: 0.66rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+    .story-back:hover, .story-back:focus-visible { color: var(--bio); outline: none; }
   </style>
 </head>
 <body>
+
+<SiteHeader current="library" accent="#5ab85c" dim="#4e6e4a" bright="#cce0c2" bg="rgba(2,7,4,0.94)" />
 
 <div id="cursor"></div>
 <div id="cursor-ring"></div>
 <canvas id="spore-canvas"></canvas>
 
 <!-- NAV -->
-<nav class="nav">
-  <a href="/" class="nav-back">← LASH</a>
-  <div class="pages-menu">
-    <button class="pages-toggle" id="pagesToggle" aria-expanded="false" aria-controls="pagesPanel">
-      <span class="nav-series">The Serpent Wars</span>
-      <span class="pages-caret">▾</span>
-    </button>
-    <div class="pages-panel" id="pagesPanel">
-      <a href="/" class="pages-item">
-        <span class="pages-item-num">№ 001</span>
-        <span class="pages-item-title">The Spear That Was Not Meant to Exist</span>
-      </a>
-      <a href="/serpent-wars" class="pages-item is-current">
-        <span class="pages-item-num">№ 002</span>
-        <span class="pages-item-title">The Serpent Wars</span>
-      </a>
-      <a href="/icetear" class="pages-item">
-        <span class="pages-item-num">№ 003</span>
-        <span class="pages-item-title">The Icetear Legacy</span>
-      </a>
-      <a href="/codex" class="pages-item">
-        <span class="pages-item-num">Reference</span>
-        <span class="pages-item-title">The Codex</span>
-      </a>
-    </div>
-  </div>
-</nav>
 
 <!-- HERO -->
 <section class="hero">
@@ -533,6 +436,8 @@
     <div class="scroll-line"></div>
   </div>
 </section>
+
+<a class="story-back" href="/library/foundation-age">← The Foundation Age</a>
 
 <!-- STORY -->
 <div class="story-wrap">
@@ -693,29 +598,6 @@
     ring.style.top  = ry + 'px';
     requestAnimationFrame(trackRing);
   })();
-
-  // PAGES MENU
-  const pagesToggle = document.getElementById('pagesToggle');
-  const pagesPanel  = document.getElementById('pagesPanel');
-  if (pagesToggle && pagesPanel) {
-    pagesToggle.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const open = pagesPanel.classList.toggle('open');
-      pagesToggle.setAttribute('aria-expanded', String(open));
-    });
-    document.addEventListener('click', (e) => {
-      if (!pagesPanel.contains(e.target) && e.target !== pagesToggle) {
-        pagesPanel.classList.remove('open');
-        pagesToggle.setAttribute('aria-expanded', 'false');
-      }
-    });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        pagesPanel.classList.remove('open');
-        pagesToggle.setAttribute('aria-expanded', 'false');
-      }
-    });
-  }
 
   // SPORE PARTICLES
   const canvas = document.getElementById('spore-canvas');

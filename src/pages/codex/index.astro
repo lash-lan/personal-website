@@ -1,0 +1,37 @@
+---
+import SectionLayout from '../../layouts/SectionLayout.astro';
+import { AGES } from '../../data/content.js';
+
+// Only the Foundation Age chronicle has been compiled so far.
+const COMPILED = new Set(['foundation-age']);
+---
+<SectionLayout
+  title="Codex | LASH"
+  description="The historical chronicle of the LASH universe, recorded age by age."
+  theme="codex"
+  current="codex"
+  eyebrow="Historical Chronicle"
+  heading="Codex"
+  tagline="A record kept where fire cannot reach. Titans, mortals, realms, and relics, age by age."
+>
+  <div class="wrap">
+    <div class="grid grid-3">
+      {AGES.map((age) => {
+        const compiled = COMPILED.has(age.slug);
+        return (
+          <a
+            href={`/codex/${age.slug}`}
+            class:list={['tile', 'reveal', { 'is-soon': !compiled }]}
+          >
+            <span class="tile-eyebrow">Book {age.numeral}</span>
+            <span class="tile-title">{age.name}</span>
+            {age.blurb && <p class="tile-blurb">{age.blurb}</p>}
+            <span class="tile-meta">
+              {compiled ? 'Compiled' : age.comingSoon ? 'Coming Soon' : 'Not yet compiled'}
+            </span>
+          </a>
+        );
+      })}
+    </div>
+  </div>
+</SectionLayout>

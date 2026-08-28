@@ -1,4 +1,5 @@
 ---
+import SiteHeader from '../../../components/SiteHeader.astro';
 ---
 <!doctype html>
 <html lang="en">
@@ -246,7 +247,7 @@ p.struck{
 /* ---------- CHAPTER INDEX ---------- */
 
 #indexbtn{
-  position:fixed;left:1rem;top:1rem;z-index:6;
+  position:fixed;left:1rem;bottom:1rem;top:auto;z-index:6;
 }
 #index{
   position:fixed;inset:0 auto 0 0;width:min(20rem,84vw);z-index:7;
@@ -255,7 +256,7 @@ p.struck{
   backdrop-filter:blur(14px);
   transform:translateX(-101%);
   transition:transform 420ms cubic-bezier(.4,0,.2,1);
-  padding:4.5rem 1.5rem 2rem;
+  padding:5.6rem 1.5rem 2rem;
   overflow-y:auto;
   display:flex;flex-direction:column;gap:.2rem;
 }
@@ -326,8 +327,7 @@ p.struck{
   font-size:.9rem;letter-spacing:.5em;padding:1.6rem 0;
   transition:color 2400ms ease;
 }
-#home{position:fixed;left:1rem;top:1rem;z-index:6;text-decoration:none}
-#indexbtn{left:auto;right:1rem;top:1rem}
+#indexbtn{left:1rem;right:auto;bottom:1rem;top:auto}
 .colophon{
   position:relative;z-index:1;max-width:38rem;margin:0 auto;
   padding:2rem 1.75rem 7rem;text-align:center;
@@ -339,10 +339,12 @@ p.struck{
 }
 .colophon a{color:var(--frost);text-decoration:none;border-bottom:1px solid rgba(127,179,213,.3)}
 .colophon a:hover{color:var(--bone)}
-@media (max-width:640px){#home{left:.7rem;top:.7rem}#indexbtn{right:.7rem;top:.7rem}}
+@media (max-width:640px){#indexbtn{left:.7rem;bottom:.7rem}}
 </style>
 </head>
 <body>
+
+<SiteHeader current="library" accent="#7fb3d5" dim="#8b94a3" bright="#e8eef6" bg="rgba(5,7,12,0.94)" />
 
 <div id="atmos" aria-hidden="true">
   <div id="wash"></div>
@@ -353,7 +355,6 @@ p.struck{
 
 <div id="rail" aria-hidden="true"><div id="railfill"></div></div>
 
-<a class="btn" id="home" href="/">Lash</a>
 <button class="btn" id="indexbtn" aria-expanded="false" aria-controls="index">Chapters</button>
 
 <nav id="index" aria-label="Chapters">
@@ -361,9 +362,9 @@ p.struck{
   <div id="indexChapters"></div>
   <div class="index-elsewhere">
     <h3>Elsewhere</h3>
-    <a href="/"><small>№ 001</small>The Spear That Was Not Meant to Exist</a>
-    <a href="/serpent-wars"><small>№ 002</small>The Serpent Wars</a>
-    <a href="/codex"><small>Reference</small>The Codex</a>
+    <a href="/library/age-of-kingdoms"><small>Library</small>The Age of Kingdoms</a>
+    <a href="/library"><small>Library</small>All ages</a>
+    <a href="/codex/foundation-age"><small>Codex</small>The Foundation Age</a>
   </div>
 </nav>
 
@@ -1072,7 +1073,7 @@ p.struck{
 <div class="colophon">
   <div class="rule"></div>
   <div class="byline">End of Part One</div>
-  <p><a href="/">Return to Lash</a> · <a href="/serpent-wars">The Serpent Wars</a></p>
+  <p><a href="/library/age-of-kingdoms">The Age of Kingdoms</a> · <a href="/library">The Library</a></p>
 </div>
 
 <script>

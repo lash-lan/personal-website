@@ -1,0 +1,45 @@
+---
+import SectionLayout from '../../layouts/SectionLayout.astro';
+import { AGES } from '../../data/content.js';
+
+// The Foundation Age has its own hand-built page; everything else is pending.
+export function getStaticPaths() {
+  return AGES.filter((a) => a.slug !== 'foundation-age').map((age) => ({
+    params: { age: age.slug },
+    props: { age },
+  }));
+}
+
+const { age } = Astro.props;
+---
+<SectionLayout
+  title={`${age.name} | Codex | LASH`}
+  description={`The chronicle of ${age.name}.`}
+  theme="codex"
+  current="codex"
+  compact={true}
+  eyebrow={`Codex · Book ${age.numeral}`}
+  heading={age.name}
+  tagline={age.blurb ?? ''}
+>
+  <div class="wrap">
+    <a class="backlink" href="/codex">← All books</a>
+
+    <div class="empty reveal">
+      <strong>Not yet compiled</strong>
+      The chronicle of this age has not been set down. The Foundation Age is the only book
+      currently held in the Codex.
+    </div>
+
+    <div class="ornament reveal">✦</div>
+
+    <div class="grid grid-3">
+      <a href="/codex/foundation-age" class="tile reveal">
+        <span class="tile-eyebrow">Book I</span>
+        <span class="tile-title">The Foundation Age</span>
+        <p class="tile-blurb">The myth, the register of who shaped it, the realms it happened in, and what endured.</p>
+        <span class="tile-meta">Compiled</span>
+      </a>
+    </div>
+  </div>
+</SectionLayout>
