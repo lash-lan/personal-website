@@ -1,5 +1,6 @@
 ---
 import SiteHeader from '../../../components/SiteHeader.astro';
+import MoodAtmosphere from '../../../components/MoodAtmosphere.astro';
 import data from '../../../data/foundation-age-stories.json';
 
 // Two of these already have hand-built pages on the site; the dynamic route
@@ -28,6 +29,11 @@ export function getStaticPaths() {
 
 const { story, number, total, prev, next } = Astro.props;
 const hrefFor = (s) => BESPOKE[s.slug] ?? `/library/foundation-age/${s.slug}`;
+
+// Mood zones drive the atmosphere as the reader scrolls.
+const zones = (story.zones?.length ? story.zones : [{ mood: 'gilded', start: 0, end: story.paras.length - 1 }])
+  .map((z) => ({ mood: z.mood, paras: story.paras.slice(z.start, z.end + 1) }));
+const openingMood = zones[0]?.mood ?? 'gilded';
 ---
 <!doctype html>
 <html lang="en">
@@ -41,99 +47,92 @@ const hrefFor = (s) => BESPOKE[s.slug] ?? `/library/foundation-age/${s.slug}`;
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Cormorant+SC:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
-    :root {
-      --bg:      #0a0704;
-      --ink:     #c9baa0;
-      --bright:  #ede0c4;
-      --dim:     #7a6a54;
-      --gold:    #c4952a;
-      --gold-l:  #e8c875;
-      --line:    rgba(196,149,42,0.18);
-    }
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body {
-      background: var(--bg); color: var(--ink);
+      color: var(--text);
       font-family: 'EB Garamond', Georgia, serif;
       font-size: 18px; line-height: 1.78; overflow-x: hidden;
+      transition: color 1400ms ease;
     }
-    body::before {
-      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background:
-        radial-gradient(ellipse 70% 45% at 50% 0%, rgba(120,86,20,0.16) 0%, transparent 70%),
-        radial-gradient(ellipse 60% 40% at 50% 100%, rgba(90,60,14,0.13) 0%, transparent 70%);
-    }
-    body::after {
-      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background: radial-gradient(ellipse at center, transparent 45%, rgba(5,4,2,0.9) 100%);
-    }
-    #rail { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 90; background: rgba(196,149,42,0.10); }
-    #railfill { height: 100%; width: 0; background: linear-gradient(90deg, var(--gold), var(--gold-l)); }
+    #rail { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 90; background: rgba(255,255,255,0.07); }
+    #railfill { height: 100%; width: 0; background: var(--accent); transition: background-color 1400ms ease; }
     main { position: relative; z-index: 1; }
 
     .head { max-width: 42rem; margin: 0 auto; padding: 8.5rem 1.6rem 2.5rem; text-align: center; }
     .head-chapter {
       font-family: 'Cormorant SC', Georgia, serif;
       font-size: 0.68rem; letter-spacing: 0.36em; text-transform: uppercase;
-      color: var(--gold); display: block; margin-bottom: 1.1rem;
+      color: var(--accent); display: block; margin-bottom: 1.1rem;
+      transition: color 1400ms ease;
     }
     .head-title {
       font-family: 'Cinzel', Georgia, serif; font-weight: 600;
       font-size: clamp(1.7rem, 5vw, 2.9rem); line-height: 1.18;
-      color: var(--bright); letter-spacing: 0.02em;
+      color: var(--text-bright); letter-spacing: 0.02em;
+      transition: color 1400ms ease;
     }
     .head-meta {
       margin-top: 1.4rem;
       font-family: 'Cormorant SC', Georgia, serif;
-      font-size: 0.64rem; letter-spacing: 0.26em; text-transform: uppercase; color: var(--dim);
+      font-size: 0.64rem; letter-spacing: 0.26em; text-transform: uppercase;
+      color: var(--text); opacity: 0.7;
     }
-    .head-rule { width: 110px; height: 1px; margin: 2rem auto 0; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+    .head-rule { width: 110px; height: 1px; margin: 2rem auto 0; background: linear-gradient(90deg, transparent, var(--accent), transparent); }
 
-    .body { max-width: 38rem; margin: 0 auto; padding: 2.5rem 1.6rem 0; }
-    .body p { margin-bottom: 1.2rem; }
-    .body p:first-of-type::first-letter {
+    .zone { max-width: 38rem; margin: 0 auto; padding: 0 1.6rem; }
+    .zone:first-of-type { padding-top: 2.5rem; }
+    .zone p {
+      margin-bottom: 1.2rem;
+      letter-spacing: var(--track);
+      transition: letter-spacing var(--line-dur) ease;
+    }
+    .zone:first-of-type p:first-child::first-letter {
       font-family: 'Cinzel', Georgia, serif;
       font-size: 3.2em; float: left; line-height: 0.78;
       padding-right: 0.09em; padding-top: 0.04em;
-      color: var(--gold-l); text-shadow: 0 0 26px rgba(196,149,42,0.4);
+      color: var(--accent);
+      transition: color 1400ms ease;
     }
 
     /* the plate that closes every story, as in the manuscript */
     .plate { max-width: 44rem; margin: 4rem auto 0; padding: 0 1.6rem; }
     .plate img {
       display: block; width: 100%; height: auto;
-      border: 1px solid var(--line); border-radius: 3px;
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 3px;
       box-shadow: 0 0 60px rgba(0,0,0,0.55);
       filter: saturate(0.92) brightness(0.9);
     }
     .plate figcaption {
       margin-top: 0.9rem; text-align: center;
       font-family: 'Cormorant SC', Georgia, serif;
-      font-size: 0.64rem; letter-spacing: 0.26em; text-transform: uppercase; color: var(--dim);
+      font-size: 0.64rem; letter-spacing: 0.26em; text-transform: uppercase;
+      color: var(--text); opacity: 0.7;
     }
 
     .end {
       text-align: center; margin-top: 3.5rem;
       font-family: 'Cormorant SC', Georgia, serif;
-      font-size: 0.66rem; letter-spacing: 0.34em; text-transform: uppercase; color: var(--dim);
+      font-size: 0.66rem; letter-spacing: 0.34em; text-transform: uppercase;
+      color: var(--text); opacity: 0.7;
     }
-    .ornament { text-align: center; color: var(--gold); opacity: 0.6; margin-top: 1.2rem; letter-spacing: 0.5em; font-size: 0.75rem; }
+    .ornament { text-align: center; color: var(--accent); opacity: 0.6; margin-top: 1.2rem; letter-spacing: 0.5em; font-size: 0.75rem; }
 
     .foot {
       max-width: 44rem; margin: 4rem auto 0;
-      padding: 3rem 1.6rem 7rem; border-top: 1px solid var(--line);
+      padding: 3rem 1.6rem 7rem; border-top: 1px solid rgba(255,255,255,0.10);
       display: flex; flex-direction: column; gap: 1.4rem; align-items: center;
     }
     .foot-links { display: flex; flex-wrap: wrap; gap: 0.8rem; justify-content: center; }
     .foot-links a {
       font-family: 'Cormorant SC', Georgia, serif;
       font-size: 0.64rem; letter-spacing: 0.2em; text-transform: uppercase;
-      color: var(--ink); text-decoration: none;
-      border: 1px solid var(--line); padding: 0.6rem 0.95rem;
+      color: var(--text); text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.14); padding: 0.6rem 0.95rem;
       max-width: 15rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       transition: color 0.3s ease, border-color 0.3s ease;
     }
-    .foot-links a:hover, .foot-links a:focus-visible { color: var(--gold-l); border-color: var(--gold); outline: none; }
+    .foot-links a:hover, .foot-links a:focus-visible { color: var(--text-bright); border-color: var(--accent); outline: none; }
 
     @media (max-width: 640px) {
       body { font-size: 17px; }
@@ -146,7 +145,9 @@ const hrefFor = (s) => BESPOKE[s.slug] ?? `/library/foundation-age/${s.slug}`;
 
 <div id="rail" aria-hidden="true"><div id="railfill"></div></div>
 
-<SiteHeader current="library" accent="#c4952a" dim="#7a6a54" bright="#ede0c4" bg="rgba(10,7,4,0.94)" />
+<MoodAtmosphere initial={openingMood} />
+
+<SiteHeader current="library" accent="#c4952a" dim="#7a6a54" bright="#ede0c4" bg="rgba(10,7,4,0.82)" />
 
 <main>
   <header class="head">
@@ -158,9 +159,11 @@ const hrefFor = (s) => BESPOKE[s.slug] ?? `/library/foundation-age/${s.slug}`;
     <div class="head-rule"></div>
   </header>
 
-  <article class="body">
-    {story.paras.map((p) => <p>{p}</p>)}
-  </article>
+  {zones.map((z) => (
+    <section class="zone" data-mood={z.mood}>
+      {z.paras.map((p) => <p>{p}</p>)}
+    </section>
+  ))}
 
   {story.image && (
     <figure class="plate">

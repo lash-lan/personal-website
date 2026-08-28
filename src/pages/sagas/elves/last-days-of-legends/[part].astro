@@ -1,5 +1,6 @@
 ---
 import SiteHeader from '../../../../components/SiteHeader.astro';
+import MoodAtmosphere from '../../../../components/MoodAtmosphere.astro';
 import saga from '../../../../data/last-days-of-legends.json';
 
 export function getStaticPaths() {
@@ -33,21 +34,36 @@ const VIDEO_HTML = `<figure class="scene-video">
   <figcaption>Round One &middot; Raastali and Crowley</figcaption>
 </figure>`;
 
-const chapters = part.chapters.map((c, ci) => ({
-  ...c,
-  ci,
-  body: c.paras
-    .map((p, pi) => {
-      const video = c.videoBefore === pi ? VIDEO_HTML : '';
-      return (
-        video +
-        (p.t === 'break'
-          ? '<div class="scene-break">✦</div>'
-          : `<p>${esc(p.x)}</p>`)
-      );
-    })
-    .join(''),
-}));
+const renderPara = (c, p, idx) => {
+  const video = c.videoBefore === idx ? VIDEO_HTML : '';
+  return (
+    video +
+    (p.t === 'break' ? '<div class="scene-break">✦</div>' : `<p>${esc(p.x)}</p>`)
+  );
+};
+
+// Each chapter is cut into mood zones; the atmosphere engine watches these
+// and shifts colour, particles and ambient sound as the reader passes through.
+const chapters = part.chapters.map((c, ci) => {
+  const zones = c.zones?.length
+    ? c.zones
+    : [{ mood: 'frost', start: 0, end: c.paras.length - 1 }];
+  return {
+    ...c,
+    ci,
+    body: zones
+      .map((z) => {
+        const inner = c.paras
+          .slice(z.start, z.end + 1)
+          .map((p, k) => renderPara(c, p, z.start + k))
+          .join('');
+        return `<section class="zone" data-mood="${z.mood}">${inner}</section>`;
+      })
+      .join(''),
+  };
+});
+
+const openingMood = part.chapters[0]?.zones?.[0]?.mood ?? 'frost';
 ---
 <!doctype html>
 <html lang="en">
@@ -61,41 +77,31 @@ const chapters = part.chapters.map((c, ci) => ({
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Cormorant+SC:wght@300;400;500&display=swap" rel="stylesheet" />
   <style is:global>
+    /* Colour comes from the mood engine: --ground, --text, --text-bright and
+       --accent are re-set as the reader scrolls through each zone. These are
+       the page's local aliases onto those. */
     :root {
-      --bg:      #0b0505;
-      --ink:     #c4a49c;
-      --bright:  #f2ded6;
-      --dim:     #7d5a54;
-      --ember:   #b4453f;
-      --ember-l: #e59386;
-      --line:    rgba(180,69,63,0.18);
+      --ink:     var(--text);
+      --bright:  var(--text-bright);
+      --dim:     color-mix(in srgb, var(--text) 70%, transparent);
+      --ember:   var(--accent);
+      --ember-l: var(--text-bright);
+      --line:    color-mix(in srgb, var(--accent) 22%, transparent);
     }
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body {
-      background: var(--bg);
       color: var(--ink);
       font-family: 'EB Garamond', Georgia, serif;
       font-size: 18px;
       line-height: 1.7;
       overflow-x: hidden;
-    }
-    body::before {
-      content: '';
-      position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background:
-        radial-gradient(ellipse 70% 45% at 50% 0%, rgba(120,30,26,0.20) 0%, transparent 70%),
-        radial-gradient(ellipse 60% 40% at 50% 100%, rgba(90,20,18,0.16) 0%, transparent 70%);
-    }
-    body::after {
-      content: '';
-      position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background: radial-gradient(ellipse at center, transparent 45%, rgba(6,3,3,0.9) 100%);
+      transition: color 1400ms ease;
     }
 
     /* progress rail */
-    #rail { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 90; background: rgba(180,69,63,0.10); }
-    #railfill { height: 100%; width: 0; background: linear-gradient(90deg, var(--ember), var(--ember-l)); }
+    #rail { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 90; background: rgba(255,255,255,0.07); }
+    #railfill { height: 100%; width: 0; background: var(--ember); transition: background-color 1400ms ease; }
 
     main { position: relative; z-index: 1; }
 
@@ -141,8 +147,9 @@ const chapters = part.chapters.map((c, ci) => ({
     }
 
     /* the manuscript is written in short declarative lines; give them room */
-    .chapter p { margin-bottom: 1.15rem; }
-    .chapter p:first-of-type::first-letter {
+    .chapter p { margin-bottom: 1.15rem; letter-spacing: var(--track); transition: letter-spacing var(--line-dur) ease; }
+    /* only the chapter's very first paragraph, not the first of every zone */
+    .chapter .zone:first-of-type p:first-of-type::first-letter {
       font-family: 'Cinzel', Georgia, serif;
       font-size: 3.2em; float: left; line-height: 0.78;
       padding-right: 0.09em; padding-top: 0.04em;
@@ -262,7 +269,9 @@ const chapters = part.chapters.map((c, ci) => ({
 
 <div id="rail" aria-hidden="true"><div id="railfill"></div></div>
 
-<SiteHeader current="sagas" accent="#b4453f" dim="#7d5a54" bright="#f2ded6" bg="rgba(11,5,5,0.94)" />
+<MoodAtmosphere initial={openingMood} />
+
+<SiteHeader current="sagas" accent="#b4453f" dim="#7d5a54" bright="#f2ded6" bg="rgba(11,5,5,0.82)" />
 
 <button class="btn" id="chapbtn" aria-expanded="false" aria-controls="chapters">Chapters</button>
 

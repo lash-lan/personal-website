@@ -1,0 +1,332 @@
+---
+// Scroll-driven atmosphere, lifted out of The Icetear Legacy so every story
+// can use it. Sections carrying data-mood swap the page's colour, grain,
+// particle behaviour and ambient sound as the reader passes through them.
+//
+// The stylesheet is GLOBAL on purpose: the mood zones and prose live in the
+// page that imports this, so Astro's scoped styles would never match them.
+const { initial = 'frost' } = Astro.props;
+---
+
+<div id="atmos" aria-hidden="true">
+  <div id="wash"></div>
+  <canvas id="particles"></canvas>
+  <div id="vignette"></div>
+  <div id="grain"></div>
+</div>
+
+<div id="controls">
+  <button class="atmos-btn" id="soundbtn" aria-pressed="false">Sound off</button>
+</div>
+
+<style is:global>
+  :root {
+    --ground:#05070c;
+    --wash:#0a1220;
+    --wash-y:60%;
+    --wash-spread:70%;
+    --vignette:.55;
+    --text:#8b94a3;
+    --text-bright:#d8dde6;
+    --accent:#7fb3d5;
+    --track:.005em;
+    --line-rise:14px;
+    --line-dur:1100ms;
+    --grain:.035;
+  }
+
+  body {
+    background: var(--ground);
+    transition: background-color 1400ms ease;
+  }
+
+  #atmos { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+  #wash {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 120% 90% at 50% var(--wash-y),
+                var(--wash) 0%, transparent var(--wash-spread));
+    transition: background 1600ms ease;
+  }
+  #particles { position: absolute; inset: 0; display: block; }
+  #vignette {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, transparent 38%, #000 140%);
+    opacity: var(--vignette);
+    transition: opacity 1600ms ease;
+  }
+  #grain {
+    position: absolute; inset: -200%;
+    opacity: var(--grain);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/></filter><rect width='120' height='120' filter='url(%23n)' opacity='0.5'/></svg>");
+    animation: grainShift 1.1s steps(3) infinite;
+    transition: opacity 1600ms ease;
+  }
+  @keyframes grainShift {
+    0%   { transform: translate(0,0); }
+    33%  { transform: translate(-2%,1%); }
+    66%  { transform: translate(1%,-2%); }
+    100% { transform: translate(0,0); }
+  }
+
+  /* the sound toggle */
+  #controls { position: fixed; right: 1rem; bottom: 1rem; z-index: 60; }
+  .atmos-btn {
+    font-family: 'Cormorant SC', Georgia, serif;
+    font-size: .68rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--text);
+    background: rgba(8,8,10,0.82);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 2px;
+    padding: .5rem .8rem;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    transition: color 220ms ease, border-color 220ms ease;
+  }
+  .atmos-btn:hover { color: var(--text-bright); border-color: var(--accent); }
+  .atmos-btn[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+  @media (max-width: 640px) { #controls { right: .7rem; bottom: .7rem; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    #grain { animation: none; }
+    body, #wash, #vignette { transition-duration: 1ms; }
+  }
+</style>
+
+<script is:inline define:vars={{ initialMood: initial }}>
+(function(){
+  var root = document.documentElement;
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------------- MOOD DEFINITIONS ---------------- */
+  var MOODS = {
+    hearth:{
+      ground:"#0a0805", wash:"#2a1a0c", washY:"72%", spread:"66%",
+      vignette:.42, text:"#a89478", bright:"#ecdcc0", accent:"#c9873f",
+      track:".005em", rise:"14px", dur:"1200ms", grain:.03,
+      p:{count:.55, speed:.16, dir:-1, drift:.4, size:1.7, color:"201,135,63", alpha:.5, frozen:false},
+      audio:{cut:420, noise:.05, drone:.05, hz:82.41}
+    },
+    frost:{
+      ground:"#05070c", wash:"#0d2036", washY:"58%", spread:"72%",
+      vignette:.55, text:"#8b94a3", bright:"#d8dde6", accent:"#7fb3d5",
+      track:".005em", rise:"14px", dur:"1100ms", grain:.035,
+      p:{count:1, speed:.34, dir:1, drift:.5, size:1.5, color:"200,220,240", alpha:.45, frozen:false},
+      audio:{cut:900, noise:.09, drone:.035, hz:65.41}
+    },
+    dread:{
+      ground:"#070809", wash:"#14171c", washY:"48%", spread:"55%",
+      vignette:.8, text:"#7a8088", bright:"#b9bfc7", accent:"#5a6470",
+      track:".045em", rise:"18px", dur:"1900ms", grain:.055,
+      p:{count:.8, speed:0, dir:1, drift:0, size:1.5, color:"170,178,188", alpha:.3, frozen:true},
+      audio:{cut:180, noise:.045, drone:.075, hz:49}
+    },
+    wonder:{
+      ground:"#04080f", wash:"#10386e", washY:"52%", spread:"88%",
+      vignette:.34, text:"#9fb4c9", bright:"#e6f0fb", accent:"#4a8fd4",
+      track:".012em", rise:"20px", dur:"1700ms", grain:.025,
+      p:{count:1.3, speed:.2, dir:-1, drift:.75, size:2.1, color:"120,180,240", alpha:.62, frozen:false},
+      audio:{cut:1500, noise:.05, drone:.085, hz:98}
+    },
+    wrath:{
+      ground:"#0a0608", wash:"#3a1116", washY:"50%", spread:"62%",
+      vignette:.66, text:"#b6a3a3", bright:"#f4e9e6", accent:"#b8443a",
+      track:".005em", rise:"6px", dur:"200ms", grain:.075,
+      p:{count:1.5, speed:1.9, dir:1, drift:2.6, size:1.2, color:"235,205,200", alpha:.42, frozen:false},
+      audio:{cut:2400, noise:.13, drone:.06, hz:58.27}
+    },
+    abyss:{
+      ground:"#020304", wash:"#080a0d", washY:"46%", spread:"40%",
+      vignette:.94, text:"#5c636d", bright:"#8f97a2", accent:"#2b2f38",
+      track:".02em", rise:"10px", dur:"2400ms", grain:.02,
+      p:{count:0, speed:0, dir:1, drift:0, size:1, color:"90,96,105", alpha:.2, frozen:false},
+      audio:{cut:90, noise:.02, drone:.05, hz:41.2}
+    },
+    /* warm gold, for the divine and ceremonial passages of the Foundation Age */
+    gilded:{
+      ground:"#0a0704", wash:"#3a2a08", washY:"56%", spread:"78%",
+      vignette:.5, text:"#c9baa0", bright:"#f2e4c0", accent:"#c4952a",
+      track:".01em", rise:"16px", dur:"1500ms", grain:.03,
+      p:{count:1.1, speed:.14, dir:-1, drift:.6, size:1.9, color:"224,182,88", alpha:.55, frozen:false},
+      audio:{cut:1100, noise:.045, drone:.07, hz:87.31}
+    }
+  };
+
+  var current = null;
+
+  function applyMood(name){
+    var m = MOODS[name];
+    if(!m || name === current) return;
+    current = name;
+    var s = root.style;
+    s.setProperty("--ground", m.ground);
+    s.setProperty("--wash", m.wash);
+    s.setProperty("--wash-y", m.washY);
+    s.setProperty("--wash-spread", m.spread);
+    s.setProperty("--vignette", m.vignette);
+    s.setProperty("--text", m.text);
+    s.setProperty("--text-bright", m.bright);
+    s.setProperty("--accent", m.accent);
+    s.setProperty("--track", m.track);
+    s.setProperty("--line-rise", m.rise);
+    s.setProperty("--line-dur", m.dur);
+    s.setProperty("--grain", m.grain);
+    field.retune(m.p);
+    Ambient.retune(m.audio);
+  }
+
+  /* ---------------- PARTICLE FIELD ---------------- */
+  var field = (function(){
+    var cv = document.getElementById("particles");
+    if(!cv) return { retune:function(){} };
+    var ctx = cv.getContext("2d");
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var w = 0, h = 0, parts = [], cfg = MOODS.frost.p, base = 0, raf = null;
+
+    function resize(){
+      w = window.innerWidth; h = window.innerHeight;
+      cv.width = w * dpr; cv.height = h * dpr;
+      cv.style.width = w + "px"; cv.style.height = h + "px";
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      base = Math.round(Math.min(90, (w * h) / 16000));
+      build();
+    }
+    function mk(){
+      return {x:Math.random()*w, y:Math.random()*h,
+              vx:(Math.random()-.5), vy:(Math.random()*.6+.4),
+              r:Math.random()*.8+.5, a:Math.random()*.6+.4};
+    }
+    function build(){
+      var want = Math.round(base * (cfg.count||0));
+      while(parts.length < want) parts.push(mk());
+      if(parts.length > want) parts.length = want;
+    }
+    function frame(){
+      ctx.clearRect(0,0,w,h);
+      for(var i=0;i<parts.length;i++){
+        var p = parts[i];
+        if(!cfg.frozen){
+          p.y += p.vy * cfg.speed * cfg.dir * 3;
+          p.x += p.vx * cfg.drift;
+          if(p.y > h + 12){ p.y = -12; p.x = Math.random()*w; }
+          if(p.y < -12){ p.y = h + 12; p.x = Math.random()*w; }
+          if(p.x > w + 12) p.x = -12;
+          if(p.x < -12) p.x = w + 12;
+        }
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * cfg.size, 0, 6.283);
+        ctx.fillStyle = "rgba(" + cfg.color + "," + (p.a * cfg.alpha) + ")";
+        ctx.fill();
+      }
+      raf = requestAnimationFrame(frame);
+    }
+    function start(){ if(!raf && !reduced) raf = requestAnimationFrame(frame); }
+    function stop(){ if(raf){ cancelAnimationFrame(raf); raf = null; } }
+
+    if(!reduced){
+      resize();
+      var rt; window.addEventListener("resize", function(){
+        clearTimeout(rt); rt = setTimeout(resize, 180);
+      });
+      document.addEventListener("visibilitychange", function(){
+        document.hidden ? stop() : start();
+      });
+      start();
+    } else { cv.style.display = "none"; }
+
+    return { retune:function(next){ cfg = next; if(!reduced) build(); } };
+  })();
+
+  /* ---------------- AMBIENT SOUND ----------------
+     Synthesised, not loaded: filtered noise for wind plus two
+     detuned oscillators for the drone. No audio files exist,
+     so nothing to host and nothing to download.              */
+  var Ambient = (function(){
+    var ctxA = null, on = false, pending = null;
+    var noiseGain, droneGain, filter, osc1, osc2, master;
+
+    function build(){
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return false;
+      ctxA = new AC();
+
+      var len = ctxA.sampleRate * 4;
+      var buf = ctxA.createBuffer(1, len, ctxA.sampleRate);
+      var d = buf.getChannelData(0), last = 0;
+      for(var i=0;i<len;i++){
+        var white = Math.random()*2-1;
+        last = (last + 0.02*white)/1.02;
+        d[i] = last * 3.2;
+      }
+      var src = ctxA.createBufferSource();
+      src.buffer = buf; src.loop = true;
+
+      filter = ctxA.createBiquadFilter();
+      filter.type = "lowpass"; filter.frequency.value = 900; filter.Q.value = .6;
+
+      noiseGain = ctxA.createGain(); noiseGain.gain.value = 0;
+      droneGain = ctxA.createGain(); droneGain.gain.value = 0;
+      master = ctxA.createGain(); master.gain.value = 0;
+
+      osc1 = ctxA.createOscillator(); osc1.type = "sine"; osc1.frequency.value = 65.41;
+      osc2 = ctxA.createOscillator(); osc2.type = "sine"; osc2.frequency.value = 65.85;
+
+      src.connect(filter); filter.connect(noiseGain); noiseGain.connect(master);
+      osc1.connect(droneGain); osc2.connect(droneGain); droneGain.connect(master);
+      master.connect(ctxA.destination);
+
+      src.start(); osc1.start(); osc2.start();
+      return true;
+    }
+
+    function glide(param, value, secs){
+      if(!ctxA) return;
+      param.cancelScheduledValues(ctxA.currentTime);
+      param.setValueAtTime(param.value, ctxA.currentTime);
+      param.linearRampToValueAtTime(value, ctxA.currentTime + (secs || 2.4));
+    }
+
+    return {
+      toggle:function(){
+        if(!ctxA && !build()) return false;
+        if(ctxA.state === "suspended") ctxA.resume();
+        on = !on;
+        glide(master.gain, on ? 1 : 0, on ? 2.5 : 1.2);
+        if(on && pending) this.retune(pending);
+        return on;
+      },
+      retune:function(a){
+        pending = a;
+        if(!ctxA || !on) return;
+        glide(filter.frequency, a.cut, 3);
+        glide(noiseGain.gain, a.noise, 3);
+        glide(droneGain.gain, a.drone, 3);
+        glide(osc1.frequency, a.hz, 3);
+        glide(osc2.frequency, a.hz * 1.006, 3);
+      }
+    };
+  })();
+
+  /* ---------------- MOOD OBSERVER ---------------- */
+  var zones = Array.prototype.slice.call(document.querySelectorAll("[data-mood]"));
+  if(zones.length){
+    var moodObs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting) applyMood(e.target.getAttribute("data-mood"));
+      });
+    }, { rootMargin:"-45% 0px -45% 0px", threshold:0 });
+    zones.forEach(function(z){ moodObs.observe(z); });
+  }
+
+  /* ---------------- SOUND TOGGLE ---------------- */
+  var soundbtn = document.getElementById("soundbtn");
+  if(soundbtn){
+    soundbtn.addEventListener("click", function(){
+      var playing = Ambient.toggle();
+      soundbtn.setAttribute("aria-pressed", String(playing));
+      soundbtn.textContent = playing ? "Sound on" : "Sound off";
+    });
+  }
+
+  applyMood(initialMood);
+})();
+</script>
