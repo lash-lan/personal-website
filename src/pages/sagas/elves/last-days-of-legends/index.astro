@@ -26,13 +26,13 @@ const totalWords = parts.reduce((n, p) => n + p.words, 0);
   theme="sagas"
   current="sagas"
   compact={true}
+  back={{ href: "/sagas/elves", label: "Elves" }}
   eyebrow="The Great Sagas · Elves"
   heading="The Last Days of Legends"
   tagline={meta.blurb}
   note={`${parts.length} parts · ${totalWords.toLocaleString()} words`}
 >
   <div class="wrap">
-    <a class="backlink" href="/sagas/elves">← Elves</a>
 
     <div class="grid grid-3">
       {parts.map((p) => (

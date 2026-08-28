@@ -39,13 +39,13 @@ const count = isFoundation ? foundation.stories.length : plain.length;
   theme="library"
   current="library"
   compact={true}
+  back={{ href: "/library", label: "Library" }}
   eyebrow={`Library · Age ${age.numeral}`}
   heading={age.name}
   tagline={age.blurb ?? ''}
   note={age.comingSoon ? 'This age has not been written yet' : count ? `${count} short stories` : ''}
 >
   <div class="wrap">
-    <a class="backlink" href="/library">← All ages</a>
 
     {isFoundation ? (
       groups.map((g) => (

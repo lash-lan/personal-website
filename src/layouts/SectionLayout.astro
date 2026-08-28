@@ -12,6 +12,7 @@ const {
   tagline = '',
   note = '',
   compact = false,
+  back = null,
 } = Astro.props;
 
 const t = THEMES[theme] ?? THEMES.library;
@@ -229,6 +230,7 @@ const themeVars = [
   <canvas id="dust"></canvas>
   <SiteHeader
     current={current}
+    back={back}
     accent={t.accent}
     dim={t.textDim}
     bright={t.textBright}

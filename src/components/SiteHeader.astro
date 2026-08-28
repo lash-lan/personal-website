@@ -7,6 +7,7 @@ const {
   dim = '#7a6a54',         // resting link colour
   bright = '#ede0c4',      // hover / active colour
   bg = 'rgba(8,6,4,0.92)', // panel + bar backdrop
+  back = null,             // { href, label } — where "up" is from this page
 } = Astro.props;
 ---
 
@@ -14,7 +15,16 @@ const {
   class="site-header"
   style={`--nav-accent:${accent}; --nav-dim:${dim}; --nav-bright:${bright}; --nav-bg:${bg};`}
 >
-  <a class="wordmark" href="/">LASH</a>
+  <div class="left">
+    {back && (
+      <a class="backlink" href={back.href} title={`Back to ${back.label}`}>
+        <span class="arrow" aria-hidden="true">←</span>
+        <span class="back-full">{back.label}</span>
+        <span class="back-short">Back</span>
+      </a>
+    )}
+    <a class="wordmark" href="/">LASH</a>
+  </div>
 
   <nav class="nav-desktop" aria-label="Sections">
     {SECTIONS.map((s) => (
@@ -35,6 +45,10 @@ const {
   </button>
 
   <div class="nav-panel" id="siteNavPanel">
+    <a href="/" class="panel-link">
+      <span class="panel-kind">Home</span>
+      <span class="panel-name">LASH</span>
+    </a>
     {SECTIONS.map((s) => (
       <a
         href={s.href}
@@ -66,7 +80,39 @@ const {
      specific than `.nav-panel`, which would force the closed (invisible)
      mobile panel back to pointer-events:auto and let it swallow taps
      across the top-right of every page. */
-  .wordmark, .nav-desktop, .nav-toggle { pointer-events: auto; }
+  .left, .nav-desktop, .nav-toggle { pointer-events: auto; }
+
+  .left { display: flex; align-items: center; gap: 0.9rem; min-width: 0; }
+
+  /* "up one level" from a story, chapter or hall */
+  .backlink {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-family: 'Cormorant SC', Georgia, serif;
+    font-size: 0.64rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--nav-dim);
+    text-decoration: none;
+    padding: 0.42rem 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--nav-accent) 26%, transparent);
+    background: rgba(0,0,0,0.34);
+    backdrop-filter: blur(8px);
+    max-width: 17rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    transition: color 0.3s ease, border-color 0.3s ease;
+  }
+  .backlink:hover, .backlink:focus-visible {
+    color: var(--nav-bright);
+    border-color: var(--nav-accent);
+    outline: none;
+  }
+  .backlink .arrow { transition: transform 0.3s ease; }
+  .backlink:hover .arrow { transform: translateX(-2px); }
+  .back-short { display: none; }
 
   .wordmark {
     font-family: 'Cormorant SC', Georgia, serif;
@@ -207,6 +253,13 @@ const {
     .nav-desktop { display: none; }
     .nav-toggle { display: flex; }
     .nav-panel { display: flex; }
+  }
+  /* On a phone the back label is abbreviated and the wordmark steps aside,
+     so the control never crowds the menu button. */
+  @media (max-width: 560px) {
+    .back-full { display: none; }
+    .back-short { display: inline; }
+    .left .wordmark { display: none; }
   }
   @media (max-width: 420px) {
     .nav-toggle-label { display: none; }

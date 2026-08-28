@@ -18,12 +18,12 @@ const { age } = Astro.props;
   theme="codex"
   current="codex"
   compact={true}
+  back={{ href: "/codex", label: "Codex" }}
   eyebrow={`Codex · Book ${age.numeral}`}
   heading={age.name}
   tagline={age.blurb ?? ''}
 >
   <div class="wrap">
-    <a class="backlink" href="/codex">← All books</a>
 
     <div class="empty reveal">
       <strong>Not yet compiled</strong>

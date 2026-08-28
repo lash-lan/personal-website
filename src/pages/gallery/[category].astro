@@ -14,12 +14,12 @@ const { cat } = Astro.props;
   theme="gallery"
   current="gallery"
   compact={true}
+  back={{ href: "/gallery", label: "Hall of Memories" }}
   eyebrow="Hall of Memories"
   heading={cat.name}
   tagline={cat.blurb}
 >
   <div class="wrap">
-    <a class="backlink" href="/gallery">← All halls</a>
 
     {cat.items.length > 0 ? (
       <div class="plates">

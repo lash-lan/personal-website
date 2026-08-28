@@ -15,12 +15,12 @@ const sagas = SAGAS.filter((s) => s.race === race.slug);
   theme="sagas"
   current="sagas"
   compact={true}
+  back={{ href: "/sagas", label: "The Great Sagas" }}
   eyebrow="The Great Sagas"
   heading={race.name}
   tagline={race.blurb}
 >
   <div class="wrap">
-    <a class="backlink" href="/sagas">← All sagas</a>
 
     {sagas.length > 0 ? (
       <div class="grid grid-3">
