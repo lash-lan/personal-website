@@ -311,6 +311,23 @@ import SiteHeader from '../../../components/SiteHeader.astro';
       text-align: center;
       font-size: 1.05rem;
     }
+    .story-plate {
+      max-width: 42rem;
+      margin: 4rem auto 0;
+      padding: 0 1rem;
+    }
+    .story-plate img {
+      display: block; width: 100%; height: auto;
+      border: 1px solid rgba(90,184,92,0.20); border-radius: 3px;
+      box-shadow: 0 0 60px rgba(0,0,0,0.55);
+      filter: saturate(0.92) brightness(0.9);
+    }
+    .story-plate figcaption {
+      margin-top: 0.9rem; text-align: center;
+      font-family: 'Cormorant SC', serif;
+      font-size: 0.64rem; letter-spacing: 0.26em; text-transform: uppercase;
+      color: var(--text-dim);
+    }
     .closing-ornament {
       text-align: center;
       color: var(--bio-dim);
@@ -574,6 +591,18 @@ import SiteHeader from '../../../components/SiteHeader.astro';
 
     <div class="closing reveal">
       <p>And far beneath mud and root, something coiled in patience, waiting for the world to decide whether it had truly noticed.</p>
+    </div>
+
+    <figure class="story-plate reveal">
+      <img
+        src="/images/stories/the-first-wrongness.jpg"
+        alt="The First Wrongness"
+        loading="lazy" width="1100" height="733"
+      />
+      <figcaption>The First Wrongness</figcaption>
+    </figure>
+
+    <div class="closing reveal" style="margin-top: 3rem; padding-top: 0; border-top: none;">
       <div class="closing-ornament">∿</div>
       <p class="chapter-end">End of Chapter I: The Serpent Wars</p>
     </div>

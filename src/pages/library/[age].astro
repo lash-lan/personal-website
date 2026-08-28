@@ -1,13 +1,37 @@
 ---
 import SectionLayout from '../../layouts/SectionLayout.astro';
 import { AGES, storiesInAge, storyHref } from '../../data/content.js';
+import foundation from '../../data/foundation-age-stories.json';
 
 export function getStaticPaths() {
   return AGES.map((age) => ({ params: { age: age.slug }, props: { age } }));
 }
 
 const { age } = Astro.props;
-const stories = storiesInAge(age.slug);
+
+// Two Foundation Age stories have hand-built pages of their own.
+const BESPOKE = {
+  'the-spear-that-was-not-meant-to-exist': '/library/foundation-age/the-spear-that-was-not-meant-to-exist',
+  'the-first-wrongness': '/library/foundation-age/the-serpent-wars',
+};
+const CHAPTER_ORDER = ['Opening', 'The Serpent Wars', 'Cataclysm of Monsters', 'Humanity', 'The God’s Blood'];
+const CHAPTER_LABEL = {
+  Opening: 'Before the Chapters',
+};
+
+const isFoundation = age.slug === 'foundation-age';
+
+const groups = isFoundation
+  ? CHAPTER_ORDER.map((name) => ({
+      name: CHAPTER_LABEL[name] ?? name,
+      stories: foundation.stories
+        .map((s, i) => ({ ...s, number: i + 1 }))
+        .filter((s) => s.chapter === name),
+    })).filter((g) => g.stories.length)
+  : [];
+
+const plain = isFoundation ? [] : storiesInAge(age.slug);
+const count = isFoundation ? foundation.stories.length : plain.length;
 ---
 <SectionLayout
   title={`${age.name} | Library | LASH`}
@@ -18,14 +42,39 @@ const stories = storiesInAge(age.slug);
   eyebrow={`Library · Age ${age.numeral}`}
   heading={age.name}
   tagline={age.blurb ?? ''}
-  note={age.comingSoon ? 'This age has not been written yet' : ''}
+  note={age.comingSoon ? 'This age has not been written yet' : count ? `${count} short stories` : ''}
 >
   <div class="wrap">
     <a class="backlink" href="/library">← All ages</a>
 
-    {stories.length > 0 ? (
+    {isFoundation ? (
+      groups.map((g) => (
+        <div class="band">
+          <div class="band-head reveal">
+            <span class="band-label">{g.stories.length} stories</span>
+            <h2 class="band-title">{g.name}</h2>
+          </div>
+          <div class="grid grid-4">
+            {g.stories.map((s) => (
+              <a
+                href={BESPOKE[s.slug] ?? `/library/foundation-age/${s.slug}`}
+                class="tile story-tile reveal"
+              >
+                {s.image && (
+                  <span class="story-cover">
+                    <img src={`/images/stories/${s.image}.jpg`} alt="" loading="lazy" width="1100" height="733" />
+                  </span>
+                )}
+                <span class="tile-eyebrow">№ {String(s.number).padStart(2, '0')}</span>
+                <span class="tile-title">{s.title}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      ))
+    ) : plain.length > 0 ? (
       <div class="grid grid-3">
-        {stories.map((s) => (
+        {plain.map((s) => (
           <a href={storyHref(s)} class="tile reveal">
             <span class="tile-eyebrow">№ {s.number}</span>
             <span class="tile-title">{s.title}</span>
@@ -44,3 +93,37 @@ const stories = storiesInAge(age.slug);
     )}
   </div>
 </SectionLayout>
+
+<style>
+  .story-tile { padding-top: 0; overflow: hidden; gap: 0.4rem; }
+  .story-cover {
+    display: block;
+    margin: 0 -1.4rem 0.9rem;
+    height: 8.5rem;
+    overflow: hidden;
+    background: #050403;
+    position: relative;
+  }
+  .story-cover img {
+    width: 100%; height: 100%;
+    object-fit: cover; object-position: 50% 42%;
+    display: block;
+    filter: saturate(0.85) brightness(0.72);
+    transition: transform 6s ease, filter 0.5s ease;
+  }
+  .story-tile:hover .story-cover img { transform: scale(1.06); filter: saturate(1) brightness(0.9); }
+  .story-cover::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 45%, var(--card) 100%);
+  }
+  .story-tile .tile-title { font-size: 1rem; line-height: 1.35; }
+
+  /* two across on a phone: 38 stories one-per-row is a long scroll */
+  @media (max-width: 640px) {
+    .grid-4 { grid-template-columns: repeat(auto-fill, minmax(min(14rem, 46%), 1fr)); gap: 0.9rem; }
+    .story-cover { height: 6.5rem; margin-left: -1.1rem; margin-right: -1.1rem; }
+    .story-tile { padding-left: 1.1rem; padding-right: 1.1rem; }
+    .story-tile .tile-title { font-size: 0.9rem; }
+  }
+</style>

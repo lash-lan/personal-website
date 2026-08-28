@@ -288,6 +288,22 @@ import SiteHeader from '../../../components/SiteHeader.astro';
       font-size: 0.68rem;
     }
 
+    .story-plate {
+      max-width: 44rem;
+      margin: 4rem auto 0;
+    }
+    .story-plate img {
+      display: block; width: 100%; height: auto;
+      border: 1px solid rgba(196,149,42,0.18); border-radius: 3px;
+      box-shadow: 0 0 60px rgba(0,0,0,0.55);
+      filter: saturate(0.92) brightness(0.9);
+    }
+    .story-plate figcaption {
+      margin-top: 0.9rem; text-align: center;
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.64rem; letter-spacing: 0.26em; text-transform: uppercase;
+      color: var(--text-dim);
+    }
     .story-end {
       margin-top: 6rem;
       padding-top: 3rem;
@@ -512,6 +528,15 @@ import SiteHeader from '../../../components/SiteHeader.astro';
     <p class="reveal">"I will not let them take you," he murmured.</p>
 
     <p class="reveal">And somewhere, not in heaven, not in abyss, but in the space between, something endured.</p>
+
+    <figure class="story-plate reveal">
+      <img
+        src="/images/stories/the-spear-that-was-not-meant-to-exist.jpg"
+        alt="The Spear That Was Not Meant to Exist"
+        loading="lazy" width="1100" height="733"
+      />
+      <figcaption>The Spear That Was Not Meant to Exist</figcaption>
+    </figure>
 
     <div class="story-end reveal">
       <div class="ornament">✦</div>
