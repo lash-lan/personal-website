@@ -61,7 +61,12 @@ const {
     background: linear-gradient(to bottom, var(--nav-bg) 0%, transparent 100%);
     pointer-events: none;
   }
-  .site-header > * { pointer-events: auto; }
+  /* Re-enable hits on the interactive children only. This must NOT be a
+     blanket `.site-header > *`: Astro's scoping makes that selector more
+     specific than `.nav-panel`, which would force the closed (invisible)
+     mobile panel back to pointer-events:auto and let it swallow taps
+     across the top-right of every page. */
+  .wordmark, .nav-desktop, .nav-toggle { pointer-events: auto; }
 
   .wordmark {
     font-family: 'Cormorant SC', Georgia, serif;
@@ -152,10 +157,22 @@ const {
     backdrop-filter: blur(14px);
     opacity: 0;
     transform: translateY(-8px);
+    /* visibility (not just pointer-events) takes the closed panel out of
+       hit-testing entirely, so it cannot intercept taps while invisible.
+       It is switched with a 0s transition delayed until the fade finishes,
+       never animated, so the panel's usability never depends on a
+       transition completing. */
+    visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.25s ease, transform 0.25s ease;
+    transition: opacity 0.25s ease, transform 0.25s ease, visibility 0s linear 0.25s;
   }
-  .nav-panel.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .nav-panel.open {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity 0.25s ease, transform 0.25s ease, visibility 0s linear 0s;
+  }
   .panel-link {
     display: flex;
     flex-direction: column;
