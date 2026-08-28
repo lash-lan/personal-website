@@ -215,7 +215,7 @@ p.struck{
   opacity:.75;
   transition:background 2400ms ease;
 }
-.tick{
+:global(.tick){
   position:absolute;left:0;width:8px;height:1px;
   background:rgba(216,221,230,0.28);
 }
@@ -265,14 +265,16 @@ p.struck{
   font-size:.75rem;letter-spacing:.3em;text-transform:uppercase;
   color:var(--dim);font-weight:400;margin-bottom:1rem;
 }
-#index a{
+:global(#index a){
   font-family:'Newsreader',Georgia,serif;
-  font-size:.95rem;color:var(--ash);text-decoration:none;
+  font-size:.95rem;color:var(--ash) !important;text-decoration:none !important;
   padding:.55rem .4rem;border-left:2px solid transparent;
   transition:color 200ms ease,border-color 200ms ease;
+  -webkit-tap-highlight-color:transparent;
 }
-#index a:hover,#index a:focus-visible{color:var(--bone);border-left-color:var(--frost);outline:none}
-#index a small{
+:global(#index a:hover),:global(#index a:focus-visible){color:var(--bone) !important;border-left-color:var(--frost);outline:none}
+:global(#index a:visited){color:var(--ash) !important;}
+:global(#index a small){
   display:block;
   font-family:'Cormorant SC',Georgia,serif;
   font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);
