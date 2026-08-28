@@ -1,0 +1,355 @@
+---
+import SiteHeader from '../../../../components/SiteHeader.astro';
+import saga from '../../../../data/last-days-of-legends.json';
+
+export function getStaticPaths() {
+  return saga.parts.map((part, i) => ({
+    params: { part: part.slug },
+    props: {
+      part,
+      index: i,
+      prev: i > 0 ? saga.parts[i - 1] : null,
+      next: i < saga.parts.length - 1 ? saga.parts[i + 1] : null,
+      total: saga.parts.length,
+    },
+  }));
+}
+
+const { part, index, prev, next, total } = Astro.props;
+const base = '/sagas/elves/last-days-of-legends';
+
+// This part runs to ~18,000 words. Rendering each line as a JSX <p> makes
+// Astro stamp a scope attribute onto every one of ~4,800 tags, which cost
+// about a megabyte of markup. Building the body as plain HTML instead keeps
+// the page lean; the stylesheet below is global so it still matches.
+const esc = (s) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+const VIDEO_HTML = `<figure class="scene-video">
+  <video controls preload="none" playsinline poster="/video/raastali-crowley-poster.jpg" width="1280" height="720">
+    <source src="/video/raastali-crowley.mp4" type="video/mp4" />
+    Your browser cannot play this video.
+  </video>
+  <figcaption>Round One &middot; Raastali and Crowley</figcaption>
+</figure>`;
+
+const chapters = part.chapters.map((c, ci) => ({
+  ...c,
+  ci,
+  body: c.paras
+    .map((p, pi) => {
+      const video = c.videoBefore === pi ? VIDEO_HTML : '';
+      return (
+        video +
+        (p.t === 'break'
+          ? '<div class="scene-break">✦</div>'
+          : `<p>${esc(p.x)}</p>`)
+      );
+    })
+    .join(''),
+}));
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{part.title} | The Last Days of Legends | LASH</title>
+  <meta name="description" content={`${part.eyebrow}: ${part.title}. Part ${index + 1} of The Last Days of Legends, a saga of the Elves by Lash.`} />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Cormorant+SC:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style is:global>
+    :root {
+      --bg:      #0b0505;
+      --ink:     #c4a49c;
+      --bright:  #f2ded6;
+      --dim:     #7d5a54;
+      --ember:   #b4453f;
+      --ember-l: #e59386;
+      --line:    rgba(180,69,63,0.18);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'EB Garamond', Georgia, serif;
+      font-size: 18px;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 70% 45% at 50% 0%, rgba(120,30,26,0.20) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 50% 100%, rgba(90,20,18,0.16) 0%, transparent 70%);
+    }
+    body::after {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background: radial-gradient(ellipse at center, transparent 45%, rgba(6,3,3,0.9) 100%);
+    }
+
+    /* progress rail */
+    #rail { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 90; background: rgba(180,69,63,0.10); }
+    #railfill { height: 100%; width: 0; background: linear-gradient(90deg, var(--ember), var(--ember-l)); }
+
+    main { position: relative; z-index: 1; }
+
+    /* ─── PART HEAD ─── */
+    .part-head {
+      max-width: 44rem; margin: 0 auto;
+      padding: 9rem 1.6rem 3rem; text-align: center;
+    }
+    .part-eyebrow {
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.7rem; letter-spacing: 0.4em; text-transform: uppercase;
+      color: var(--ember); display: block; margin-bottom: 1.2rem;
+    }
+    .part-title {
+      font-family: 'Cinzel', Georgia, serif; font-weight: 600;
+      font-size: clamp(1.9rem, 5.5vw, 3.1rem); line-height: 1.15;
+      color: var(--bright); letter-spacing: 0.02em;
+    }
+    .part-of {
+      margin-top: 1.6rem;
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.66rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--dim);
+    }
+    .part-rule { width: 120px; height: 1px; margin: 2.2rem auto 0; background: linear-gradient(90deg, transparent, var(--ember), transparent); }
+
+    /* ─── CHAPTERS ─── */
+    .chapter { max-width: 40rem; margin: 0 auto; padding: 4.5rem 1.6rem 0; }
+    .chapter-head { text-align: center; margin-bottom: 3rem; scroll-margin-top: 5rem; }
+    .chapter-num {
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.68rem; letter-spacing: 0.34em; color: var(--dim);
+      display: block; margin-bottom: 0.7rem;
+    }
+    .chapter-eyebrow {
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.66rem; letter-spacing: 0.28em; text-transform: uppercase;
+      color: var(--ember); display: block; margin-bottom: 0.6rem;
+    }
+    .chapter-title {
+      font-family: 'Cinzel', Georgia, serif; font-weight: 400;
+      font-size: clamp(1.15rem, 3vw, 1.6rem);
+      color: var(--bright); letter-spacing: 0.04em; text-transform: uppercase;
+    }
+
+    /* the manuscript is written in short declarative lines; give them room */
+    .chapter p { margin-bottom: 1.15rem; }
+    .chapter p:first-of-type::first-letter {
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 3.2em; float: left; line-height: 0.78;
+      padding-right: 0.09em; padding-top: 0.04em;
+      color: var(--ember-l);
+      text-shadow: 0 0 26px rgba(180,69,63,0.45);
+    }
+    .scene-break {
+      text-align: center; color: var(--ember);
+      opacity: 0.5; letter-spacing: 0.5em;
+      margin: 2.4rem 0; font-size: 0.7rem;
+    }
+
+    /* ─── SCENE VIDEO ─── */
+    .scene-video {
+      margin: 3rem auto;
+      max-width: 40rem;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      overflow: hidden;
+      background: #070303;
+      box-shadow: 0 0 60px rgba(0,0,0,0.6);
+    }
+    .scene-video video { display: block; width: 100%; height: auto; }
+    .scene-video figcaption {
+      padding: 0.85rem 1rem;
+      text-align: center;
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.64rem; letter-spacing: 0.24em; text-transform: uppercase;
+      color: var(--dim);
+      border-top: 1px solid var(--line);
+    }
+
+    /* ─── CHAPTER DRAWER ─── */
+    .btn {
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--ink);
+      background: rgba(18,8,8,0.86);
+      border: 1px solid var(--line);
+      border-radius: 2px; padding: 0.5rem 0.85rem; cursor: pointer;
+      backdrop-filter: blur(6px);
+      transition: color 0.25s ease, border-color 0.25s ease;
+    }
+    .btn:hover { color: var(--bright); border-color: var(--ember); }
+    #chapbtn { position: fixed; left: 1rem; bottom: 1rem; z-index: 60; }
+    #chapters {
+      position: fixed; inset: 0 auto 0 0; z-index: 70;
+      width: min(21rem, 86vw);
+      background: rgba(10,5,5,0.97);
+      border-right: 1px solid var(--line);
+      backdrop-filter: blur(14px);
+      transform: translateX(-101%);
+      transition: transform 380ms cubic-bezier(.4,0,.2,1);
+      padding: 5.6rem 1.4rem 2rem;
+      overflow-y: auto;
+      display: flex; flex-direction: column; gap: 0.15rem;
+    }
+    #chapters.open { transform: none; }
+    #chapters h3 {
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.68rem; letter-spacing: 0.28em; text-transform: uppercase;
+      color: var(--dim); font-weight: 400; margin-bottom: 0.9rem;
+    }
+    #chapters a {
+      font-family: 'EB Garamond', Georgia, serif;
+      font-size: 0.95rem; color: var(--ink); text-decoration: none;
+      padding: 0.5rem 0.45rem; border-left: 2px solid transparent;
+      transition: color 200ms ease, border-color 200ms ease;
+    }
+    #chapters a:hover, #chapters a:focus-visible {
+      color: var(--bright); border-left-color: var(--ember); outline: none;
+    }
+    #chapters a small {
+      display: block;
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim);
+    }
+    .drawer-other {
+      margin-top: 1.4rem; padding-top: 1.4rem;
+      border-top: 1px solid var(--line);
+      display: flex; flex-direction: column; gap: 0.15rem;
+    }
+
+    /* ─── FOOT NAV ─── */
+    .foot {
+      max-width: 40rem; margin: 5rem auto 0;
+      padding: 3.5rem 1.6rem 7rem;
+      border-top: 1px solid var(--line);
+      display: flex; flex-direction: column; gap: 1.6rem; align-items: center;
+    }
+    .foot-end {
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.66rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--dim);
+    }
+    .foot-links { display: flex; flex-wrap: wrap; gap: 0.9rem; justify-content: center; }
+    .foot-links a {
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.66rem; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--ink); text-decoration: none;
+      border: 1px solid var(--line); padding: 0.6rem 1rem;
+      transition: color 0.3s ease, border-color 0.3s ease;
+    }
+    .foot-links a:hover, .foot-links a:focus-visible { color: var(--ember-l); border-color: var(--ember); outline: none; }
+
+    @media (max-width: 640px) {
+      body { font-size: 17px; }
+      .chapter { padding-left: 1.3rem; padding-right: 1.3rem; }
+      .part-head { padding-top: 7.5rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      #chapters { transition: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="rail" aria-hidden="true"><div id="railfill"></div></div>
+
+<SiteHeader current="sagas" accent="#b4453f" dim="#7d5a54" bright="#f2ded6" bg="rgba(11,5,5,0.94)" />
+
+<button class="btn" id="chapbtn" aria-expanded="false" aria-controls="chapters">Chapters</button>
+
+<nav id="chapters" aria-label="Chapters">
+  <h3>{part.title}</h3>
+  {part.chapters.map((c, i) => (
+    <a href={`#ch-${i}`}>
+      <small>{c.numeral || c.eyebrow || `Chapter ${i + 1}`}</small>
+      {c.title}
+    </a>
+  ))}
+  <div class="drawer-other">
+    <h3>The Saga</h3>
+    <a href={base}><small>Contents</small>All parts</a>
+    <a href="/sagas/elves"><small>Sagas</small>Elves</a>
+  </div>
+</nav>
+
+<main>
+  <header class="part-head">
+    <span class="part-eyebrow">{part.eyebrow}</span>
+    <h1 class="part-title">{part.title}</h1>
+    <p class="part-of">The Last Days of Legends · Part {index + 1} of {total}</p>
+    <div class="part-rule"></div>
+  </header>
+
+  {chapters.map((c) => (
+    <section class="chapter">
+      <div class="chapter-head" id={`ch-${c.ci}`}>
+        {c.numeral && <span class="chapter-num">{c.numeral}</span>}
+        {c.eyebrow && <span class="chapter-eyebrow">{c.eyebrow}</span>}
+        <h2 class="chapter-title">{c.title}</h2>
+      </div>
+      <Fragment set:html={c.body} />
+    </section>
+  ))}
+
+  <div class="foot">
+    <span class="foot-end">End of {part.eyebrow}</span>
+    <div class="foot-links">
+      {prev && <a href={`${base}/${prev.slug}`}>← {prev.title}</a>}
+      <a href={base}>All parts</a>
+      {next && <a href={`${base}/${next.slug}`}>{next.title} →</a>}
+    </div>
+  </div>
+</main>
+
+<script>
+  // reading progress
+  const fill = document.getElementById('railfill');
+  const onScroll = () => {
+    const max = document.body.scrollHeight - window.innerHeight;
+    fill.style.width = max > 0 ? (window.scrollY / max) * 100 + '%' : '0%';
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // chapter drawer
+  const drawer = document.getElementById('chapters');
+  const chapbtn = document.getElementById('chapbtn');
+  const setOpen = (open) => {
+    drawer.classList.toggle('open', open);
+    chapbtn.setAttribute('aria-expanded', String(open));
+    chapbtn.textContent = open ? 'Close' : 'Chapters';
+  };
+  chapbtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setOpen(!drawer.classList.contains('open'));
+  });
+  drawer.querySelectorAll('a[href^="#"]').forEach((a) =>
+    a.addEventListener('click', () => setOpen(false))
+  );
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(false); });
+  document.addEventListener('click', (e) => {
+    if (drawer.classList.contains('open') &&
+        !drawer.contains(e.target as Node) && e.target !== chapbtn) setOpen(false);
+  });
+
+  // pause the scene video when it scrolls out of view
+  const vid = document.querySelector('video');
+  if (vid && 'IntersectionObserver' in window) {
+    new IntersectionObserver(
+      (entries) => entries.forEach((en) => { if (!en.isIntersecting) vid.pause(); }),
+      { threshold: 0 }
+    ).observe(vid);
+  }
+</script>
+
+</body>
+</html>

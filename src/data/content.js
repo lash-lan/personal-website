@@ -72,8 +72,18 @@ export const SAGA_RACES = [
   { slug: 'other-mortal-races', name: 'Other Mortal Races', blurb: 'Giants, dwarves, the stone-born, and every people the histories forgot to centre.' },
 ];
 
-// Full sagas. None published yet; add entries here as chapters go live.
-export const SAGAS = [];
+// Full sagas. `race` must match a SAGA_RACES slug.
+export const SAGAS = [
+  {
+    slug: 'last-days-of-legends',
+    race: 'elves',
+    title: 'The Last Days of Legends',
+    eyebrow: 'Saga I',
+    blurb: 'Hansall, first High King of the Elves, remembers a shoulder buckle, a tournament that became an arena, and the war that took the people he was supposed to outlive.',
+  },
+];
+
+export const sagaHref = (s) => `/sagas/${s.race}/${s.slug}`;
 
 // ─── HALL OF MEMORIES ────────────────────────────────────────
 // Images live in /images/codex/<img>.jpg

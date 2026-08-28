@@ -25,7 +25,7 @@ const sagas = SAGAS.filter((s) => s.race === race.slug);
     {sagas.length > 0 ? (
       <div class="grid grid-3">
         {sagas.map((s) => (
-          <a href={s.href} class="tile reveal">
+          <a href={`/sagas/${s.race}/${s.slug}`} class="tile reveal">
             <span class="tile-eyebrow">{s.eyebrow}</span>
             <span class="tile-title">{s.title}</span>
             <p class="tile-blurb">{s.blurb}</p>

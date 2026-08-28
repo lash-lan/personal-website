@@ -1,0 +1,61 @@
+---
+import SectionLayout from '../../../../layouts/SectionLayout.astro';
+import { SAGAS } from '../../../../data/content.js';
+import saga from '../../../../data/last-days-of-legends.json';
+
+const meta = SAGAS.find((s) => s.slug === 'last-days-of-legends');
+
+const wordsIn = (part) =>
+  part.chapters.reduce(
+    (n, c) => n + c.paras.reduce((m, p) => m + (p.x ? p.x.split(/\s+/).length : 0), 0),
+    0
+  );
+
+const parts = saga.parts.map((p, i) => ({
+  ...p,
+  index: i + 1,
+  words: wordsIn(p),
+  minutes: Math.max(1, Math.round(wordsIn(p) / 230)),
+}));
+
+const totalWords = parts.reduce((n, p) => n + p.words, 0);
+---
+<SectionLayout
+  title="The Last Days of Legends | The Great Sagas | LASH"
+  description={meta.blurb}
+  theme="sagas"
+  current="sagas"
+  compact={true}
+  eyebrow="The Great Sagas · Elves"
+  heading="The Last Days of Legends"
+  tagline={meta.blurb}
+  note={`${parts.length} parts · ${totalWords.toLocaleString()} words`}
+>
+  <div class="wrap">
+    <a class="backlink" href="/sagas/elves">← Elves</a>
+
+    <div class="grid grid-3">
+      {parts.map((p) => (
+        <a href={`/sagas/elves/last-days-of-legends/${p.slug}`} class="tile reveal">
+          <span class="tile-eyebrow">{p.eyebrow}</span>
+          <span class="tile-title">{p.title}</span>
+          <p class="tile-blurb">
+            {p.chapters.length === 1
+              ? 'One long chapter.'
+              : `${p.chapters.length} chapters.`}{' '}
+            About {p.minutes} minutes of reading.
+          </p>
+          <span class="tile-meta">Part {p.index} of {parts.length}</span>
+        </a>
+      ))}
+    </div>
+
+    <div class="ornament reveal">✦</div>
+
+    <div class="empty reveal" style="border-style: solid;">
+      <strong>Start at the beginning</strong>
+      The saga runs in order, but each part stands on its own if you would rather
+      begin somewhere else.
+    </div>
+  </div>
+</SectionLayout>
