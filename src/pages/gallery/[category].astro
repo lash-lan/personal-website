@@ -23,10 +23,18 @@ const { cat } = Astro.props;
 
     {cat.items.length > 0 ? (
       <div class="plates">
-        {cat.items.map((item) => (
+        {cat.items.map((item, i) => (
           <figure class="plate reveal">
-            <button class="plate-btn" data-full={`/images/codex/${item.img}.jpg`} data-name={item.name}>
+            <button
+              class="plate-btn"
+              data-index={i}
+              data-full={`/images/gallery/full/${item.img}.jpg`}
+              data-name={item.name}
+              data-note={item.note ?? ''}
+              aria-label={`Expand ${item.name}`}
+            >
               <img src={`/images/codex/${item.img}.jpg`} alt={item.name} loading="lazy" width="480" height="720" />
+              <span class="plate-zoom" aria-hidden="true">⤢</span>
             </button>
             <figcaption>
               <span class="plate-name">{item.name}</span>
@@ -44,29 +52,54 @@ const { cat } = Astro.props;
   </div>
 
   <div class="lightbox" id="lightbox" hidden>
-    <button class="lightbox-close" id="lightboxClose" aria-label="Close">✕</button>
-    <img id="lightboxImg" src="" alt="" />
-    <p class="lightbox-caption" id="lightboxCaption"></p>
+    <button class="lb-close" id="lbClose" aria-label="Close">✕</button>
+    <button class="lb-arrow lb-prev" id="lbPrev" aria-label="Previous">‹</button>
+
+    <figure class="lb-stage">
+      <img id="lbImg" src="" alt="" />
+      <figcaption>
+        <span class="lb-name" id="lbName"></span>
+        <span class="lb-note" id="lbNote"></span>
+        <span class="lb-count" id="lbCount"></span>
+      </figcaption>
+    </figure>
+
+    <button class="lb-arrow lb-next" id="lbNext" aria-label="Next">›</button>
   </div>
 </SectionLayout>
 
 <style>
   .plates {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
-    gap: 1.4rem;
+    /* min() keeps two columns on a phone instead of one full-width plate,
+       so that tapping through to the lightbox is an actual enlargement. */
+    grid-template-columns: repeat(auto-fill, minmax(min(12rem, 46%), 1fr));
+    gap: clamp(0.8rem, 3vw, 1.4rem);
   }
   .plate { display: flex; flex-direction: column; gap: 0.7rem; }
   .plate-btn {
+    position: relative;
     display: block; padding: 0; border: 1px solid var(--line);
     background: #05070a; cursor: zoom-in; overflow: hidden;
-    border-radius: 3px; aspect-ratio: 2 / 3;
+    border-radius: 3px; aspect-ratio: 2 / 3; width: 100%;
     transition: border-color 0.4s ease, transform 0.4s ease;
   }
   .plate-btn img {
     width: 100%; height: 100%; object-fit: cover; display: block;
     filter: saturate(0.85) brightness(0.8);
     transition: transform 6s ease, filter 0.5s ease;
+  }
+  .plate-zoom {
+    position: absolute; right: 0.6rem; bottom: 0.6rem;
+    width: 1.9rem; height: 1.9rem;
+    display: grid; place-items: center;
+    font-size: 0.8rem; line-height: 1;
+    color: var(--textBright);
+    background: rgba(5,7,10,0.72);
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    opacity: 0; transform: translateY(4px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
   }
   .plate-btn:hover, .plate-btn:focus-visible {
     border-color: color-mix(in srgb, var(--accent) 55%, transparent);
@@ -77,11 +110,10 @@ const { cat } = Astro.props;
     transform: scale(1.05);
     filter: saturate(1) brightness(0.95);
   }
+  .plate-btn:hover .plate-zoom, .plate-btn:focus-visible .plate-zoom { opacity: 1; transform: translateY(0); }
+
   figcaption { display: flex; flex-direction: column; gap: 0.2rem; text-align: center; }
-  .plate-name {
-    font-family: 'Cinzel', Georgia, serif;
-    font-size: 0.95rem; color: var(--textBright);
-  }
+  .plate-name { font-family: 'Cinzel', Georgia, serif; font-size: 0.95rem; color: var(--textBright); }
   .plate-note {
     font-family: 'Cormorant SC', Georgia, serif;
     font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase;
@@ -91,55 +123,125 @@ const { cat } = Astro.props;
   /* ─── LIGHTBOX ─── */
   .lightbox {
     position: fixed; inset: 0; z-index: 200;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 1.2rem; padding: 3rem 1.5rem;
-    background: color-mix(in srgb, var(--bg) 92%, black);
-    backdrop-filter: blur(10px);
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: clamp(0.3rem, 2vw, 1.5rem);
+    padding: clamp(1rem, 4vh, 3rem) clamp(0.5rem, 2vw, 2rem);
+    background: color-mix(in srgb, var(--bg) 94%, black);
+    backdrop-filter: blur(12px);
   }
   .lightbox[hidden] { display: none; }
-  .lightbox img {
-    max-width: min(92vw, 40rem);
-    max-height: 76vh;
+
+  .lb-stage {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 1rem; min-width: 0; min-height: 0;
+  }
+  .lb-stage img {
+    max-width: 100%;
+    max-height: 78vh;
+    width: auto; height: auto;
     object-fit: contain;
     border: 1px solid var(--line);
+    border-radius: 2px;
+    opacity: 0;
+    transition: opacity 0.35s ease;
   }
-  .lightbox-caption {
-    font-family: 'Cinzel', Georgia, serif;
-    color: var(--textBright); font-size: 1rem; text-align: center;
+  .lb-stage img.loaded { opacity: 1; }
+  .lb-stage figcaption { gap: 0.35rem; }
+  .lb-name { font-family: 'Cinzel', Georgia, serif; font-size: 1.05rem; color: var(--textBright); }
+  .lb-note {
+    font-family: 'Cormorant SC', Georgia, serif;
+    font-size: 0.64rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--accent);
   }
-  .lightbox-close {
-    position: absolute; top: 1.4rem; right: 1.6rem;
-    background: none; border: 1px solid var(--line);
-    color: var(--text); cursor: pointer;
-    width: 2.4rem; height: 2.4rem; border-radius: 50%;
-    font-size: 0.85rem; line-height: 1;
+  .lb-count {
+    font-family: 'Cormorant SC', Georgia, serif;
+    font-size: 0.6rem; letter-spacing: 0.2em; color: var(--textDim);
+  }
+
+  .lb-close {
+    position: absolute; top: 1.2rem; right: 1.3rem;
+    width: 2.5rem; height: 2.5rem; border-radius: 50%;
+    background: rgba(5,7,10,0.6); border: 1px solid var(--line);
+    color: var(--text); cursor: pointer; font-size: 0.85rem; line-height: 1;
     transition: color 0.3s ease, border-color 0.3s ease;
   }
-  .lightbox-close:hover { color: var(--accentLight); border-color: var(--accent); }
+  .lb-close:hover { color: var(--accentLight); border-color: var(--accent); }
+
+  .lb-arrow {
+    width: 2.8rem; height: 2.8rem; border-radius: 50%;
+    display: grid; place-items: center;
+    background: rgba(5,7,10,0.6); border: 1px solid var(--line);
+    color: var(--text); cursor: pointer;
+    font-size: 1.5rem; line-height: 1; padding-bottom: 0.2rem;
+    transition: color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
+  }
+  .lb-arrow:hover { color: var(--accentLight); border-color: var(--accent); }
+  .lb-arrow[disabled] { opacity: 0.25; cursor: default; }
+
+  @media (max-width: 640px) {
+    .lightbox { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+    .lb-arrow { position: absolute; bottom: 1.2rem; }
+    .lb-prev { left: 1.2rem; }
+    .lb-next { right: 1.2rem; }
+    .lb-stage img { max-height: 66vh; }
+  }
 </style>
 
 <script>
-  const box = document.getElementById('lightbox');
-  const boxImg = document.getElementById('lightboxImg') as HTMLImageElement | null;
-  const boxCap = document.getElementById('lightboxCaption');
-  const boxClose = document.getElementById('lightboxClose');
+  const box   = document.getElementById('lightbox');
+  const img   = document.getElementById('lbImg') as HTMLImageElement | null;
+  const name  = document.getElementById('lbName');
+  const note  = document.getElementById('lbNote');
+  const count = document.getElementById('lbCount');
+  const prev  = document.getElementById('lbPrev') as HTMLButtonElement | null;
+  const next  = document.getElementById('lbNext') as HTMLButtonElement | null;
+  const close = document.getElementById('lbClose');
+  const plates = Array.from(document.querySelectorAll<HTMLButtonElement>('.plate-btn'));
 
-  if (box && boxImg && boxCap && boxClose) {
-    const close = () => { box.hidden = true; document.body.style.overflow = ''; };
+  if (box && img && name && note && count && prev && next && close && plates.length) {
+    let at = 0;
 
-    document.querySelectorAll<HTMLButtonElement>('.plate-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        boxImg.src = btn.dataset.full ?? '';
-        boxImg.alt = btn.dataset.name ?? '';
-        boxCap.textContent = btn.dataset.name ?? '';
-        box.hidden = false;
-        document.body.style.overflow = 'hidden';
-      });
+    const show = (i: number) => {
+      at = Math.max(0, Math.min(plates.length - 1, i));
+      const btn = plates[at];
+      img.classList.remove('loaded');
+      img.src = btn.dataset.full ?? '';
+      img.alt = btn.dataset.name ?? '';
+      name.textContent = btn.dataset.name ?? '';
+      note.textContent = btn.dataset.note ?? '';
+      count.textContent = `${at + 1} of ${plates.length}`;
+      prev.disabled = at === 0;
+      next.disabled = at === plates.length - 1;
+    };
+
+    const open = (i: number) => {
+      show(i);
+      box.hidden = false;
+      document.body.style.overflow = 'hidden';
+      close.focus();
+    };
+
+    const shut = () => {
+      box.hidden = true;
+      document.body.style.overflow = '';
+      plates[at]?.focus();
+    };
+
+    img.addEventListener('load', () => img.classList.add('loaded'));
+
+    plates.forEach((btn, i) => btn.addEventListener('click', () => open(i)));
+    prev.addEventListener('click', () => show(at - 1));
+    next.addEventListener('click', () => show(at + 1));
+    close.addEventListener('click', shut);
+    box.addEventListener('click', (e) => { if (e.target === box) shut(); });
+
+    document.addEventListener('keydown', (e) => {
+      if (box.hidden) return;
+      if (e.key === 'Escape') shut();
+      if (e.key === 'ArrowLeft') show(at - 1);
+      if (e.key === 'ArrowRight') show(at + 1);
     });
-
-    boxClose.addEventListener('click', close);
-    box.addEventListener('click', (e) => { if (e.target === box) close(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !box.hidden) close(); });
   }
 </script>
