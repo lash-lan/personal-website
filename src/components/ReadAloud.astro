@@ -1,32 +1,37 @@
 ---
-// Read-aloud for story pages, using the browser's own speech synthesis.
-// Nothing is hosted or downloaded: no audio files, no external service.
+// Listening control for story pages.
 //
-// Speaks one paragraph per utterance rather than the whole story in one go,
-// which keeps Chrome from truncating long text and lets us highlight and
-// follow along line by line.
+// If narrated audio exists for the page it plays that, highlighting each line
+// as it is spoken using the timings recorded when the audio was generated.
+// Where no audio exists yet it falls back to the browser's own speech, so the
+// control works everywhere and improves silently as narration is added.
 const {
   selector = 'main p',   // what counts as readable prose on this page
-  title = '',            // spoken first, so the listener knows where they are
+  title = '',            // spoken first by the fallback voice
+  tracks = null,         // [{ src, cues:[seconds], offset:paragraphIndex }]
 } = Astro.props;
+
+const hasAudio = Array.isArray(tracks) && tracks.length > 0;
 ---
 
-<div id="readaloud" data-selector={selector} data-title={title} hidden>
-  <button class="atmos-btn tts-main" id="ttsMain" aria-pressed="false">Read aloud</button>
-  <button class="atmos-btn tts-stop" id="ttsStop" hidden aria-label="Stop reading">Stop</button>
+<div
+  id="readaloud"
+  data-selector={selector}
+  data-title={title}
+  data-tracks={hasAudio ? JSON.stringify(tracks) : ''}
+  hidden
+>
+  <button class="atmos-btn tts-main" id="ttsMain" aria-pressed="false">
+    {hasAudio ? 'Listen' : 'Read aloud'}
+  </button>
+  <button class="atmos-btn tts-stop" id="ttsStop" hidden aria-label="Stop">Stop</button>
 </div>
 
 <style is:global>
   #readaloud { display: flex; flex-direction: column; gap: .5rem; align-items: flex-end; }
-  /* Standalone pages (no atmosphere cluster) get their own corner. */
-  #readaloud.tts-floating {
-    position: fixed; right: 1rem; bottom: 1rem; z-index: 60;
-  }
-  @media (max-width: 640px) {
-    #readaloud.tts-floating { right: .7rem; bottom: .7rem; }
-  }
+  #readaloud.tts-floating { position: fixed; right: 1rem; bottom: 1rem; z-index: 60; }
+  @media (max-width: 640px) { #readaloud.tts-floating { right: .7rem; bottom: .7rem; } }
 
-  /* the button styling mirrors the ambient-sound control */
   #readaloud .atmos-btn {
     font-family: 'Cormorant SC', Georgia, serif;
     font-size: .68rem; letter-spacing: .2em; text-transform: uppercase;
@@ -42,7 +47,6 @@ const {
   #readaloud .atmos-btn:hover { color: var(--text-bright, #fff); border-color: var(--accent, #888); }
   #readaloud .tts-main[aria-pressed="true"] { color: var(--accent, #888); border-color: var(--accent, #888); }
 
-  /* the line currently being spoken */
   .tts-speaking {
     color: var(--text-bright, #fff) !important;
     text-shadow: 0 0 22px color-mix(in srgb, var(--accent, #888) 45%, transparent);
@@ -55,47 +59,26 @@ const {
     const host = document.getElementById('readaloud');
     if (!host) return;
 
-    const synth = window.speechSynthesis;
-    // No support (or a browser that hides it): leave the control hidden.
-    if (!synth || typeof SpeechSynthesisUtterance === 'undefined') return;
-
     const selector = host.dataset.selector || 'main p';
     const nodes = Array.from(document.querySelectorAll(selector))
       .filter((el) => el.textContent && el.textContent.trim().length);
     if (!nodes.length) return;
 
-    // Join the ambient-sound cluster if the page has one, else float alone.
+    let tracks = [];
+    try { tracks = host.dataset.tracks ? JSON.parse(host.dataset.tracks) : []; } catch { tracks = []; }
+    const useAudio = tracks.length > 0;
+
+    const synth = window.speechSynthesis;
+    if (!useAudio && (!synth || typeof SpeechSynthesisUtterance === 'undefined')) return;
+
+    // sit with the ambient-sound control if the page has one
     const cluster = document.getElementById('controls');
-    if (cluster) cluster.prepend(host);
-    else host.classList.add('tts-floating');
+    if (cluster) cluster.prepend(host); else host.classList.add('tts-floating');
     host.hidden = false;
 
     const mainBtn = document.getElementById('ttsMain');
     const stopBtn = document.getElementById('ttsStop');
-
-    const pieces = [];
-    if (host.dataset.title) pieces.push({ el: null, text: host.dataset.title });
-    nodes.forEach((el) => pieces.push({ el, text: el.textContent.trim() }));
-
-    let at = 0;
-    let state = 'idle';        // idle | playing | paused
-    let voice = null;
-    let keepAlive = null;
-
-    function pickVoice() {
-      const all = synth.getVoices();
-      if (!all.length) return null;
-      const en = all.filter((v) => /^en(-|_|$)/i.test(v.lang));
-      const pool = en.length ? en : all;
-      // prefer a natural-sounding voice over the robotic defaults
-      return (
-        pool.find((v) => /natural|neural|enhanced|premium/i.test(v.name)) ||
-        pool.find((v) => /^en-GB/i.test(v.lang)) ||
-        pool[0]
-      );
-    }
-    voice = pickVoice();
-    synth.addEventListener?.('voiceschanged', () => { voice = pickVoice(); });
+    let state = 'idle';
 
     function highlight(el) {
       document.querySelectorAll('.tts-speaking').forEach((n) => n.classList.remove('tts-speaking'));
@@ -108,56 +91,125 @@ const {
       }
     }
 
-    function setUI(next) {
+    function setUI(next, playingLabel) {
       state = next;
-      const playing = next === 'playing';
-      mainBtn.textContent = playing ? 'Pause' : next === 'paused' ? 'Resume' : 'Read aloud';
+      mainBtn.textContent =
+        next === 'playing' ? 'Pause' : next === 'paused' ? 'Resume' : playingLabel;
       mainBtn.setAttribute('aria-pressed', String(next !== 'idle'));
       stopBtn.hidden = next === 'idle';
     }
 
+    // ─── narrated audio ───────────────────────────────────────────────
+    if (useAudio) {
+      const audio = new Audio();
+      audio.preload = 'none';
+      let ti = 0;          // which track
+      let lastLine = -1;
+
+      const load = (i) => {
+        ti = i;
+        lastLine = -1;
+        audio.src = tracks[i].src;
+      };
+      load(0);
+
+      audio.addEventListener('timeupdate', () => {
+        const { cues, offset } = tracks[ti];
+        const t = audio.currentTime;
+        // cues ascend, so walk forward from the line we are on
+        let i = lastLine < 0 ? 0 : lastLine;
+        while (i + 1 < cues.length && cues[i + 1] <= t) i++;
+        while (i > 0 && cues[i] > t) i--;
+        if (i !== lastLine) {
+          lastLine = i;
+          highlight(nodes[offset + i] || null);
+        }
+      });
+
+      audio.addEventListener('ended', () => {
+        if (ti + 1 < tracks.length) { load(ti + 1); audio.play(); }
+        else stop();
+      });
+      audio.addEventListener('error', () => stop());
+
+      function stop() {
+        audio.pause();
+        audio.currentTime = 0;
+        load(0);
+        highlight(null);
+        setUI('idle', 'Listen');
+      }
+
+      mainBtn.addEventListener('click', () => {
+        if (state === 'idle' || state === 'paused') {
+          audio.play().then(() => setUI('playing', 'Listen')).catch(() => stop());
+        } else {
+          audio.pause();
+          setUI('paused', 'Listen');
+        }
+      });
+      stopBtn.addEventListener('click', stop);
+      window.addEventListener('pagehide', () => audio.pause());
+      return;
+    }
+
+    // ─── fallback: the browser's own voice ────────────────────────────
+    const pieces = [];
+    if (host.dataset.title) pieces.push({ el: null, text: host.dataset.title });
+    nodes.forEach((el) => pieces.push({ el, text: el.textContent.trim() }));
+
+    let at = 0, voice = null, keepAlive = null;
+
+    function pickVoice() {
+      const all = synth.getVoices();
+      if (!all.length) return null;
+      const en = all.filter((v) => /^en(-|_|$)/i.test(v.lang));
+      const pool = en.length ? en : all;
+      return (
+        pool.find((v) => /natural|neural|enhanced|premium/i.test(v.name)) ||
+        pool.find((v) => /^en-GB/i.test(v.lang)) ||
+        pool[0]
+      );
+    }
+    voice = pickVoice();
+    synth.addEventListener?.('voiceschanged', () => { voice = pickVoice(); });
+
     function speakFrom(i) {
-      if (i >= pieces.length) { stop(); return; }
+      if (i >= pieces.length) { stopSpeech(); return; }
       at = i;
       const piece = pieces[i];
       const u = new SpeechSynthesisUtterance(piece.text);
       if (voice) u.voice = voice;
       u.rate = 0.95;
-      u.pitch = 1;
       u.onstart = () => highlight(piece.el);
       u.onend = () => { if (state === 'playing') speakFrom(at + 1); };
       u.onerror = () => { if (state === 'playing') speakFrom(at + 1); };
       synth.speak(u);
     }
 
-    function start() {
-      synth.cancel();
-      setUI('playing');
-      // Chrome silently stops long sessions; a periodic resume keeps it alive.
-      clearInterval(keepAlive);
-      keepAlive = setInterval(() => {
-        if (state === 'playing' && !synth.paused) { synth.resume(); }
-      }, 9000);
-      speakFrom(0);
-    }
-
-    function stop() {
+    function stopSpeech() {
       clearInterval(keepAlive);
       synth.cancel();
       highlight(null);
-      setUI('idle');
+      setUI('idle', 'Read aloud');
       at = 0;
     }
 
     mainBtn.addEventListener('click', () => {
-      if (state === 'idle') start();
-      else if (state === 'playing') { synth.pause(); setUI('paused'); }
-      else { synth.resume(); setUI('playing'); }
+      if (state === 'idle') {
+        synth.cancel();
+        setUI('playing', 'Read aloud');
+        clearInterval(keepAlive);
+        // Chrome silently drops long sessions; nudge it awake
+        keepAlive = setInterval(() => {
+          if (state === 'playing' && !synth.paused) synth.resume();
+        }, 9000);
+        speakFrom(0);
+      } else if (state === 'playing') { synth.pause(); setUI('paused', 'Read aloud'); }
+      else { synth.resume(); setUI('playing', 'Read aloud'); }
     });
-    stopBtn.addEventListener('click', stop);
-
-    // Speech outlives navigation in some browsers, so silence it on the way out.
+    stopBtn.addEventListener('click', stopSpeech);
     window.addEventListener('pagehide', () => { clearInterval(keepAlive); synth.cancel(); });
-    window.addEventListener('beforeunload', () => { synth.cancel(); });
+    window.addEventListener('beforeunload', () => synth.cancel());
   })();
 </script>

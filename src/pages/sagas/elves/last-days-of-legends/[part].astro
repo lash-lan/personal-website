@@ -3,6 +3,7 @@ import SiteHeader from '../../../../components/SiteHeader.astro';
 import MoodAtmosphere from '../../../../components/MoodAtmosphere.astro';
 import ReadAloud from '../../../../components/ReadAloud.astro';
 import saga from '../../../../data/last-days-of-legends.json';
+import { sagaTracks } from '../../../../data/narration.js';
 
 export function getStaticPaths() {
   return saga.parts.map((part, i) => ({
@@ -65,6 +66,9 @@ const chapters = part.chapters.map((c, ci) => {
 });
 
 const openingMood = part.chapters[0]?.zones?.[0]?.mood ?? 'frost';
+
+// Real narration if it has been generated; otherwise the browser reads it.
+const tracks = sagaTracks(part.slug, part.chapters);
 ---
 <!doctype html>
 <html lang="en">
@@ -274,7 +278,7 @@ const openingMood = part.chapters[0]?.zones?.[0]?.mood ?? 'frost';
 
 <SiteHeader back={{ href: base, label: "The Last Days of Legends" }} current="sagas" accent="#b4453f" dim="#7d5a54" bright="#f2ded6" bg="rgba(11,5,5,0.82)" />
 
-<ReadAloud selector=".chapter p" title={part.title} />
+<ReadAloud selector=".chapter p" title={part.title} tracks={tracks} />
 
 <button class="btn" id="chapbtn" aria-expanded="false" aria-controls="chapters">Chapters</button>
 

@@ -16,9 +16,10 @@ from kokoro_onnx import Kokoro
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, "src", "data")
 OUT = os.path.join(ROOT, "public", "audio")
+CUES = os.path.join(ROOT, "src", "data", "audio")
 MODELS = os.environ.get("KOKORO_MODELS", os.path.join(ROOT, ".kokoro"))
 
-VOICE = os.environ.get("KOKORO_VOICE", "bm_george")   # British male narrator
+VOICE = os.environ.get("KOKORO_VOICE", "bf_isabella")  # British woman, warmer
 LANG = os.environ.get("KOKORO_LANG", "en-gb")
 BITRATE = os.environ.get("NARRATION_BITRATE", "28k")  # opus, mono, speech
 
@@ -133,22 +134,36 @@ def main():
             continue
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         t0, sr, pieces = time.time(), 24000, []
+        cues, at = [], 0          # start time of each spoken paragraph
 
         samples, sr = k.create(u["title"] + ".", voice=VOICE, speed=0.92, lang=LANG)
-        pieces.append(samples)
-        pieces.append(np.zeros(int(sr * 0.9), dtype=np.float32))
+        pieces.append(samples); at += len(samples)
+        pad = np.zeros(int(sr * 0.9), dtype=np.float32)
+        pieces.append(pad); at += len(pad)
 
         count = 0
         for text, speed, gap in lines_with_speed(u):
+            cues.append(round(at / sr, 2))     # this line begins here
             s, sr = k.create(text, voice=VOICE, speed=speed, lang=LANG)
-            pieces.append(s)
-            pieces.append(np.zeros(int(sr * gap), dtype=np.float32))
+            pieces.append(s); at += len(s)
+            pad = np.zeros(int(sr * gap), dtype=np.float32)
+            pieces.append(pad); at += len(pad)
             count += 1
 
         audio = np.concatenate(pieces)
         wav = dest.replace(".opus", ".wav")
         sf.write(wav, audio, sr)
         encode(wav, dest)
+
+        # Timings live under src/ so the build can read them; only the audio
+        # itself is a public asset. The Cloudflare build has no filesystem
+        # access, so pages pick these up through Vite's glob instead.
+        cue_path = os.path.join(CUES, u["rel"].replace(".opus", ".json"))
+        os.makedirs(os.path.dirname(cue_path), exist_ok=True)
+        with open(cue_path, "w", encoding="utf-8") as f:
+            json.dump({"voice": VOICE, "duration": round(len(audio) / sr, 2), "cues": cues},
+                      f, separators=(",", ":"))
+
         mins = len(audio) / sr / 60
         print(f'[{n}/{len(todo)}] {u["id"]}  {count} lines  {mins:.1f} min  '
               f'{os.path.getsize(dest)/1024:.0f} KB  ({time.time()-t0:.0f}s)', flush=True)

@@ -11,8 +11,8 @@ on:
   workflow_dispatch:
     inputs:
       voice:
-        description: 'Kokoro voice (bm_george, bm_lewis, bf_emma, bf_isabella, am_michael, af_heart)'
-        default: 'bm_george'
+        description: 'Kokoro voice (bf_isabella, bf_emma, bm_george, bm_lewis, am_michael, af_heart)'
+        default: 'bf_isabella'
         required: false
       redo:
         description: 'Re-narrate everything, replacing existing audio'
@@ -65,7 +65,7 @@ jobs:
 
       - name: Clear existing audio
         if: inputs.redo
-        run: rm -rf public/audio
+        run: rm -rf public/audio src/data/audio
 
       - name: Narrate shard ${{ matrix.shard }}
         env:
@@ -75,7 +75,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: narration-${{ matrix.shard }}
-          path: public/audio
+          path: |
+            public/audio
+            src/data/audio
           if-no-files-found: ignore
           retention-days: 1
 
@@ -89,13 +91,13 @@ jobs:
         with:
           pattern: narration-*
           merge-multiple: true
-          path: public/audio
+          path: .
 
       - name: Commit the narration
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/audio
+          git add public/audio src/data/audio
           if git diff --staged --quiet; then
             echo "No new audio to commit."
             exit 0

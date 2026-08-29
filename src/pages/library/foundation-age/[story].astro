@@ -3,6 +3,7 @@ import SiteHeader from '../../../components/SiteHeader.astro';
 import MoodAtmosphere from '../../../components/MoodAtmosphere.astro';
 import ReadAloud from '../../../components/ReadAloud.astro';
 import data from '../../../data/foundation-age-stories.json';
+import { storyTracks } from '../../../data/narration.js';
 
 // Two of these already have hand-built pages on the site; the dynamic route
 // must not claim their URLs.
@@ -35,6 +36,9 @@ const hrefFor = (s) => BESPOKE[s.slug] ?? `/library/foundation-age/${s.slug}`;
 const zones = (story.zones?.length ? story.zones : [{ mood: 'gilded', start: 0, end: story.paras.length - 1 }])
   .map((z) => ({ mood: z.mood, paras: story.paras.slice(z.start, z.end + 1) }));
 const openingMood = zones[0]?.mood ?? 'gilded';
+
+// Real narration if it has been generated; otherwise the browser reads it.
+const tracks = storyTracks(story.slug);
 ---
 <!doctype html>
 <html lang="en">
@@ -150,7 +154,7 @@ const openingMood = zones[0]?.mood ?? 'gilded';
 
 <SiteHeader back={{ href: "/library/foundation-age", label: "The Foundation Age" }} current="library" accent="#c4952a" dim="#7a6a54" bright="#ede0c4" bg="rgba(10,7,4,0.82)" />
 
-<ReadAloud selector=".zone p" title={story.title} />
+<ReadAloud selector=".zone p" title={story.title} tracks={tracks} />
 
 <main>
   <header class="head">
