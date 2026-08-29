@@ -1,5 +1,6 @@
 ---
 import SiteHeader from '../../../components/SiteHeader.astro';
+import ReadAloud from '../../../components/ReadAloud.astro';
 ---
 <!doctype html>
 <html lang="en">
@@ -345,6 +346,8 @@ p.struck{
 <body>
 
 <SiteHeader back={{ href: "/library/age-of-kingdoms", label: "The Age of Kingdoms" }} current="library" accent="#7fb3d5" dim="#8b94a3" bright="#e8eef6" bg="rgba(5,7,12,0.94)" />
+
+<ReadAloud selector=".zone p.line" title="The Icetear Legacy. Part One." />
 
 <div id="atmos" aria-hidden="true">
   <div id="wash"></div>

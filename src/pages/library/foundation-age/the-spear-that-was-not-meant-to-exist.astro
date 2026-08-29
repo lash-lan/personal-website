@@ -1,5 +1,6 @@
 ---
 import SiteHeader from '../../../components/SiteHeader.astro';
+import ReadAloud from '../../../components/ReadAloud.astro';
 ---
 <html lang="en">
 <head>
@@ -361,6 +362,8 @@ import SiteHeader from '../../../components/SiteHeader.astro';
 <body>
 
 <SiteHeader back={{ href: "/library/foundation-age", label: "The Foundation Age" }} current="library" accent="#c4952a" dim="#7a6a54" bright="#ede0c4" bg="rgba(10,7,4,0.94)" />
+
+<ReadAloud selector=".story-body p, .story-body .pull-quote" title="The Spear That Was Not Meant to Exist" />
 
 <div id="cursor"></div>
 <div id="cursor-ring"></div>

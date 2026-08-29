@@ -1,5 +1,6 @@
 ---
 import SiteHeader from '../../../components/SiteHeader.astro';
+import ReadAloud from '../../../components/ReadAloud.astro';
 ---
 <html lang="en">
 <head>
@@ -434,6 +435,8 @@ import SiteHeader from '../../../components/SiteHeader.astro';
 <body>
 
 <SiteHeader back={{ href: "/library/foundation-age", label: "The Foundation Age" }} current="library" accent="#5ab85c" dim="#4e6e4a" bright="#cce0c2" bg="rgba(2,7,4,0.94)" />
+
+<ReadAloud selector=".story-body p, .story-body .pull-quote, .story-body .horror-line" title="The Serpent Wars. Chapter One. The First Wrongness." />
 
 <div id="cursor"></div>
 <div id="cursor-ring"></div>
