@@ -1,0 +1,77 @@
+---
+import SectionLayout from '../../layouts/SectionLayout.astro';
+import { BENCHES, TOOLS, toolsIn } from '../../data/tools.js';
+
+const ready = TOOLS.filter((t) => !t.soon).length;
+---
+<SectionLayout
+  title="Utilities | The Workshop | LASH"
+  description="A workshop of file tools that run entirely in your browser: PDFs, images, data and writing. Nothing is uploaded."
+  theme="utilities"
+  current="utilities"
+  eyebrow="The Workshop"
+  heading="Utilities"
+  tagline="Benches for ordinary work. Bind and cleave documents, recast pictures, rewrite tables, measure prose."
+  note={`${ready} tools · nothing leaves your device`}
+>
+  <div class="wrap">
+    <div class="creed reveal">
+      <strong>Everything here runs inside your own browser.</strong>
+      Your files are never uploaded, never stored, and never seen by anyone else.
+      Close the tab and nothing remains.
+    </div>
+
+    {BENCHES.map((b) => {
+      const tools = toolsIn(b.slug);
+      if (!tools.length) return null;
+      return (
+        <div class="band">
+          <div class="band-head reveal">
+            <span class="band-label">{b.kind}</span>
+            <h2 class="band-title">{b.name}</h2>
+            <p class="band-note">{b.blurb}</p>
+          </div>
+          <div class="grid grid-3">
+            {tools.map((t) => (
+              t.soon ? (
+                <div class="tile is-soon reveal">
+                  <span class="tile-eyebrow">{t.sub}</span>
+                  <span class="tile-title">{t.name}</span>
+                  <p class="tile-blurb">{t.blurb}</p>
+                  <span class="tile-meta">Coming Soon</span>
+                </div>
+              ) : (
+                <a href={`/utilities/${t.slug}`} class="tile reveal">
+                  <span class="tile-eyebrow">{t.sub}</span>
+                  <span class="tile-title">{t.name}</span>
+                  <p class="tile-blurb">{t.blurb}</p>
+                </a>
+              )
+            ))}
+          </div>
+        </div>
+      );
+    })}
+  </div>
+</SectionLayout>
+
+<style>
+  .creed {
+    border: 1px solid var(--line);
+    border-left: 2px solid var(--accent);
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--accent) 5%, var(--card));
+    padding: 1.3rem 1.5rem;
+    font-size: .98rem;
+    line-height: 1.7;
+    color: var(--textDim);
+  }
+  .creed strong {
+    display: block;
+    font-family: 'Cinzel', Georgia, serif;
+    font-weight: 400;
+    color: var(--textBright);
+    margin-bottom: .35rem;
+    letter-spacing: .02em;
+  }
+</style>

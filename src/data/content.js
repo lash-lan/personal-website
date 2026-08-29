@@ -10,6 +10,7 @@ export const SECTIONS = [
   { slug: 'codex',   name: 'Codex',              kind: 'Historical Chronicle', href: '/codex' },
   { slug: 'gallery', name: 'Hall of Memories',   kind: 'Image Gallery',        href: '/gallery' },
   { slug: 'trial',   name: 'Trial of Character', kind: 'Personality Quiz',     href: '/trial', comingSoon: true },
+  { slug: 'utilities', name: 'Utilities',       kind: 'The Workshop',         href: '/utilities' },
 ];
 
 // The ages of the world. Used by both the Library and the Codex.
@@ -238,6 +239,12 @@ export const THEMES = {
     bg: '#08060c', card: '#110c19', accent: '#8a6fc4', accentLight: '#c8b4f0',
     accentDim: '#54407f', text: '#b0a4c6', textDim: '#6b5f80', textBright: '#e8def8',
     particle: '138,111,196', line: 'rgba(138,111,196,0.18)',
+  },
+  // Glorion's forge: hot metal on cold iron.
+  utilities: {
+    bg: '#0a0706', card: '#141010', accent: '#d2843a', accentLight: '#f5c489',
+    accentDim: '#8a5426', text: '#c2b1a2', textDim: '#7d6a5c', textBright: '#f3e6d6',
+    particle: '210,132,58', line: 'rgba(210,132,58,0.20)',
   },
 };
 

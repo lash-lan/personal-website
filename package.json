@@ -15,7 +15,11 @@
   "dependencies": {
     "@astrojs/cloudflare": "^13.1.10",
     "astro": "^6.1.8",
-    "wrangler": "^4.83.0"
+    "fflate": "^0.8.3",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.2.108",
+    "wrangler": "^4.83.0",
+    "xlsx": "^0.18.5"
   },
   "overrides": {
     "vite": "^7"

@@ -1,0 +1,28 @@
+---
+import SectionLayout from '../../layouts/SectionLayout.astro';
+import ToolBench from '../../components/ToolBench.astro';
+import { TOOLS, BENCHES } from '../../data/tools.js';
+
+export function getStaticPaths() {
+  return TOOLS.filter((t) => !t.soon).map((tool) => ({
+    params: { tool: tool.slug },
+    props: { tool, bench: BENCHES.find((b) => b.slug === tool.bench) },
+  }));
+}
+
+const { tool, bench } = Astro.props;
+---
+<SectionLayout
+  title={`${tool.name} — ${tool.sub} | Utilities | LASH`}
+  description={`${tool.blurb} Runs entirely in your browser; nothing is uploaded.`}
+  theme="utilities"
+  current="utilities"
+  compact={true}
+  back={{ href: '/utilities', label: 'The Workshop' }}
+  eyebrow={bench?.name ?? 'The Workshop'}
+  heading={tool.name}
+  tagline={tool.blurb}
+  note={tool.sub}
+>
+  <ToolBench tool={tool} />
+</SectionLayout>
