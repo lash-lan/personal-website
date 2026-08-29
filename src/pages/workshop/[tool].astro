@@ -1,6 +1,7 @@
 ---
 import SectionLayout from '../../layouts/SectionLayout.astro';
 import ToolBench from '../../components/ToolBench.astro';
+import ToolIcon from '../../components/ToolIcon.astro';
 import { TOOLS, BENCHES } from '../../data/tools.js';
 
 export function getStaticPaths() {
@@ -24,5 +25,20 @@ const { tool, bench } = Astro.props;
   tagline={tool.blurb}
   note={tool.sub}
 >
+  <div class="tool-crest"><ToolIcon slug={tool.slug} size={40} /></div>
   <ToolBench tool={tool} />
+
+<style>
+  .tool-crest {
+    display: grid;
+    place-items: center;
+    width: 4.6rem;
+    height: 4.6rem;
+    margin: -1rem auto 2.2rem;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--accent) 8%, var(--card));
+    color: var(--accent);
+  }
+</style>
 </SectionLayout>

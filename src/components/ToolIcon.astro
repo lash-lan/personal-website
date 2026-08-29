@@ -1,0 +1,126 @@
+---
+// A distinct mark for every tool, so a card reads at a glance rather than
+// having to be parsed. Inline SVG on purpose: it inherits the page's colour,
+// stays crisp at any size, and costs no extra request.
+const { slug, size = 26 } = Astro.props;
+
+const P = {
+  // ── documents ──────────────────────────────────────────────────────
+  'merge-pdf': `
+    <rect x="3" y="3" width="10" height="13" rx="1.5"/>
+    <path d="M16 7h3a1.5 1.5 0 0 1 1.5 1.5V19A1.5 1.5 0 0 1 19 20.5h-8A1.5 1.5 0 0 1 9.5 19v-3"/>`,
+  'split-pdf': `
+    <path d="M9 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V4.5A1.5 1.5 0 0 0 17.5 3H15"/>
+    <path d="M12 2v20" stroke-dasharray="2.5 2.5"/>`,
+  'organise-pdf': `
+    <rect x="3" y="3" width="7.5" height="7.5" rx="1"/>
+    <rect x="13.5" y="3" width="7.5" height="7.5" rx="1"/>
+    <rect x="3" y="13.5" width="7.5" height="7.5" rx="1"/>
+    <path d="M20.5 17.2a3.7 3.7 0 1 1-1.1-2.6"/>
+    <path d="M20.7 12.9v2.6h-2.6"/>`,
+  'pdf-to-images': `
+    <path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8z"/>
+    <path d="M14 3v5h5"/>
+    <path d="M8 17.5l2.6-2.6 2 1.7 1.7-1.7L16 16.4"/>
+    <circle cx="9.6" cy="12.2" r="1"/>`,
+  'images-to-pdf': `
+    <rect x="3" y="5" width="18" height="14" rx="1.5"/>
+    <circle cx="8.2" cy="10" r="1.3"/>
+    <path d="M3.5 16.8l4.8-4.6 3.3 2.9 3-3 5.9 5"/>`,
+  'pdf-text': `
+    <path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8z"/>
+    <path d="M14 3v5h5"/>
+    <path d="M8.5 12.5h7M8.5 15.5h7M8.5 18h4"/>`,
+  'compress-pdf': `
+    <path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8z"/>
+    <path d="M14 3v5h5"/>
+    <path d="M12 10.5v5"/><path d="M9.8 13.3 12 15.5l2.2-2.2"/>
+    <path d="M8.8 18.2h6.4"/>`,
+
+  // ── pictures ───────────────────────────────────────────────────────
+  'convert-image': `
+    <rect x="3" y="5" width="18" height="14" rx="1.5"/>
+    <circle cx="8" cy="9.8" r="1.2"/>
+    <path d="M3.5 16.5l4.4-4.2 3 2.6 2.8-2.8 5.8 4.9"/>
+    <path d="M15.6 3.6 18 6l-2.4 2.4"/>`,
+  'resize-image': `
+    <rect x="3" y="5" width="18" height="14" rx="1.5"/>
+    <path d="M7 12.5V9h3.5"/>
+    <path d="M17 11.5V15h-3.5"/>
+    <path d="M7 9l4 4"/><path d="M17 15l-4-4"/>`,
+  'compress-image': `
+    <rect x="3" y="5" width="18" height="14" rx="1.5"/>
+    <path d="M8.4 8.4h3v3"/><path d="M15.6 15.6h-3v-3"/>
+    <path d="M8.4 8.4l3.1 3.1"/><path d="M15.6 15.6l-3.1-3.1"/>`,
+
+  // ── records ────────────────────────────────────────────────────────
+  'csv-json': `
+    <path d="M9.5 3.5H8A2.5 2.5 0 0 0 5.5 6v3.5A2.5 2.5 0 0 1 3 12a2.5 2.5 0 0 1 2.5 2.5V18A2.5 2.5 0 0 0 8 20.5h1.5"/>
+    <path d="M14.5 3.5H16A2.5 2.5 0 0 1 18.5 6v3.5A2.5 2.5 0 0 0 21 12a2.5 2.5 0 0 0-2.5 2.5V18a2.5 2.5 0 0 1-2.5 2.5h-1.5"/>`,
+  'csv-xlsx': `
+    <rect x="3" y="4" width="18" height="16" rx="1.5"/>
+    <path d="M3 9h18"/><path d="M9 9v11"/><path d="M15 9v11"/><path d="M3 14.5h18"/>`,
+  'format-json': `
+    <path d="M8.5 4H7.5A2.5 2.5 0 0 0 5 6.5v3A2.5 2.5 0 0 1 2.5 12 2.5 2.5 0 0 1 5 14.5v3A2.5 2.5 0 0 0 7.5 20h1"/>
+    <path d="M10.5 9h8"/><path d="M12.5 12.5h6"/><path d="M12.5 16h4"/>`,
+  'clean-csv': `
+    <rect x="3" y="4" width="18" height="16" rx="1.5"/>
+    <path d="M3 9h18"/><path d="M9 9v11"/>
+    <path d="M13 15.6l1.7-1.7 1.7 1.7-1.7 1.7z"/>
+    <path d="M18.2 11.2l.9.9"/>`,
+
+  // ── words ──────────────────────────────────────────────────────────
+  'make-epub': `
+    <path d="M12 6.5S10 4.5 4.5 4.5v13C10 17.5 12 19.5 12 19.5"/>
+    <path d="M12 6.5S14 4.5 19.5 4.5v13C14 17.5 12 19.5 12 19.5"/>
+    <path d="M12 6.5v13"/>`,
+  'clean-manuscript': `
+    <path d="M19.5 4.5C13 4.5 8.5 8 7 13.5c-.4 1.5-1.6 3-3 4.5"/>
+    <path d="M19.5 4.5c0 7-3.5 11.5-9 12.5-2 .4-3.6 0-4.5-.5"/>
+    <path d="M4.5 19.5s2-.5 3.5-1.5"/>`,
+  'count-words': `
+    <rect x="2.5" y="7.5" width="19" height="9" rx="1.5"/>
+    <path d="M6.5 7.5v3"/><path d="M10 7.5v4.5"/><path d="M13.5 7.5v3"/><path d="M17 7.5v4.5"/>`,
+
+  // ── the forge ──────────────────────────────────────────────────────
+  'video-to-mp3': `
+    <path d="M9 18.5V6.2l10-1.7v12"/>
+    <circle cx="6.8" cy="18.5" r="2.3"/>
+    <circle cx="16.8" cy="16.5" r="2.3"/>`,
+  'convert-audio': `
+    <path d="M4 10.5v3M7.5 8v8M11 5.5v13M14.5 8.5v7M18 11v2"/>
+    <path d="M20 8.5 22 10.5 20 12.5"/>`,
+  'trim-media': `
+    <path d="M3 12h5.5M15.5 12H21"/>
+    <circle cx="10.5" cy="7.5" r="2.2"/>
+    <circle cx="10.5" cy="16.5" r="2.2"/>
+    <path d="M12.4 8.7 19 17"/><path d="M12.4 15.3 19 7"/>`,
+  'video-to-gif': `
+    <rect x="2.5" y="5" width="19" height="14" rx="1.5"/>
+    <path d="M2.5 9h19M2.5 15h19"/>
+    <path d="M7 5v14M17 5v14"/>`,
+  'zip-files': `
+    <path d="M3 8.5 12 4l9 4.5-9 4.5z"/>
+    <path d="M3 8.5v7L12 20l9-4.5v-7"/>
+    <path d="M12 13v7"/>`,
+  'unzip-files': `
+    <path d="M3.5 9.5 12 5.5l8.5 4"/>
+    <path d="M3.5 9.5v6L12 19.5l8.5-4v-6"/>
+    <path d="M12 13.5v6"/>
+    <path d="M12 2.5v4"/><path d="M10 4.5 12 2.5l2 2"/>`,
+};
+
+const path = P[slug] ?? `<circle cx="12" cy="12" r="8.5"/><path d="M12 8v4l2.5 2.5"/>`;
+---
+<svg
+  class="tool-icon"
+  width={size} height={size}
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.4"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+  set:html={path}
+/>

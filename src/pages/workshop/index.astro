@@ -1,6 +1,7 @@
 ---
 import SectionLayout from '../../layouts/SectionLayout.astro';
 import { BENCHES, TOOLS, toolsIn } from '../../data/tools.js';
+import ToolIcon from '../../components/ToolIcon.astro';
 
 const ready = TOOLS.filter((t) => !t.soon).length;
 ---
@@ -41,6 +42,7 @@ const ready = TOOLS.filter((t) => !t.soon).length;
             {tools.map((t) => (
               t.soon ? (
                 <div class="tile is-soon reveal">
+                  <span class="tool-mark"><ToolIcon slug={t.slug} /></span>
                   <span class="tile-eyebrow">{t.sub}</span>
                   <span class="tile-title">{t.name}</span>
                   <p class="tile-blurb">{t.blurb}</p>
@@ -48,6 +50,7 @@ const ready = TOOLS.filter((t) => !t.soon).length;
                 </div>
               ) : (
                 <a href={`/workshop/${t.slug}`} class="tile reveal">
+                  <span class="tool-mark"><ToolIcon slug={t.slug} /></span>
                   <span class="tile-eyebrow">{t.sub}</span>
                   <span class="tile-title">{t.name}</span>
                   <p class="tile-blurb">{t.blurb}</p>
@@ -62,6 +65,25 @@ const ready = TOOLS.filter((t) => !t.soon).length;
 </SectionLayout>
 
 <style>
+  /* the glyph that lets a card be recognised before it is read */
+  .tool-mark {
+    display: grid;
+    place-items: center;
+    width: 2.9rem;
+    height: 2.9rem;
+    margin-bottom: .35rem;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--accent) 7%, transparent);
+    color: var(--accent);
+    transition: color .35s ease, border-color .35s ease, background-color .35s ease;
+  }
+  a.tile:hover .tool-mark {
+    color: var(--accentLight);
+    border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+
   .creed {
     border: 1px solid var(--line);
     border-left: 2px solid var(--accent);
