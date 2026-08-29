@@ -11,15 +11,21 @@ const ready = TOOLS.filter((t) => !t.soon).length;
   current="utilities"
   eyebrow="The Workshop"
   heading="Utilities"
-  tagline="Benches for ordinary work. Bind and cleave documents, recast pictures, rewrite tables, measure prose."
+  tagline="An inventor's room, borrowed. Bind and cleave documents, recast pictures, rewrite tables, cut sound, measure prose."
   note={`${ready} tools · nothing leaves your device`}
 >
   <div class="wrap">
     <div class="creed reveal">
       <strong>Everything here runs inside your own browser.</strong>
-      Your files are never uploaded, never stored, and never seen by anyone else.
-      Close the tab and nothing remains.
+      Your files are never uploaded, never stored, and never seen by anyone else,
+      not even by me. Close the tab and nothing remains.
     </div>
+
+    <p class="epigraph reveal">
+      Golian spent much of his life converting affection into engineering.
+      This room is kept in that spirit: things taken apart, understood,
+      and handed back in better order than they arrived.
+    </p>
 
     {BENCHES.map((b) => {
       const tools = toolsIn(b.slug);
@@ -64,6 +70,15 @@ const ready = TOOLS.filter((t) => !t.soon).length;
     padding: 1.3rem 1.5rem;
     font-size: .98rem;
     line-height: 1.7;
+    color: var(--textDim);
+  }
+  .epigraph {
+    max-width: 34rem;
+    margin: 1.6rem auto 0;
+    text-align: center;
+    font-style: italic;
+    font-size: .98rem;
+    line-height: 1.8;
     color: var(--textDim);
   }
   .creed strong {

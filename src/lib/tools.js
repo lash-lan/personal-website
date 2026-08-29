@@ -61,13 +61,24 @@ async function drawToBlob(src, w, h, type, quality) {
   return canvasBlob(c, type, quality);
 }
 
+// Rendered off-screen where possible: it does not depend on the page being
+// painted, which keeps rendering going in background tabs and is faster.
 async function renderPdfPage(page, scale, type, quality) {
   const vp = page.getViewport({ scale });
+  const w = Math.round(vp.width), h = Math.round(vp.height);
+
+  if (typeof OffscreenCanvas === 'function') {
+    const c = new OffscreenCanvas(w, h);
+    const ctx = c.getContext('2d');
+    if (type === 'image/jpeg') { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h); }
+    await page.render({ canvasContext: ctx, viewport: vp }).promise;
+    return c.convertToBlob({ type, quality });
+  }
+
   const c = document.createElement('canvas');
-  c.width = Math.round(vp.width);
-  c.height = Math.round(vp.height);
+  c.width = w; c.height = h;
   const ctx = c.getContext('2d');
-  if (type === 'image/jpeg') { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); }
+  if (type === 'image/jpeg') { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h); }
   await page.render({ canvasContext: ctx, viewport: vp }).promise;
   return canvasBlob(c, type, quality);
 }

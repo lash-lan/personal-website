@@ -240,11 +240,11 @@ export const THEMES = {
     accentDim: '#54407f', text: '#b0a4c6', textDim: '#6b5f80', textBright: '#e8def8',
     particle: '138,111,196', line: 'rgba(138,111,196,0.18)',
   },
-  // Glorion's forge: hot metal on cold iron.
+  // The builders' workshop: cold steel, blue Fae lanterns, a lit forge.
   utilities: {
-    bg: '#0a0706', card: '#141010', accent: '#d2843a', accentLight: '#f5c489',
-    accentDim: '#8a5426', text: '#c2b1a2', textDim: '#7d6a5c', textBright: '#f3e6d6',
-    particle: '210,132,58', line: 'rgba(210,132,58,0.20)',
+    bg: '#05080d', card: '#0d141c', accent: '#5f9fd4', accentLight: '#a8d4f5',
+    accentDim: '#38607f', text: '#a4b6c6', textDim: '#647684', textBright: '#e4f0fa',
+    particle: '95,159,212', line: 'rgba(95,159,212,0.20)',
   },
 };
 

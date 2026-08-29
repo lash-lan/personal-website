@@ -1,33 +1,36 @@
 // The Workshop's catalogue.
 //
+// Framed after Golian's workshop: an inventor's bench, chaotic and useful,
+// where things are taken apart and put back together better than they were.
+//
 // Every tool runs entirely in the reader's browser. Nothing is uploaded, so
 // there is no server to pay for, no size limit imposed by us, and a person's
 // files never leave their own machine. That constraint is also the honest
-// limit: very large videos will be slow, because the work happens on their
+// limit: very large files will be slow, because the work happens on their
 // device rather than on a farm of ours.
 
 export const BENCHES = [
   {
     slug: 'parchment',
-    name: 'The Parchment Bench',
+    name: 'The Binding Bench',
     kind: 'PDF',
-    blurb: 'Bind, cleave and rewrite documents.',
+    blurb: 'Where documents are bound, cleaved and set back in order.',
   },
   {
     slug: 'lens',
     name: 'The Lens Bench',
     kind: 'Images',
-    blurb: 'Recast pictures into other shapes, formats and weights.',
+    blurb: 'Where pictures are recast into other shapes, formats and weights.',
   },
   {
     slug: 'ledger',
     name: 'The Ledger Bench',
     kind: 'Data',
-    blurb: 'Turn tables and records from one script into another.',
+    blurb: 'Where tables and records are rewritten from one script into another.',
   },
   {
     slug: 'quill',
-    name: 'The Quill Bench',
+    name: 'The Scribe’s Bench',
     kind: 'Writing',
     blurb: 'Small instruments for anyone working in words.',
   },
@@ -35,7 +38,7 @@ export const BENCHES = [
     slug: 'forge',
     name: 'The Great Forge',
     kind: 'Media & Archives',
-    blurb: 'Heavier work: sound, moving pictures, and bundles.',
+    blurb: 'The hot end of the room: sound, moving pictures, and bundles.',
   },
 ];
 
