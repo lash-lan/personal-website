@@ -62,6 +62,7 @@ const { tool } = Astro.props;
       </div>
     ))}
 
+    {tool.note && <p class="hint">{tool.note}</p>}
     {tool.caution && <p class="caution">{tool.caution}</p>}
 
     <button class="run" id="run" disabled>{tool.name}</button>
@@ -158,6 +159,7 @@ const { tool } = Astro.props;
   .choice-name { font-family: 'Cinzel', Georgia, serif; font-size: .9rem; color: var(--textBright); }
   .choice-note { font-size: .78rem; color: var(--textDim); line-height: 1.4; }
 
+  .hint { font-size: .88rem; color: var(--textDim); }
   .caution {
     font-size: .88rem; color: var(--textDim); font-style: italic;
     border-left: 2px solid color-mix(in srgb, var(--accent) 50%, transparent);

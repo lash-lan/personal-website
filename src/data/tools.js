@@ -192,6 +192,16 @@ export const TOOLS = [
     ],
   },
   {
+    slug: 'make-epub', bench: 'quill', engine: 'epub',
+    name: 'Bind a Book', sub: 'Text → EPUB',
+    blurb: 'Turn text files into an EPUB a Kindle, Kobo or phone can read. One file becomes one chapter, in the order you set.',
+    accept: '.txt,.md,text/plain', multiple: true,
+    fields: [
+      { id: 'title', type: 'text', label: 'Book title', placeholder: 'leave blank to use the first filename' },
+      { id: 'author', type: 'text', label: 'Author', placeholder: 'Lash' },
+    ],
+  },
+  {
     slug: 'count-words', bench: 'quill', engine: 'wordCount',
     name: 'Take the Measure', sub: 'Word count & reading time',
     blurb: 'Words, characters, paragraphs, reading time and the longest sentences.',
@@ -218,10 +228,52 @@ export const TOOLS = [
     blurb: 'Open an archive and take the files out.',
     accept: '.zip,application/zip',
   },
-  { slug: 'video-to-mp3',  bench: 'forge', name: 'Draw the Voice',  sub: 'Video → MP3',        blurb: 'Lift the audio out of a video.', soon: true },
-  { slug: 'video-to-gif',  bench: 'forge', name: 'Still the Motion', sub: 'Video → GIF',        blurb: 'Turn a clip into a looping image.', soon: true },
-  { slug: 'convert-audio', bench: 'forge', name: 'Retune',          sub: 'Audio converter',    blurb: 'Move between MP3, WAV, M4A and Opus.', soon: true },
-  { slug: 'trim-media',    bench: 'forge', name: 'Cut to Length',   sub: 'Trim video or audio', blurb: 'Keep only the stretch you want.', soon: true },
+  {
+    slug: 'video-to-mp3', bench: 'forge', engine: 'mediaToMp3',
+    name: 'Draw the Voice', sub: 'Video → MP3',
+    blurb: 'Lift the sound out of a video and keep it as an MP3.',
+    accept: 'video/*,audio/*', multiple: true, quality: true,
+    note: 'Quality sets the bitrate: 320, 192 or 128 kbps.',
+  },
+  {
+    slug: 'convert-audio', bench: 'forge', engine: 'audioConvert',
+    name: 'Retune', sub: 'Audio converter',
+    blurb: 'Move audio into MP3, or into WAV when you need it uncompressed.',
+    accept: 'audio/*,video/*', multiple: true, quality: true,
+    fields: [
+      { id: 'format', type: 'select', label: 'Convert to', options: [
+        { value: 'mp3', label: 'MP3 (compressed)' },
+        { value: 'wav', label: 'WAV (uncompressed)' },
+      ] },
+    ],
+  },
+  {
+    slug: 'trim-media', bench: 'forge', engine: 'mediaTrim',
+    name: 'Cut to Length', sub: 'Trim audio',
+    blurb: 'Keep only the stretch you want. Works on audio, or on the soundtrack of a video.',
+    accept: 'audio/*,video/*', multiple: true, quality: true,
+    fields: [
+      { id: 'start', type: 'text', label: 'Start', placeholder: '0:00' },
+      { id: 'end', type: 'text', label: 'End', placeholder: '1:30 — leave blank for the end' },
+      { id: 'format', type: 'select', label: 'Save as', options: [
+        { value: 'mp3', label: 'MP3' },
+        { value: 'wav', label: 'WAV' },
+      ] },
+    ],
+  },
+  {
+    slug: 'video-to-gif', bench: 'forge', engine: 'videoToGif',
+    name: 'Still the Motion', sub: 'Video → GIF',
+    blurb: 'Turn a stretch of video into a looping image.',
+    accept: 'video/*', quality: true,
+    fields: [
+      { id: 'start', type: 'text', label: 'Start', placeholder: '0:00' },
+      { id: 'end', type: 'text', label: 'End', placeholder: '0:05' },
+      { id: 'fps', type: 'number', label: 'Frames per second', placeholder: '10' },
+      { id: 'width', type: 'number', label: 'Width (px)', placeholder: '480' },
+    ],
+    caution: 'GIF is a heavy format. Keep clips short, the width modest and the rate low.',
+  },
 ];
 
 export const toolsIn = (bench) => TOOLS.filter((t) => t.bench === bench);
