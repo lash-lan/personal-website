@@ -10,7 +10,7 @@ export const SECTIONS = [
   { slug: 'codex',   name: 'Codex',              kind: 'Historical Chronicle', href: '/codex' },
   { slug: 'gallery', name: 'Hall of Memories',   kind: 'Image Gallery',        href: '/gallery' },
   { slug: 'trial',   name: 'Trial of Character', kind: 'Personality Quiz',     href: '/trial', comingSoon: true },
-  { slug: 'utilities', name: 'Utilities',       kind: 'The Workshop',         href: '/utilities' },
+  { slug: 'workshop', name: 'The Workshop',     kind: 'Utilities',            href: '/workshop' },
 ];
 
 // The ages of the world. Used by both the Library and the Codex.
@@ -241,7 +241,7 @@ export const THEMES = {
     particle: '138,111,196', line: 'rgba(138,111,196,0.18)',
   },
   // The builders' workshop: cold steel, blue Fae lanterns, a lit forge.
-  utilities: {
+  workshop: {
     bg: '#05080d', card: '#0d141c', accent: '#5f9fd4', accentLight: '#a8d4f5',
     accentDim: '#38607f', text: '#a4b6c6', textDim: '#647684', textBright: '#e4f0fa',
     particle: '95,159,212', line: 'rgba(95,159,212,0.20)',

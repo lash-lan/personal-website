@@ -11,5 +11,6 @@ export default defineConfig({
   redirects: {
     '/serpent-wars': '/library/foundation-age/the-serpent-wars',
     '/icetear': '/library/age-of-kingdoms/the-icetear-legacy',
+    '/utilities': '/workshop',
   },
 });

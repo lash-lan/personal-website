@@ -5,12 +5,12 @@ import { BENCHES, TOOLS, toolsIn } from '../../data/tools.js';
 const ready = TOOLS.filter((t) => !t.soon).length;
 ---
 <SectionLayout
-  title="Utilities | The Workshop | LASH"
+  title="The Workshop | LASH"
   description="A workshop of file tools that run entirely in your browser: PDFs, images, data and writing. Nothing is uploaded."
-  theme="utilities"
-  current="utilities"
-  eyebrow="The Workshop"
-  heading="Utilities"
+  theme="workshop"
+  current="workshop"
+  eyebrow="Utilities"
+  heading="The Workshop"
   tagline="An inventor's room, borrowed. Bind and cleave documents, recast pictures, rewrite tables, cut sound, measure prose."
   note={`${ready} tools · nothing leaves your device`}
 >
@@ -47,7 +47,7 @@ const ready = TOOLS.filter((t) => !t.soon).length;
                   <span class="tile-meta">Coming Soon</span>
                 </div>
               ) : (
-                <a href={`/utilities/${t.slug}`} class="tile reveal">
+                <a href={`/workshop/${t.slug}`} class="tile reveal">
                   <span class="tile-eyebrow">{t.sub}</span>
                   <span class="tile-title">{t.name}</span>
                   <p class="tile-blurb">{t.blurb}</p>

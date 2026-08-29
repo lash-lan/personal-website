@@ -13,12 +13,12 @@ export function getStaticPaths() {
 const { tool, bench } = Astro.props;
 ---
 <SectionLayout
-  title={`${tool.name} — ${tool.sub} | Utilities | LASH`}
+  title={`${tool.name} — ${tool.sub} | The Workshop | LASH`}
   description={`${tool.blurb} Runs entirely in your browser; nothing is uploaded.`}
-  theme="utilities"
-  current="utilities"
+  theme="workshop"
+  current="workshop"
   compact={true}
-  back={{ href: '/utilities', label: 'The Workshop' }}
+  back={{ href: '/workshop', label: 'The Workshop' }}
   eyebrow={bench?.name ?? 'The Workshop'}
   heading={tool.name}
   tagline={tool.blurb}
