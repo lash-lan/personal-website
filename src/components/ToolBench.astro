@@ -1,13 +1,15 @@
 ---
-// One working bench: drop files in, set the dials, take the result out.
-// Everything happens in the reader's browser; nothing is uploaded.
+// One working bench: bring the work in, see what you have, set the dials,
+// take the result away. Everything happens in the reader's browser.
 import { QUALITY } from '../data/tools.js';
 
 const { tool } = Astro.props;
+const fields = tool.fields || [];
+// tools that cut a span out of something get a listen-and-choose strip
+const hasRange = fields.some((f) => f.id === 'start') && fields.some((f) => f.id === 'end');
 ---
 
-<section class="bench" data-tool={tool.slug} data-engine={tool.engine}>
-  <!-- 1. take the work in -->
+<section class="bench" data-tool={tool.slug} data-engine={tool.engine} data-range={hasRange ? '1' : ''}>
   <div class="drop" id="drop" tabindex="0" role="button"
        aria-label={`Choose files for ${tool.name}`}>
     <input type="file" id="picker" hidden
@@ -20,7 +22,34 @@ const { tool } = Astro.props;
 
   <ul class="queue" id="queue" hidden></ul>
 
-  <!-- 2. set the dials -->
+  {hasRange && (
+    <div class="scrub" id="scrub" hidden>
+      <div class="scrub-head">
+        <span class="scrub-title">Listen, then choose what to keep</span>
+        <span class="scrub-state" id="scrubState">reading…</span>
+      </div>
+
+      <div class="stage" id="stage" hidden></div>
+
+      <div class="wave-wrap">
+        <canvas id="wave" class="wave"></canvas>
+        <div class="playhead" id="playhead" hidden></div>
+      </div>
+
+      <div class="scrub-bar">
+        <button type="button" class="ghost" id="playSel">Play selection</button>
+        <span class="scrub-read">
+          <b id="readStart">0:00</b> to <b id="readEnd">0:00</b>
+          <span id="readLen"></span>
+        </span>
+        <button type="button" class="ghost" id="markIn">Start here</button>
+        <button type="button" class="ghost" id="markOut">End here</button>
+        <button type="button" class="ghost" id="selAll">Whole thing</button>
+      </div>
+      <p class="scrub-hint">Drag across the waveform to choose a span, or play and mark as you listen.</p>
+    </div>
+  )}
+
   <div class="dials" id="dials" hidden>
     {tool.quality && (
       <div class="dial">
@@ -39,9 +68,9 @@ const { tool } = Astro.props;
       </div>
     )}
 
-    {(tool.fields || []).map((f) => (
-      <div class="dial">
-        <label class="dial-label" for={`f-${f.id}`}>{f.label}</label>
+    {fields.map((f) => (
+      <div class="dial" data-dial={f.id}>
+        {f.type !== 'checkbox' && <label class="dial-label" for={`f-${f.id}`}>{f.label}</label>}
         {f.type === 'select' && (
           <select id={`f-${f.id}`} data-field={f.id}>
             {f.options.map((o) => <option value={o.value}>{o.label}</option>)}
@@ -70,13 +99,12 @@ const { tool } = Astro.props;
     <p class="error" id="error" hidden></p>
   </div>
 
-  <!-- 3. take the result away -->
   <div class="results" id="results" hidden>
     <div class="results-head">
       <span class="results-count" id="resultsCount"></span>
-      <button class="ghost" id="downloadAll" hidden>Download all as ZIP</button>
       <button class="ghost" id="reset">Start again</button>
     </div>
+    <button class="download-all" id="downloadAll" hidden>Download all as ZIP</button>
     <ul class="spoils" id="spoils"></ul>
     <pre class="preview" id="preview" hidden></pre>
   </div>
@@ -101,9 +129,7 @@ const { tool } = Astro.props;
   }
   .drop.over { transform: translateY(-2px); }
   .drop-mark { font-size: 1.7rem; color: var(--accent); line-height: 1; }
-  .drop-line {
-    font-family: 'Cinzel', Georgia, serif; font-size: 1.05rem; color: var(--textBright);
-  }
+  .drop-line { font-family: 'Cinzel', Georgia, serif; font-size: 1.05rem; color: var(--textBright); }
   .drop-sub {
     font-family: 'Cormorant SC', Georgia, serif;
     font-size: .64rem; letter-spacing: .24em; text-transform: uppercase; color: var(--textDim);
@@ -111,10 +137,15 @@ const { tool } = Astro.props;
 
   .queue { list-style: none; margin-top: 1.2rem; display: flex; flex-direction: column; gap: .4rem; }
   .queue li {
-    display: flex; align-items: center; gap: .7rem;
+    display: flex; align-items: center; gap: .8rem;
     padding: .6rem .8rem;
     border: 1px solid var(--line); border-radius: 2px;
     background: var(--card); font-size: .92rem;
+  }
+  .queue .thumb {
+    width: 2.6rem; height: 2.6rem; flex-shrink: 0;
+    border: 1px solid var(--line); border-radius: 2px;
+    object-fit: cover; background: #05070a;
   }
   .queue .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .queue .sz {
@@ -127,6 +158,48 @@ const { tool } = Astro.props;
     font-size: .8rem; transition: color .2s ease, border-color .2s ease;
   }
   .queue button:hover { color: var(--accentLight); border-color: var(--accent); }
+  .queue button:disabled { opacity: .3; cursor: default; }
+
+  /* ─── listen and choose ─── */
+  .scrub {
+    margin-top: 1.4rem; padding: 1.1rem 1.2rem 1.2rem;
+    border: 1px solid var(--line); border-radius: 3px;
+    background: color-mix(in srgb, var(--accent) 4%, var(--card));
+  }
+  .scrub-head { display: flex; align-items: baseline; gap: .8rem; margin-bottom: .9rem; }
+  .scrub-title {
+    flex: 1;
+    font-family: 'Cormorant SC', Georgia, serif;
+    font-size: .64rem; letter-spacing: .24em; text-transform: uppercase; color: var(--accent);
+  }
+  .scrub-state { font-size: .8rem; color: var(--textDim); }
+  .stage { margin-bottom: .9rem; }
+  .stage audio, .stage video { width: 100%; display: block; border-radius: 2px; background: #05070a; }
+  .stage video { max-height: 15rem; }
+
+  .wave-wrap { position: relative; }
+  .wave {
+    display: block; width: 100%; height: 84px;
+    border: 1px solid var(--line); border-radius: 2px;
+    background: #060a0f; cursor: ew-resize; touch-action: none;
+  }
+  .playhead {
+    position: absolute; top: 1px; bottom: 1px; width: 1px;
+    background: var(--accentLight); pointer-events: none;
+    box-shadow: 0 0 8px var(--accentLight);
+  }
+
+  .scrub-bar {
+    display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+    margin-top: .8rem;
+  }
+  .scrub-read {
+    flex: 1; min-width: 9rem;
+    font-size: .88rem; color: var(--textDim);
+  }
+  .scrub-read b { color: var(--textBright); font-weight: 400; font-variant-numeric: tabular-nums; }
+  .scrub-read span { margin-left: .4rem; opacity: .8; }
+  .scrub-hint { margin-top: .7rem; font-size: .84rem; color: var(--textDim); font-style: italic; }
 
   .dials { margin-top: 1.8rem; display: flex; flex-direction: column; gap: 1.4rem; }
   .dial { display: flex; flex-direction: column; gap: .55rem; }
@@ -185,6 +258,7 @@ const { tool } = Astro.props;
   .progress { color: var(--textDim); }
   .error { color: #e0776a; text-transform: none; letter-spacing: .04em; font-size: .9rem; }
 
+  /* ─── what you take away ─── */
   .results { margin-top: 2.2rem; border-top: 1px solid var(--line); padding-top: 1.6rem; }
   .results-head { display: flex; align-items: center; gap: .7rem; flex-wrap: wrap; margin-bottom: 1rem; }
   .results-count {
@@ -201,28 +275,66 @@ const { tool } = Astro.props;
     transition: color .3s ease, border-color .3s ease;
   }
   .ghost:hover { color: var(--accentLight); border-color: var(--accent); }
+  .ghost:disabled { opacity: .35; cursor: default; }
 
-  .spoils { list-style: none; display: flex; flex-direction: column; gap: .4rem; }
-  .spoils li {
-    display: flex; align-items: center; gap: .7rem;
-    padding: .65rem .8rem; border: 1px solid var(--line); border-radius: 2px;
-    background: var(--card); font-size: .92rem;
-  }
-  .spoils .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .spoils a {
+  .download-all {
+    display: block; width: 100%; margin-bottom: 1rem;
     font-family: 'Cormorant SC', Georgia, serif;
-    font-size: .6rem; letter-spacing: .2em; text-transform: uppercase;
-    color: var(--accent); text-decoration: none;
-    border: 1px solid var(--line); padding: .4rem .7rem; border-radius: 2px;
-    transition: color .3s ease, border-color .3s ease;
+    font-size: .7rem; letter-spacing: .26em; text-transform: uppercase;
+    color: var(--bg); background: var(--accent);
+    border: 1px solid var(--accent); border-radius: 2px;
+    padding: .85rem 1rem; cursor: pointer;
+    transition: background-color .3s ease;
   }
-  .spoils a:hover { color: var(--accentLight); border-color: var(--accent); }
+  .download-all:hover { background: var(--accentLight); border-color: var(--accentLight); }
+
+  .spoils { list-style: none; display: flex; flex-direction: column; gap: .6rem; }
+  .spoils li {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: .9rem;
+    padding: .8rem .9rem;
+    border: 1px solid var(--line); border-radius: 2px;
+    background: var(--card);
+  }
+  .spoils .out-thumb {
+    width: 3.2rem; height: 3.2rem;
+    border: 1px solid var(--line); border-radius: 2px;
+    object-fit: cover; background: #05070a;
+  }
+  .spoils .out-text { display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
+  .spoils .nm {
+    font-size: .95rem; color: var(--textBright);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .spoils .sz {
+    font-family: 'Cormorant SC', Georgia, serif;
+    font-size: .6rem; letter-spacing: .16em; text-transform: uppercase; color: var(--textDim);
+  }
+  .spoils .out-play { grid-column: 1 / -1; width: 100%; margin-top: .3rem; }
+
+  .dl {
+    display: inline-flex; align-items: center; gap: .45rem;
+    font-family: 'Cormorant SC', Georgia, serif;
+    font-size: .64rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--bg); background: var(--accent);
+    border: 1px solid var(--accent); border-radius: 2px;
+    padding: .6rem 1rem; text-decoration: none; white-space: nowrap;
+    transition: background-color .3s ease;
+  }
+  .dl:hover, .dl:focus-visible { background: var(--accentLight); border-color: var(--accentLight); outline: none; }
 
   .preview {
     margin-top: 1rem; padding: 1rem; max-height: 22rem; overflow: auto;
     background: var(--card); border: 1px solid var(--line); border-radius: 2px;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: .82rem; line-height: 1.6; color: var(--text); white-space: pre-wrap;
+  }
+
+  @media (max-width: 560px) {
+    .spoils li { grid-template-columns: auto 1fr; }
+    .spoils .dl { grid-column: 1 / -1; justify-content: center; }
   }
 </style>
 
@@ -231,28 +343,44 @@ const { tool } = Astro.props;
 
   const bench = document.querySelector('.bench');
   if (bench) {
-    const engineName = bench.dataset.engine;
-    const engine = ENGINES[engineName];
-
+    const engine = ENGINES[bench.dataset.engine];
     const $ = (id) => document.getElementById(id);
     const drop = $('drop'), picker = $('picker'), queue = $('queue'), dials = $('dials');
     const runBtn = $('run'), progress = $('progress'), errorBox = $('error');
     const results = $('results'), spoils = $('spoils'), preview = $('preview');
     const countEl = $('resultsCount'), allBtn = $('downloadAll'), resetBtn = $('reset');
+    const wantsRange = bench.dataset.range === '1';
 
     let files = [];
     let made = [];
     const urls = [];
+    const keep = (u) => { urls.push(u); return u; };
+    const dropUrls = () => { urls.splice(0).forEach(URL.revokeObjectURL); };
 
     const size = (n) =>
       n < 1024 ? n + ' B'
       : n < 1048576 ? (n / 1024).toFixed(0) + ' KB'
       : (n / 1048576).toFixed(1) + ' MB';
+    const clock = (s) => {
+      if (!isFinite(s) || s < 0) s = 0;
+      const m = Math.floor(s / 60);
+      const r = Math.floor(s % 60);
+      return `${m}:${String(r).padStart(2, '0')}`;
+    };
+    const isImage = (f) => /^image\//.test(f.type);
+    const isMedia = (f) => /^(audio|video)\//.test(f.type);
 
+    // ─── the queue ───────────────────────────────────────────────────
     function renderQueue() {
       queue.innerHTML = '';
       files.forEach((f, i) => {
         const li = document.createElement('li');
+        if (isImage(f)) {
+          const img = document.createElement('img');
+          img.className = 'thumb'; img.alt = ''; img.loading = 'lazy';
+          img.src = keep(URL.createObjectURL(f));
+          li.append(img);
+        }
         const nm = document.createElement('span');
         nm.className = 'nm'; nm.textContent = f.name;
         const sz = document.createElement('span');
@@ -263,15 +391,15 @@ const { tool } = Astro.props;
           up.type = 'button'; up.textContent = '↑'; up.title = 'Move up';
           up.disabled = i === 0;
           up.onclick = () => { [files[i - 1], files[i]] = [files[i], files[i - 1]]; renderQueue(); };
-          const down = document.createElement('button');
-          down.type = 'button'; down.textContent = '↓'; down.title = 'Move down';
-          down.disabled = i === files.length - 1;
-          down.onclick = () => { [files[i + 1], files[i]] = [files[i], files[i + 1]]; renderQueue(); };
-          li.append(up, down);
+          const dn = document.createElement('button');
+          dn.type = 'button'; dn.textContent = '↓'; dn.title = 'Move down';
+          dn.disabled = i === files.length - 1;
+          dn.onclick = () => { [files[i + 1], files[i]] = [files[i], files[i + 1]]; renderQueue(); };
+          li.append(up, dn);
         }
         const rm = document.createElement('button');
         rm.type = 'button'; rm.textContent = '✕'; rm.title = 'Remove';
-        rm.onclick = () => { files.splice(i, 1); renderQueue(); };
+        rm.onclick = () => { files.splice(i, 1); refresh(); };
         li.append(rm);
         queue.appendChild(li);
       });
@@ -281,10 +409,12 @@ const { tool } = Astro.props;
       errorBox.hidden = true;
     }
 
+    function refresh() { renderQueue(); if (wantsRange) setupRange(); }
+
     function accept(list) {
       const incoming = Array.from(list);
-      files = bench.querySelector('#picker').multiple ? files.concat(incoming) : incoming.slice(0, 1);
-      renderQueue();
+      files = picker.multiple ? files.concat(incoming) : incoming.slice(0, 1);
+      refresh();
     }
 
     drop.addEventListener('click', () => picker.click());
@@ -300,6 +430,174 @@ const { tool } = Astro.props;
       if (e.dataTransfer?.files?.length) accept(e.dataTransfer.files);
     });
 
+    // ─── listen and choose ───────────────────────────────────────────
+    let media = null, duration = 0, selA = 0, selB = 0, peaks = null, stopAt = null;
+
+    async function setupRange() {
+      const scrub = $('scrub');
+      if (!scrub) return;
+      const f = files.find(isMedia) || files[0];
+      if (!f) { scrub.hidden = true; return; }
+      scrub.hidden = false;
+      const state = $('scrubState'), stage = $('stage');
+      state.textContent = 'reading…';
+      stage.innerHTML = '';
+      peaks = null;
+
+      // a real player, so you can hear what you are cutting
+      media = document.createElement(/^video\//.test(f.type) ? 'video' : 'audio');
+      media.controls = true;
+      media.preload = 'metadata';
+      media.src = keep(URL.createObjectURL(f));
+      stage.appendChild(media);
+      stage.hidden = false;
+
+      media.addEventListener('loadedmetadata', () => {
+        duration = media.duration || 0;
+        selA = 0; selB = duration;
+        writeFields(); drawWave();
+        state.textContent = clock(duration) + ' long';
+      });
+      media.addEventListener('timeupdate', () => {
+        movePlayhead();
+        if (stopAt !== null && media.currentTime >= stopAt) { media.pause(); stopAt = null; }
+      });
+
+      // waveform, so you can see where the sound is
+      try {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new Ctx();
+        const buf = await ctx.decodeAudioData(await f.arrayBuffer());
+        ctx.close?.();
+        duration = buf.duration;
+        if (!selB) { selA = 0; selB = duration; writeFields(); }
+        const ch = buf.getChannelData(0);
+        const N = 1000, step = Math.max(1, Math.floor(ch.length / N));
+        const p = new Float32Array(N);
+        for (let i = 0; i < N; i++) {
+          let max = 0;
+          const base = i * step;
+          for (let j = 0; j < step; j += 8) {
+            const v = Math.abs(ch[base + j] || 0);
+            if (v > max) max = v;
+          }
+          p[i] = max;
+        }
+        peaks = p;
+        state.textContent = clock(duration) + ' long';
+        drawWave();
+      } catch {
+        state.textContent = 'no waveform for this file, use the player';
+        drawWave();
+      }
+    }
+
+    function drawWave() {
+      const c = $('wave');
+      if (!c) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = c.clientWidth || 600, h = 84;
+      c.width = w * dpr; c.height = h * dpr;
+      const g = c.getContext('2d');
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      g.clearRect(0, 0, w, h);
+
+      const css = getComputedStyle(document.documentElement);
+      const accent = css.getPropertyValue('--accent').trim() || '#5f9fd4';
+      const dim = css.getPropertyValue('--textDim').trim() || '#647684';
+
+      const x0 = duration ? (selA / duration) * w : 0;
+      const x1 = duration ? (selB / duration) * w : w;
+
+      // the chosen span
+      g.fillStyle = accent + '22';
+      g.fillRect(x0, 0, Math.max(1, x1 - x0), h);
+      g.strokeStyle = accent; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(x0, 0); g.lineTo(x0, h); g.moveTo(x1, 0); g.lineTo(x1, h); g.stroke();
+
+      const mid = h / 2;
+      if (peaks) {
+        for (let i = 0; i < peaks.length; i++) {
+          const x = (i / peaks.length) * w;
+          const amp = Math.max(1, peaks[i] * (h * 0.46));
+          g.strokeStyle = (x >= x0 && x <= x1) ? accent : dim;
+          g.globalAlpha = (x >= x0 && x <= x1) ? 0.95 : 0.4;
+          g.beginPath(); g.moveTo(x, mid - amp); g.lineTo(x, mid + amp); g.stroke();
+        }
+        g.globalAlpha = 1;
+      } else {
+        g.strokeStyle = dim; g.globalAlpha = .5;
+        g.beginPath(); g.moveTo(0, mid); g.lineTo(w, mid); g.stroke();
+        g.globalAlpha = 1;
+      }
+    }
+
+    function movePlayhead() {
+      const ph = $('playhead'), c = $('wave');
+      if (!ph || !c || !duration) return;
+      ph.hidden = false;
+      ph.style.left = ((media.currentTime / duration) * c.clientWidth) + 'px';
+    }
+
+    function writeFields() {
+      const a = bench.querySelector('[data-field="start"]');
+      const b = bench.querySelector('[data-field="end"]');
+      if (a) a.value = clock(selA);
+      if (b) b.value = clock(selB);
+      const rs = $('readStart'), re = $('readEnd'), rl = $('readLen');
+      if (rs) rs.textContent = clock(selA);
+      if (re) re.textContent = clock(selB);
+      if (rl) rl.textContent = duration ? `(${(selB - selA).toFixed(1)}s of ${duration.toFixed(1)}s)` : '';
+      drawWave();
+    }
+
+    if (wantsRange) {
+      const c = $('wave');
+      let dragging = false;
+      const at = (e) => {
+        const r = c.getBoundingClientRect();
+        const x = Math.min(Math.max(e.clientX - r.left, 0), r.width);
+        return (x / r.width) * duration;
+      };
+      c.addEventListener('pointerdown', (e) => {
+        if (!duration) return;
+        dragging = true; c.setPointerCapture(e.pointerId);
+        selA = selB = at(e); writeFields();
+      });
+      c.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const t = at(e);
+        selB = Math.max(t, selA); writeFields();
+      });
+      c.addEventListener('pointerup', (e) => {
+        if (!dragging) return;
+        dragging = false;
+        if (selB - selA < 0.15) { selA = 0; selB = duration; }   // a tap means all of it
+        writeFields();
+      });
+
+      $('markIn').onclick = () => { if (media) { selA = Math.min(media.currentTime, selB); writeFields(); } };
+      $('markOut').onclick = () => { if (media) { selB = Math.max(media.currentTime, selA); writeFields(); } };
+      $('selAll').onclick = () => { selA = 0; selB = duration; writeFields(); };
+      $('playSel').onclick = () => {
+        if (!media) return;
+        media.currentTime = selA; stopAt = selB; media.play();
+      };
+      // typing in the boxes should move the picture too
+      ['start', 'end'].forEach((id) => {
+        const el = bench.querySelector(`[data-field="${id}"]`);
+        el?.addEventListener('change', () => {
+          const parse = (v) => v.split(':').reduce((a, n) => a * 60 + parseFloat(n || 0), 0);
+          const t = parse(el.value);
+          if (!isFinite(t)) return;
+          if (id === 'start') selA = Math.min(t, selB); else selB = Math.max(t, selA);
+          writeFields();
+        });
+      });
+      window.addEventListener('resize', drawWave);
+    }
+
+    // ─── run ─────────────────────────────────────────────────────────
     function readOptions() {
       const o = {};
       const qsel = bench.querySelector('input[name="quality"]:checked');
@@ -313,27 +611,46 @@ const { tool } = Astro.props;
     function showResults(out) {
       made = out;
       spoils.innerHTML = '';
-      urls.splice(0).forEach(URL.revokeObjectURL);
       out.forEach((r) => {
-        const url = URL.createObjectURL(r.blob);
-        urls.push(url);
+        const url = keep(URL.createObjectURL(r.blob));
         const li = document.createElement('li');
+
+        if (/^image\//.test(r.blob.type)) {
+          const img = document.createElement('img');
+          img.className = 'out-thumb'; img.alt = ''; img.src = url;
+          li.append(img);
+        }
+
+        const text = document.createElement('span');
+        text.className = 'out-text';
         const nm = document.createElement('span');
         nm.className = 'nm'; nm.textContent = r.name;
         const sz = document.createElement('span');
         sz.className = 'sz';
         sz.textContent = r.was
-          ? `${size(r.was)} → ${size(r.blob.size)}  (−${Math.max(0, Math.round((1 - r.blob.size / r.was) * 100))}%)`
-          : r.note || size(r.blob.size);
+          ? `${size(r.was)} → ${size(r.blob.size)} · ${Math.max(0, Math.round((1 - r.blob.size / r.was) * 100))}% smaller`
+          : r.note ? `${r.note} · ${size(r.blob.size)}` : size(r.blob.size);
+        text.append(nm, sz);
+        li.append(text);
+
         const a = document.createElement('a');
-        a.href = url; a.download = r.name; a.textContent = 'Save';
-        li.append(nm, sz, a);
+        a.className = 'dl'; a.href = url; a.download = r.name;
+        a.textContent = 'Download';
+        li.append(a);
+
+        // hear the result before keeping it
+        if (/^audio\//.test(r.blob.type)) {
+          const player = document.createElement('audio');
+          player.className = 'out-play'; player.controls = true; player.src = url;
+          li.append(player);
+        }
         spoils.appendChild(li);
       });
+
       const withPreview = out.find((r) => r.preview);
       preview.hidden = !withPreview;
       if (withPreview) preview.textContent = withPreview.preview;
-      countEl.textContent = out.length === 1 ? '1 file ready' : `${out.length} files ready`;
+      countEl.textContent = out.length === 1 ? 'Ready' : `${out.length} files ready`;
       allBtn.hidden = out.length < 2;
       results.hidden = false;
       results.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -363,22 +680,34 @@ const { tool } = Astro.props;
     });
 
     allBtn.addEventListener('click', async () => {
-      const { zip } = await import('fflate');
-      const entries = {};
-      for (const r of made) {
-        entries[r.name] = [new Uint8Array(await r.blob.arrayBuffer()), { level: 6 }];
+      allBtn.disabled = true;
+      const label = allBtn.textContent;
+      allBtn.textContent = 'Bundling…';
+      try {
+        const { zip } = await import('fflate');
+        const entries = {};
+        for (const r of made) {
+          entries[r.name] = [new Uint8Array(await r.blob.arrayBuffer()), { level: 6 }];
+        }
+        const data = await new Promise((res, rej) =>
+          zip(entries, (e, out) => (e ? rej(e) : res(out))));
+        const url = URL.createObjectURL(new Blob([data], { type: 'application/zip' }));
+        const a = document.createElement('a');
+        a.href = url; a.download = 'workshop-output.zip'; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+      } finally {
+        allBtn.disabled = false;
+        allBtn.textContent = label;
       }
-      const data = await new Promise((res, rej) =>
-        zip(entries, (e, out) => (e ? rej(e) : res(out))));
-      const url = URL.createObjectURL(new Blob([data], { type: 'application/zip' }));
-      const a = document.createElement('a');
-      a.href = url; a.download = 'workshop-output.zip'; a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 4000);
     });
 
     resetBtn.addEventListener('click', () => {
       files = []; made = [];
-      urls.splice(0).forEach(URL.revokeObjectURL);
+      media?.pause?.();
+      media = null; peaks = null; duration = 0; selA = selB = 0;
+      dropUrls();
+      const scrub = $('scrub');
+      if (scrub) { scrub.hidden = true; $('stage').innerHTML = ''; }
       renderQueue();
       results.hidden = true;
       preview.hidden = true;
