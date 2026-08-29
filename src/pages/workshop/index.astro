@@ -7,7 +7,7 @@ const ready = TOOLS.filter((t) => !t.soon).length;
 ---
 <SectionLayout
   title="The Workshop | LASH"
-  description="A workshop of file tools that run entirely in your browser: PDFs, images, data and writing. Nothing is uploaded."
+  description="A workshop of file tools that run entirely in your browser: PDFs, images, data, writing and media. Nothing is uploaded."
   theme="workshop"
   current="workshop"
   eyebrow="Utilities"
@@ -28,62 +28,53 @@ const ready = TOOLS.filter((t) => !t.soon).length;
       and handed back in better order than they arrived.
     </p>
 
-    {BENCHES.map((b) => {
-      const tools = toolsIn(b.slug);
-      if (!tools.length) return null;
-      return (
-        <div class="band">
-          <div class="band-head reveal">
-            <span class="band-label">{b.kind}</span>
-            <h2 class="band-title">{b.name}</h2>
-            <p class="band-note">{b.blurb}</p>
-          </div>
-          <div class="grid grid-3">
-            {tools.map((t) => (
-              t.soon ? (
-                <div class="tile is-soon reveal">
-                  <span class="tool-mark"><ToolIcon slug={t.slug} /></span>
-                  <span class="tile-eyebrow">{t.sub}</span>
-                  <span class="tile-title">{t.name}</span>
-                  <p class="tile-blurb">{t.blurb}</p>
-                  <span class="tile-meta">Coming Soon</span>
-                </div>
-              ) : (
-                <a href={`/workshop/${t.slug}`} class="tile reveal">
-                  <span class="tool-mark"><ToolIcon slug={t.slug} /></span>
-                  <span class="tile-eyebrow">{t.sub}</span>
-                  <span class="tile-title">{t.name}</span>
-                  <p class="tile-blurb">{t.blurb}</p>
-                </a>
-              )
-            ))}
-          </div>
-        </div>
-      );
-    })}
+    <div class="benches">
+      {BENCHES.map((b) => {
+        const tools = toolsIn(b.slug);
+        if (!tools.length) return null;
+        return (
+          <details class="bench-card">
+            <summary>
+              <span class="bench-text">
+                <span class="bench-kind">{b.kind}</span>
+                <span class="bench-name">{b.name}</span>
+                <span class="bench-blurb">{b.blurb}</span>
+              </span>
+              <span class="bench-meta">
+                <span class="bench-count">{tools.length} tools</span>
+                <span class="chev" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="1.6"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </span>
+              </span>
+            </summary>
+
+            <ul class="tool-list">
+              {tools.map((t) => (
+                <li>
+                  <a href={`/workshop/${t.slug}`} class="tool-row">
+                    <span class="row-mark"><ToolIcon slug={t.slug} size={22} /></span>
+                    <span class="row-text">
+                      <span class="row-name">{t.name}</span>
+                      <span class="row-sub">{t.sub}</span>
+                      <span class="row-blurb">{t.blurb}</span>
+                    </span>
+                    <span class="row-go" aria-hidden="true">→</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </details>
+        );
+      })}
+    </div>
   </div>
 </SectionLayout>
 
 <style>
-  /* the glyph that lets a card be recognised before it is read */
-  .tool-mark {
-    display: grid;
-    place-items: center;
-    width: 2.9rem;
-    height: 2.9rem;
-    margin-bottom: .35rem;
-    border: 1px solid var(--line);
-    border-radius: 3px;
-    background: color-mix(in srgb, var(--accent) 7%, transparent);
-    color: var(--accent);
-    transition: color .35s ease, border-color .35s ease, background-color .35s ease;
-  }
-  a.tile:hover .tool-mark {
-    color: var(--accentLight);
-    border-color: color-mix(in srgb, var(--accent) 55%, transparent);
-    background: color-mix(in srgb, var(--accent) 14%, transparent);
-  }
-
   .creed {
     border: 1px solid var(--line);
     border-left: 2px solid var(--accent);
@@ -94,6 +85,14 @@ const ready = TOOLS.filter((t) => !t.soon).length;
     line-height: 1.7;
     color: var(--textDim);
   }
+  .creed strong {
+    display: block;
+    font-family: 'Cinzel', Georgia, serif;
+    font-weight: 400;
+    color: var(--textBright);
+    margin-bottom: .35rem;
+    letter-spacing: .02em;
+  }
   .epigraph {
     max-width: 34rem;
     margin: 1.6rem auto 0;
@@ -103,12 +102,126 @@ const ready = TOOLS.filter((t) => !t.soon).length;
     line-height: 1.8;
     color: var(--textDim);
   }
-  .creed strong {
-    display: block;
+
+  /* ─── the benches, closed until asked ─── */
+  .benches {
+    margin-top: 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: .9rem;
+    max-width: 52rem;
+    margin-inline: auto;
+  }
+
+  .bench-card {
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--card);
+    transition: border-color .35s ease, background-color .35s ease;
+  }
+  .bench-card[open] {
+    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+    background: color-mix(in srgb, var(--accent) 4%, var(--card));
+  }
+  .bench-card:hover { border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+
+  summary {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    padding: 1.35rem 1.5rem;
+    cursor: pointer;
+    list-style: none;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary:focus-visible { outline: 1px solid var(--accent); outline-offset: -3px; }
+
+  .bench-text { display: flex; flex-direction: column; gap: .25rem; flex: 1; min-width: 0; }
+  .bench-kind {
+    font-family: 'Cormorant SC', Georgia, serif;
+    font-size: .62rem; letter-spacing: .26em; text-transform: uppercase;
+    color: var(--accent); opacity: .9;
+  }
+  .bench-name {
     font-family: 'Cinzel', Georgia, serif;
-    font-weight: 400;
-    color: var(--textBright);
-    margin-bottom: .35rem;
-    letter-spacing: .02em;
+    font-size: 1.18rem; color: var(--textBright); letter-spacing: .02em;
+  }
+  .bench-blurb { font-size: .93rem; color: var(--textDim); line-height: 1.6; }
+
+  .bench-meta { display: flex; align-items: center; gap: .9rem; flex-shrink: 0; }
+  .bench-count {
+    font-family: 'Cormorant SC', Georgia, serif;
+    font-size: .6rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--textDim); white-space: nowrap;
+  }
+  .chev {
+    display: grid; place-items: center;
+    width: 1.9rem; height: 1.9rem;
+    border: 1px solid var(--line); border-radius: 50%;
+    color: var(--accent);
+    transition: transform .35s ease, border-color .35s ease;
+  }
+  .bench-card[open] .chev { transform: rotate(180deg); border-color: var(--accent); }
+
+  /* ─── the tools inside ─── */
+  /* Setting display here unconditionally would override the browser's own
+     rule that hides a closed <details>, leaving every list permanently
+     open. It is only given a display once the bench is actually open. */
+  .tool-list {
+    display: none;
+    list-style: none;
+    padding: 0 .7rem .8rem;
+    gap: .2rem;
+    border-top: 1px solid var(--line);
+    margin-top: -1px;
+  }
+  .bench-card[open] .tool-list {
+    display: flex;
+    flex-direction: column;
+  }
+  .tool-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 1rem;
+    padding: .85rem .8rem;
+    border-radius: 2px;
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    transition: background-color .25s ease, border-color .25s ease;
+  }
+  .tool-row:hover, .tool-row:focus-visible {
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    border-left-color: var(--accent);
+    outline: none;
+  }
+  .row-mark {
+    display: grid; place-items: center;
+    width: 2.4rem; height: 2.4rem;
+    border: 1px solid var(--line); border-radius: 3px;
+    color: var(--accent);
+    transition: color .3s ease, border-color .3s ease;
+  }
+  .tool-row:hover .row-mark { color: var(--accentLight); border-color: var(--accent); }
+  .row-text { display: flex; flex-direction: column; gap: .1rem; min-width: 0; }
+  .row-name {
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 1rem; color: var(--textBright);
+  }
+  .row-sub {
+    font-family: 'Cormorant SC', Georgia, serif;
+    font-size: .6rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--accent); opacity: .85;
+  }
+  .row-blurb { font-size: .88rem; color: var(--textDim); line-height: 1.55; margin-top: .2rem; }
+  .row-go { color: var(--accent); opacity: 0; transform: translateX(-4px); transition: opacity .25s ease, transform .25s ease; }
+  .tool-row:hover .row-go, .tool-row:focus-visible .row-go { opacity: 1; transform: translateX(0); }
+
+  @media (max-width: 640px) {
+    summary { padding: 1.1rem 1.1rem; gap: .8rem; }
+    .bench-blurb { display: none; }
+    .bench-count { display: none; }
+    .row-blurb { display: none; }
+    .tool-row { gap: .8rem; padding: .75rem .6rem; }
   }
 </style>
