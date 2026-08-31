@@ -95,7 +95,9 @@ export const QUESTIONS = [
     [
       { t: 'If you gave your word to arrive, take the dangerous crossing rather than casually break it.', p: 'O', s: 'F' },
       { t: 'Base the decision around the weakest members, even if everyone is delayed.', p: 'H', s: 'W' },
-      { t: 'Assess materials and organize a repair or controlled crossing.', p: 'F', s: 'W' },
+      // "Assess" is one of the four Crucible names, so it is reworded here.
+      // The Callings it scores are untouched.
+      { t: 'Examine the materials and organize a repair or controlled crossing.', p: 'F', s: 'W' },
       { t: 'Find locals or rivals and negotiate enough help to cross.', p: 'V', s: 'H' },
       { t: 'Scout another route before gambling the whole party.', p: 'W', s: 'F' },
     ]),
