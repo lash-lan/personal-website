@@ -330,6 +330,9 @@ const TONES = [
 
     .science{font-size:.9rem;color:var(--dim);border:1px solid var(--edge);
       border-left:2px solid var(--oath);padding:1rem 1.1rem;background:rgba(0,0,0,.3)}
+    .rec-limits{max-width:40rem;margin:2.4rem auto 0;text-align:center;font-style:italic;
+      font-size:.88rem;color:var(--dim);padding-top:1.4rem;
+      border-top:1px solid rgba(200,155,60,.15)}
     .rec-actions{display:flex;flex-wrap:wrap;gap:.7rem;margin:2.4rem 0 1.4rem}
 
     @media (max-width:560px){
@@ -347,6 +350,113 @@ const TONES = [
       .ring-runes{animation:none}
       .gateway{transform:none !important}
     }
+
+    /* ─── the Mirror ─── */
+    .hud-stage{font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.2em;
+      text-transform:uppercase;color:var(--oath);margin-left:auto}
+    .mirror-item{padding:1.1rem 0 1.3rem;border-bottom:1px solid rgba(200,155,60,.12)}
+    .mirror-item:last-child{border-bottom:none}
+    .mirror-q{font-size:1.02rem;color:var(--text);margin-bottom:.85rem}
+    .scale{display:grid;grid-template-columns:repeat(auto-fit,minmax(8.5rem,1fr));gap:.45rem}
+    .step-btn{display:flex;align-items:center;gap:.55rem;padding:.7rem .8rem;min-height:48px;
+      background:rgba(12,10,8,.72);border:1px solid var(--edge);border-radius:14px;
+      color:var(--dim);font:inherit;font-size:.82rem;text-align:left;cursor:pointer;
+      transition:border-color .2s,background-color .2s,color .2s,transform .12s}
+    .step-btn i{flex-shrink:0;width:.85rem;height:.85rem;border-radius:50%;
+      border:1px solid rgba(200,155,60,.45);background:rgba(0,0,0,.4);
+      transition:background-color .2s,box-shadow .2s}
+    .step-btn:hover{border-color:rgba(200,155,60,.5);color:var(--text);transform:translateY(-1px)}
+    .step-btn:active{transform:translateY(0) scale(.985)}
+    .step-btn:focus-visible{outline:2px solid var(--oath);outline-offset:3px}
+    .step-btn[aria-pressed="true"]{border-color:var(--oath);color:var(--bright);
+      background:rgba(52,39,17,.92)}
+    .step-btn[aria-pressed="true"] i{background:var(--oath);
+      box-shadow:0 0 14px rgba(200,155,60,.6)}
+
+    .choice.trade{align-items:flex-start;padding:1.15rem 1.2rem;font-size:1.04rem}
+    .nav-note{font-size:.86rem;color:var(--dim);font-style:italic}
+
+    /* ─── the record ─── */
+    .record{max-width:46rem;margin:0 auto;padding:5.5rem 1.2rem 6rem}
+    .rec-head{text-align:center;margin-bottom:2.6rem}
+    .rec-tier{font-family:'Cormorant SC',serif;font-size:.66rem;letter-spacing:.32em;
+      text-transform:uppercase;color:var(--oath);display:block;margin-bottom:.5rem}
+    .rec-name{font-family:'Cinzel',serif;font-weight:700;color:var(--bright);
+      font-size:clamp(1.9rem,7vw,3.2rem);line-height:1.1;letter-spacing:.03em}
+    .rec-blend{font-family:'Cormorant SC',serif;font-size:.72rem;letter-spacing:.26em;
+      text-transform:uppercase;color:var(--dim);margin-bottom:1rem}
+    .rec-tag{font-style:italic;font-size:1.14rem;color:var(--text);margin-bottom:1.1rem}
+    .rec-clarity{font-size:.92rem;color:var(--dim);margin-top:1rem}
+    .rec-date{font-family:'Cormorant SC',serif;font-size:.62rem;letter-spacing:.24em;
+      text-transform:uppercase;color:var(--dim);margin-top:1rem}
+
+    .rec-block{margin:0 0 2.8rem}
+    .rec-block h2{font-family:'Cinzel',serif;font-weight:600;color:var(--bright);
+      font-size:clamp(1.1rem,3.4vw,1.5rem);margin-bottom:1rem;padding-bottom:.55rem;
+      border-bottom:1px solid rgba(200,155,60,.22)}
+    .rec-block h3{font-family:'Cormorant SC',serif;font-size:.7rem;letter-spacing:.24em;
+      text-transform:uppercase;color:var(--oath);margin:1.5rem 0 .6rem}
+    .rec-block p{margin-bottom:1rem;font-size:1.02rem}
+    .rec-block p:last-child{margin-bottom:0}
+    .rec-block strong{color:var(--bright);font-weight:600}
+    .prompts{list-style:none;margin:.4rem 0 1rem}
+    .prompts li{position:relative;padding:.7rem 0 .7rem 1.5rem;font-size:1.02rem;
+      border-bottom:1px solid rgba(200,155,60,.1)}
+    .prompts li::before{content:'';position:absolute;left:.15rem;top:1.25rem;
+      width:.4rem;height:.4rem;border-radius:50%;background:var(--oath)}
+    .prompts li:last-child{border-bottom:none}
+
+    .bars{margin:.2rem 0 1.4rem}
+    .bar-row{display:flex;align-items:center;gap:.8rem;margin-bottom:.5rem}
+    .bar-row.off{opacity:.55}
+    .bar-name{flex:0 0 6.5rem;font-family:'Cinzel',serif;font-size:.82rem;color:var(--bright)}
+    .bar-track{flex:1;height:9px;border-radius:99px;background:rgba(255,255,255,.07);
+      overflow:hidden;min-width:3rem}
+    .bar-fill{display:block;height:100%;border-radius:99px}
+    .bar-num{flex:0 0 auto;font-size:.74rem;color:var(--dim);white-space:nowrap}
+    .bar-note{font-size:.9rem;color:var(--dim);margin:0 0 1.1rem 0;padding-left:.1rem}
+
+    .facet-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(13rem,1fr));
+      gap:.7rem;margin-bottom:1.4rem}
+    .facet-card{padding:.75rem .85rem;border:1px solid var(--edge);border-radius:14px;
+      background:rgba(12,10,8,.6)}
+    .facet-name{display:block;font-family:'Cinzel',serif;font-size:.78rem;
+      color:var(--bright);margin-bottom:.45rem}
+    .facet-card .bar-track{display:block;width:100%;margin-bottom:.4rem}
+    .facet-band{font-size:.72rem;color:var(--dim);letter-spacing:.04em}
+
+    .gap-list{margin-bottom:1.3rem}
+    .gap-row{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
+      padding:.55rem 0;border-bottom:1px solid rgba(200,155,60,.1)}
+    .gap-name{flex:1 1 8rem;font-family:'Cinzel',serif;font-size:.8rem;color:var(--bright)}
+    .gap-num{font-size:.75rem;color:var(--dim);white-space:nowrap}
+    .gap-tag{font-family:'Cormorant SC',serif;font-size:.62rem;letter-spacing:.16em;
+      text-transform:uppercase;padding:.24rem .6rem;border-radius:99px;
+      border:1px solid var(--edge);color:var(--dim);white-space:nowrap}
+    .tag-HiddenStrength{color:#7fd6a0;border-color:rgba(127,214,160,.4)}
+    .tag-Idealized{color:#d9a55f;border-color:rgba(217,165,95,.4)}
+
+    .rec-limits{max-width:40rem;margin:2.4rem auto 0;text-align:center;font-style:italic;
+      font-size:.88rem;color:var(--dim);padding-top:1.4rem;
+      border-top:1px solid rgba(200,155,60,.15)}
+    .rec-actions{display:flex;gap:.8rem;flex-wrap:wrap;justify-content:center;
+      margin:2.6rem 0 1.6rem}
+    .tech{border:1px solid var(--edge);border-radius:16px;background:rgba(0,0,0,.3);
+      padding:.2rem .2rem}
+    .tech summary{cursor:pointer;padding:.9rem 1.1rem;font-family:'Cormorant SC',serif;
+      font-size:.66rem;letter-spacing:.24em;text-transform:uppercase;color:var(--dim)}
+    .tech summary:hover{color:var(--bright)}
+    .tech-body{padding:0 1.1rem 1.1rem}
+    .tech-body p{font-size:.82rem;color:var(--dim);margin-bottom:.7rem;line-height:1.6}
+    .tech-body .science{font-style:italic;padding-top:.7rem;
+      border-top:1px solid rgba(200,155,60,.15)}
+
+    @media (max-width:420px){
+      .bar-name{flex:0 0 5rem;font-size:.74rem}
+      .bar-num{font-size:.68rem}
+      .record{padding-left:.9rem;padding-right:.9rem}
+    }
+
   </style>
 </head>
 <body>
@@ -419,94 +529,62 @@ const TONES = [
     </div>
   </section>
 
-  <!-- ── the trials ── -->
+  <!-- ── the assessment: the Mirror, the Trial, the Scales ── -->
   <section class="screen" id="screenTrial">
     <div class="hud">
       <div class="hud-in">
-        <span class="hud-count" id="hudCount">Trial 01 / 10</span>
-        <span class="hud-sigils" aria-hidden="true">
-          {ORDER.map((k) => <i style={`background:${CALLINGS[k].colour}`}></i>)}
-        </span>
+        <span class="hud-count" id="hudCount">0 answered</span>
+        <span class="hud-stage" id="hudStage">The Mirror</span>
       </div>
       <div class="track"><i id="trackFill"></i></div>
     </div>
 
     <div class="trial">
-      <div class="scene-art" id="sceneArt" role="img" aria-label="" >
-        <span class="scene-cap" id="sceneCap"></span>
+      <!-- the Mirror -->
+      <div id="stageMirror" hidden>
+        <span class="trial-no">The Mirror</span>
+        <h2>How you see yourself</h2>
+        <p class="prompt">Answer quickly and honestly. There are no right answers here, and nothing on this page decides your archetype. It is kept separate so the record can compare what you say with what you later choose.</p>
+        <div id="mirrorList"></div>
       </div>
-      <span class="trial-no" id="trialNo"></span>
-      <h2 id="trialTitle"></h2>
-      <p class="prompt" id="trialPrompt"></p>
 
-      <div class="choices" id="choices" role="group" aria-label="Choose your course"></div>
+      <!-- the Trial -->
+      <div id="stageTrial" hidden>
+        <div class="scene-art" id="sceneArt" role="img" aria-label="">
+          <span class="scene-cap" id="sceneCap"></span>
+        </div>
+        <span class="trial-no" id="trialNo"></span>
+        <h2 id="trialTitle"></h2>
+        <p class="prompt" id="trialPrompt"></p>
+        <div class="choices" id="choices" role="group" aria-label="Choose your course"></div>
+        <div class="crucible locked" id="crucible">
+          <span class="crucible-q" id="crucibleQ"></span>
+          <div class="cru-grid" id="cruGrid" role="group" aria-label="Your first response"></div>
+        </div>
+      </div>
 
-      <div class="crucible locked" id="crucible">
-        <span class="crucible-q">{CRUCIBLE_PROMPT}</span>
-        <div class="cru-grid" id="cruGrid" role="group" aria-label="Your first response to danger"></div>
+      <!-- the Scales -->
+      <div id="stageTrade" hidden>
+        <span class="trial-no" id="tradeNo"></span>
+        <h2>The Scales</h2>
+        <p class="prompt" id="tradePrompt"></p>
+        <div class="choices" id="tradeChoices" role="group" aria-label="Keep one"></div>
       </div>
 
       <div class="nav">
-        <button class="btn" id="btnBack">Back</button>
-        <button class="btn primary" id="btnNext" disabled>Next</button>
-        <span class="nav-note" id="navNote">Choose a course, then answer the Crucible.</span>
+        <button class="btn" id="btnBack" type="button">Back</button>
+        <button class="btn primary" id="btnNext" type="button" disabled>Next</button>
+        <span class="nav-note" id="navNote"></span>
       </div>
     </div>
   </section>
 
   <!-- ── the record ── -->
   <section class="screen" id="screenResult">
-    <div class="result">
-      <div class="rec-head">
-        <span class="rec-tier" id="recTier"></span>
-        <h1 class="rec-name" id="recName"></h1>
-        <div class="rec-art" id="recArt" role="img" aria-label="">
-          <span class="glyphs" id="recGlyphs"></span>
-        </div>
-        <p class="rec-tag" id="recTag"></p>
-      </div>
-
-      <section class="block">
-        <h3>Your Fivefold Pattern</h3>
-        <div class="bars" id="recBars"></div>
-        <p class="legend">Resonance reads how strongly a Calling answered within this Trial. It is not a percentage of your personality.</p>
-      </section>
-
-      <section class="block"><h3>Why This Archetype Found You</h3><p id="recPortrait"></p></section>
-      <section class="block"><h3>How You Decide</h3><ul class="decide" id="recDecide"></ul></section>
-      <section class="block"><h3>Your Strength</h3><p id="recStrength"></p></section>
-      <section class="block"><h3>Your Shadow</h3><p id="recShadow"></p></section>
-
-      <section class="block">
-        <h3>The Crucible</h3>
-        <div class="bars" id="cruBars"></div>
-        <p id="cruText" style="margin-top:1rem"></p>
-        <p class="legend" id="cruCaveat"></p>
-      </section>
-
-      <section class="block" id="borderBlock" hidden>
-        <h3>Borderland</h3>
-        <p id="borderText"></p>
-      </section>
-
-      <div class="rec-actions">
-        <button class="btn primary" id="btnDownload">Download Your Trial Record</button>
-        <button class="btn" id="btnRetake">Retake the Trial</button>
-      </div>
-
-      <section class="block">
-        <details class="tech">
-          <summary>Technical details</summary>
-          <div class="tech-body" id="techBody"></div>
-        </details>
-      </section>
-
-      <section class="block">
-        <h3>Science and Limitations</h3>
-        <p class="science">{SCIENCE_COPY}</p>
-      </section>
-    </div>
+    <div class="record" id="record"></div>
   </section>
+
+
 </main>
 
 <script define:vars={{ TONES }}>
@@ -514,20 +592,44 @@ const TONES = [
 </script>
 
 <script>
-  import { QUESTIONS, CALLINGS, ORDER, CRUCIBLE, BORDERLINE_MESSAGE } from '../../data/trial.js';
-  import { evaluate } from '../../lib/trial-engine.js';
+  import { CALLINGS, ORDER, CRUCIBLE, CRUCIBLE_PROMPT } from '../../data/trial.js';
+  import { MIRROR, MIRROR_SCALE, DILEMMAS, TRADEOFFS } from '../../data/trial-items.js';
+  import { FACETS, FACET_ORDER } from '../../data/trial-facets.js';
+  import { evaluateDeep } from '../../lib/trial-engine-deep.js';
+  import { buildReport } from '../../lib/trial-report-build.js';
 
   const TONES = window.__TRIAL_TONES;
-  const KEY = 'lash.trial.v1';
   const $ = (id) => document.getElementById(id);
+  const KEY = 'lash.trial.v2';
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // ── state, kept on this device only ──
-  let state = { at: 0, answers: Array(10).fill(null), crucible: Array(10).fill(null), done: false };
+  // ── the shape of the walk ──
+  const PER_PAGE = 5;
+  const MIRROR_PAGES = Math.ceil(MIRROR.length / PER_PAGE);
+  const CRUCIBLE_AT = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18];   // ten of the twenty four
+  const cruSlot = (i) => CRUCIBLE_AT.indexOf(i);
+
+  const STEPS = [
+    ...Array.from({ length: MIRROR_PAGES }, (_, p) => ({ kind: 'mirror', p })),
+    ...DILEMMAS.map((_, i) => ({ kind: 'trial', i })),
+    ...TRADEOFFS.map((_, i) => ({ kind: 'trade', i })),
+  ];
+  const DECISIONS = MIRROR.length + DILEMMAS.length + TRADEOFFS.length;
+
+  // ── state, on this device only ──
+  const fresh = () => ({
+    step: 0,
+    mirror: Array(MIRROR.length).fill(null),
+    trial: Array(DILEMMAS.length).fill(null),
+    tradeoff: Array(TRADEOFFS.length).fill(null),
+    crucible: Array(CRUCIBLE_AT.length).fill(null),
+    done: false,
+  });
+  let state = fresh();
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
-    if (saved && Array.isArray(saved.answers) && saved.answers.length === 10) state = saved;
-  } catch { /* start fresh */ }
+    if (saved && Array.isArray(saved.trial) && saved.trial.length === DILEMMAS.length) state = saved;
+  } catch { /* start clean */ }
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
 
   const show = (id) => {
@@ -535,9 +637,8 @@ const TONES = [
       $(s).classList.toggle('on', s === id));
     window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
   };
-
   const tone = (i) => {
-    const [a, b] = TONES[i] || TONES[0];
+    const [a, b] = TONES[i % TONES.length] || TONES[0];
     document.documentElement.style.setProperty('--scene-a', a);
     document.documentElement.style.setProperty('--scene-b', b);
   };
@@ -547,14 +648,11 @@ const TONES = [
   const sigilName = $('sigilName');
   const REST = 'Touch the five marks, or open the gate';
   const lit = new Set();
-
   const glow = (s) => {
     s.classList.add('lit');
     s.querySelector('i').style.boxShadow = `0 0 20px ${s.style.color}, 0 0 42px ${s.style.color}`;
   };
 
-  // The five marks ring the gate. Naming them here is safe: the Callings are
-  // explained openly, and nothing on this page maps a mark to a choice.
   (function placeSigils() {
     const ring = $('runeRing');
     ORDER.forEach((k, i) => {
@@ -568,15 +666,12 @@ const TONES = [
       const angle = (-90 + i * 72) * (Math.PI / 180);
       b.style.left = `calc(50% + ${Math.cos(angle) * 46}% - 18px)`;
       b.style.top = `calc(50% + ${Math.sin(angle) * 46}% - 18px)`;
-
       const say = (on) => {
         sigilName.textContent = on ? `${cal.name} · ${cal.meaning}` : REST;
         sigilName.classList.toggle('on', on);
       };
       const touch = () => {
-        glow(b);
-        lit.add(k);
-        say(true);
+        glow(b); lit.add(k); say(true);
         if (lit.size === 5) {
           gateway.classList.add('all-lit');
           sigilName.textContent = 'All five answer. The way is open.';
@@ -593,14 +688,12 @@ const TONES = [
     });
   })();
 
-  // the gate leans toward the pointer, so it reads as a thing in a place
   if (!reduced) {
     gateway.addEventListener('pointermove', (e) => {
       const r = gateway.getBoundingClientRect();
       const dx = (e.clientX - (r.left + r.width / 2)) / r.width;
       const dy = (e.clientY - (r.top + r.height / 2)) / r.height;
-      gateway.style.transform =
-        `perspective(900px) rotateY(${dx * 7}deg) rotateX(${-dy * 7}deg)`;
+      gateway.style.transform = `perspective(900px) rotateY(${dx * 7}deg) rotateX(${-dy * 7}deg)`;
     });
     gateway.addEventListener('pointerleave', () => { gateway.style.transform = ''; });
   }
@@ -629,15 +722,64 @@ const TONES = [
     });
   });
 
-  // ── a Trial ──
-  function render() {
-    const i = state.at;
-    const q = QUESTIONS[i];
-    tone(i);
+  // ── counting what has been answered ──
+  const answeredCount = () =>
+    state.mirror.filter((x) => x !== null).length +
+    state.trial.filter((x) => x !== null).length +
+    state.tradeoff.filter((x) => x !== null).length;
 
-    $('hudCount').textContent = `Trial ${String(i + 1).padStart(2, '0')} / 10`;
-    $('trackFill').style.width = `${(i / 10) * 100}%`;
-    $('trialNo').textContent = `Trial ${String(i + 1).padStart(2, '0')}`;
+  // ── drawing a step ──
+  function render() {
+    const step = STEPS[state.step];
+    if (!step) return;
+    tone(state.step);
+    ['stageMirror', 'stageTrial', 'stageTrade'].forEach((s) => { $(s).hidden = true; });
+
+    if (step.kind === 'mirror') drawMirror(step.p);
+    if (step.kind === 'trial') drawTrial(step.i);
+    if (step.kind === 'trade') drawTrade(step.i);
+    paint();
+  }
+
+  function drawMirror(page) {
+    $('stageMirror').hidden = false;
+    $('hudStage').textContent = 'The Mirror';
+    const from = page * PER_PAGE;
+    const items = MIRROR.slice(from, from + PER_PAGE);
+    const box = $('mirrorList');
+    box.innerHTML = '';
+    items.forEach((item, n) => {
+      const idx = from + n;
+      const wrap = document.createElement('div');
+      wrap.className = 'mirror-item';
+      const q = document.createElement('p');
+      q.className = 'mirror-q';
+      q.textContent = item.t;
+      wrap.appendChild(q);
+      const row = document.createElement('div');
+      row.className = 'scale';
+      row.setAttribute('role', 'group');
+      row.setAttribute('aria-label', item.t);
+      MIRROR_SCALE.forEach((s, si) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'step-btn';
+        b.setAttribute('aria-pressed', String(state.mirror[idx] === si));
+        b.innerHTML = '<i></i><span></span>';
+        b.querySelector('span').textContent = s.t;
+        b.addEventListener('click', () => { state.mirror[idx] = si; save(); paint(); });
+        row.appendChild(b);
+      });
+      wrap.appendChild(row);
+      box.appendChild(wrap);
+    });
+  }
+
+  function drawTrial(i) {
+    $('stageTrial').hidden = false;
+    $('hudStage').textContent = 'The Trial';
+    const q = DILEMMAS[i];
+    $('trialNo').textContent = `Scene ${String(i + 1).padStart(2, '0')} of ${DILEMMAS.length}`;
     $('trialTitle').textContent = q.title;
     $('trialPrompt').textContent = q.prompt;
     $('sceneCap').textContent = q.scene;
@@ -649,190 +791,328 @@ const TONES = [
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'choice';
-      b.setAttribute('aria-pressed', String(state.answers[i] === n));
-      b.innerHTML = `<b>${'ABCDE'[n]}</b><span></span>`;
+      b.setAttribute('aria-pressed', String(state.trial[i] === n));
+      b.innerHTML = '<b></b><span></span>';
+      b.querySelector('b').textContent = 'ABCDE'[n];
       b.querySelector('span').textContent = c.t;
-      b.addEventListener('click', () => {
-        state.answers[i] = n;            // replaces, never accumulates
-        save(); paint();
-      });
+      b.addEventListener('click', () => { state.trial[i] = n; save(); paint(); });
       box.appendChild(b);
     });
 
-    const grid = $('cruGrid');
-    grid.innerHTML = '';
-    // Lettered, never named. Showing "Fight" or "Freeze" here would tell the
-    // reader which box they are ticking, and they would answer accordingly.
-    // The names are revealed afterwards, on the record.
-    CRUCIBLE.forEach((c, n) => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'cru';
-      b.setAttribute('aria-pressed', String(state.crucible[i] === c.id));
-      b.innerHTML = `<b></b><span></span>`;
-      b.querySelector('b').textContent = 'ABCD'[n];
-      b.querySelector('span').textContent = c.t;
-      b.addEventListener('click', () => { state.crucible[i] = c.id; save(); paint(); });
-      grid.appendChild(b);
-    });
-
-    paint();
+    const slot = cruSlot(i);
+    $('crucible').hidden = slot === -1;
+    if (slot !== -1) {
+      $('crucibleQ').textContent = CRUCIBLE_PROMPT;
+      const grid = $('cruGrid');
+      grid.innerHTML = '';
+      // Lettered, never named. Showing Fight or Freeze would tell the reader
+      // which box they are ticking. The names appear afterwards, on the record.
+      CRUCIBLE.forEach((c, n) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'cru';
+        b.setAttribute('aria-pressed', String(state.crucible[slot] === c.id));
+        b.innerHTML = '<b></b><span></span>';
+        b.querySelector('b').textContent = 'ABCD'[n];
+        b.querySelector('span').textContent = c.t;
+        b.addEventListener('click', () => { state.crucible[slot] = c.id; save(); paint(); });
+        grid.appendChild(b);
+      });
+    }
   }
 
+  function drawTrade(i) {
+    $('stageTrade').hidden = false;
+    $('hudStage').textContent = 'The Scales';
+    const q = TRADEOFFS[i];
+    $('tradeNo').textContent = `Scale ${i + 1} of ${TRADEOFFS.length}`;
+    $('tradePrompt').textContent = q.prompt;
+    const box = $('tradeChoices');
+    box.innerHTML = '';
+    q.choices.forEach((c, n) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'choice trade';
+      b.setAttribute('aria-pressed', String(state.tradeoff[i] === n));
+      b.innerHTML = '<b></b><span></span>';
+      b.querySelector('b').textContent = 'AB'[n];
+      b.querySelector('span').textContent = c.t;
+      b.addEventListener('click', () => { state.tradeoff[i] = n; save(); paint(); });
+      box.appendChild(b);
+    });
+  }
+
+  // ── the state of the controls, with no scores anywhere ──
   function paint() {
-    const i = state.at;
-    const picked = state.answers[i] !== null;
-    const cru = state.crucible[i] !== null;
-    [...$('choices').children].forEach((b, n) =>
-      b.setAttribute('aria-pressed', String(state.answers[i] === n)));
-    [...$('cruGrid').children].forEach((b, n) =>
-      b.setAttribute('aria-pressed', String(state.crucible[i] === CRUCIBLE[n].id)));
-    $('crucible').classList.toggle('locked', !picked);
-    $('btnBack').disabled = i === 0;
-    $('btnNext').disabled = !(picked && cru);
-    $('btnNext').textContent = i === 9 ? 'Receive Your Judgment' : 'Next';
-    $('navNote').textContent = !picked ? 'Choose a course, then answer the Crucible.'
-      : !cru ? 'Now the Crucible.' : '';
+    const step = STEPS[state.step];
+    let ready = false, note = '';
+
+    if (step.kind === 'mirror') {
+      const from = step.p * PER_PAGE;
+      const idxs = MIRROR.slice(from, from + PER_PAGE).map((_, n) => from + n);
+      idxs.forEach((idx, n) => {
+        const row = $('mirrorList').children[n];
+        if (!row) return;
+        [...row.querySelector('.scale').children].forEach((b, si) =>
+          b.setAttribute('aria-pressed', String(state.mirror[idx] === si)));
+      });
+      const left = idxs.filter((idx) => state.mirror[idx] === null).length;
+      ready = left === 0;
+      note = ready ? '' : `${left} of these still to answer.`;
+    }
+
+    if (step.kind === 'trial') {
+      const i = step.i;
+      [...$('choices').children].forEach((b, n) =>
+        b.setAttribute('aria-pressed', String(state.trial[i] === n)));
+      const slot = cruSlot(i);
+      const picked = state.trial[i] !== null;
+      $('crucible').classList.toggle('locked', !picked);
+      if (slot !== -1) {
+        [...$('cruGrid').children].forEach((b, n) =>
+          b.setAttribute('aria-pressed', String(state.crucible[slot] === CRUCIBLE[n].id)));
+      }
+      const cruDone = slot === -1 || state.crucible[slot] !== null;
+      ready = picked && cruDone;
+      note = !picked ? 'Choose your course.'
+        : !cruDone ? 'One more, quickly, without thinking about it.' : '';
+    }
+
+    if (step.kind === 'trade') {
+      [...$('tradeChoices').children].forEach((b, n) =>
+        b.setAttribute('aria-pressed', String(state.tradeoff[step.i] === n)));
+      ready = state.tradeoff[step.i] !== null;
+      note = ready ? '' : 'One or the other. You cannot keep both.';
+    }
+
+    const done = answeredCount();
+    $('hudCount').textContent = `${done} of ${DECISIONS} answered`;
+    $('trackFill').style.width = `${(done / DECISIONS) * 100}%`;
+    $('btnBack').disabled = state.step === 0;
+    $('btnNext').disabled = !ready;
+    $('btnNext').textContent = state.step === STEPS.length - 1 ? 'Receive Your Record' : 'Next';
+    $('navNote').textContent = note;
+    save();
   }
 
   $('btnBack').addEventListener('click', () => {
-    if (state.at > 0) { state.at--; save(); render(); }
+    if (state.step === 0) return;
+    state.step--; save(); render();          // replaces, never duplicates
   });
   $('btnNext').addEventListener('click', () => {
-    if (state.at < 9) { state.at++; save(); render(); }
-    else { state.done = true; save(); finish(); }
+    if (state.step === STEPS.length - 1) { finish(); return; }
+    state.step++; save(); render();
   });
 
   // ── the record ──
-  let last = null;
+  let lastDoc = null, lastResult = null;
+
   function finish() {
-    const r = evaluate(state.answers, state.crucible);
-    last = r;
-    const a = r.archetype;
-
-    $('recTier').textContent = r.tier;
-    $('recName').textContent = a.name;
-    $('recTag').textContent = a.tagline;
-    $('recArt').setAttribute('aria-label',
-      `${a.name}. Sigils of ${r.active.map((k) => CALLINGS[k].name).join(', ')}.`);
-
-    const glyphs = $('recGlyphs');
-    glyphs.innerHTML = '';
-    r.active.forEach((k) => {
-      const g = document.createElement('i');
-      g.style.background = CALLINGS[k].colour;
-      g.style.color = CALLINGS[k].colour;
-      glyphs.appendChild(g);
-    });
-
-    const maxRaw = Math.max(...ORDER.map((k) => r.raw[k]), 1);
-    $('recBars').innerHTML = '';
-    ORDER.forEach((k) => {
-      const on = r.active.includes(k);
-      const row = document.createElement('div');
-      row.className = 'bar-row' + (on ? '' : ' off');
-      row.innerHTML =
-        `<span class="bar-name"></span>
-         <span class="bar-track"><span class="bar-fill"></span></span>
-         <span class="bar-num"></span>`;
-      row.querySelector('.bar-name').textContent = CALLINGS[k].name;
-      row.querySelector('.bar-num').textContent =
-        `${r.raw[k]} raw · ${r.resonance[k]} Resonance${on ? ' · active' : ''}`;
-      const fill = row.querySelector('.bar-fill');
-      fill.style.background = on ? CALLINGS[k].colour : 'rgba(255,255,255,.16)';
-      $('recBars').appendChild(row);
-      requestAnimationFrame(() => { fill.style.width = `${(r.raw[k] / maxRaw) * 100}%`; });
-    });
-
-    $('recPortrait').textContent = a.portrait;
-    $('recStrength').textContent = a.strengths;
-    $('recShadow').textContent = a.shadow;
-
-    $('recDecide').innerHTML = '';
-    r.decide.forEach((d) => {
-      const li = document.createElement('li');
-      li.style.setProperty('--c', CALLINGS[d.calling].colour);
-      li.textContent = `${d.name}: ${d.line}`;
-      $('recDecide').appendChild(li);
-    });
-
-    const cruColour = { fight: '#9E3030', flight: '#2F7D78', freeze: '#684A87', assess: '#406A9B' };
-    const cruMax = Math.max(...last.crucible.bars.map((b) => b[1]), 1);
-    $('cruBars').innerHTML = '';
-    last.crucible.bars.forEach(([id, n]) => {
-      const row = document.createElement('div');
-      row.className = 'bar-row';
-      row.innerHTML =
-        `<span class="bar-name"></span>
-         <span class="bar-track"><span class="bar-fill"></span></span>
-         <span class="bar-num"></span>`;
-      row.querySelector('.bar-name').textContent = id.charAt(0).toUpperCase() + id.slice(1);
-      row.querySelector('.bar-num').textContent = `${n} of 10`;
-      const fill = row.querySelector('.bar-fill');
-      fill.style.background = cruColour[id];
-      $('cruBars').appendChild(row);
-      requestAnimationFrame(() => { fill.style.width = `${(n / cruMax) * 100}%`; });
-    });
-    $('cruText').textContent =
-      (last.crucible.label ? `${last.crucible.kind === 'hybrid' ? 'Hybrid' : 'Dominant'}: ${last.crucible.label}. ` : '')
-      + last.crucible.text;
-    $('cruCaveat').textContent = last.crucible.caveat;
-
-    if (r.neighbours.length) {
-      $('borderBlock').hidden = false;
-      $('borderText').textContent = `${BORDERLINE_MESSAGE} ` + r.neighbours.map((n) =>
-        `Were ${CALLINGS[n.calling].name} to answer a little louder, this record would read ${n.archetype.name}. ${n.archetype.tagline}`
-      ).join(' ');
-    } else {
-      $('borderBlock').hidden = true;
-    }
-
-    const rows = ORDER.map((k) =>
-      `<tr><td>${CALLINGS[k].name}</td><td>${r.raw[k]} raw, ${r.resonance[k]} Resonance${r.active.includes(k) ? ', active' : ''}</td></tr>`).join('');
-    $('techBody').innerHTML =
-      `<table>${rows}
-        <tr><td>Active threshold</td><td>${r.cutoff} of ${r.top}</td></tr>
-        <tr><td>Archetype mask</td><td>${r.mask}</td></tr>
-        <tr><td>Crucible counts</td><td>${r.crucible.bars.map(([i2, n]) => `${i2} ${n}`).join(', ')}</td></tr>
-        <tr><td>Completed</td><td>${new Date().toLocaleDateString()}</td></tr>
-      </table>
-      <p>A Calling is active when its raw score reaches 0.75 of the highest. Codes are Oath 1, Hearth 2, Forge 4, Voice 8, Watch 16, summed to give the mask.</p>`;
-
+    state.done = true; save();
+    lastResult = evaluateDeep(state);
+    lastDoc = buildReport(lastResult);
+    drawRecord(lastDoc, lastResult);
     show('screenResult');
   }
 
-  $('btnRetake').addEventListener('click', () => {
-    state = { at: 0, answers: Array(10).fill(null), crucible: Array(10).fill(null), done: false };
-    save();
-    show('screenGate');
-  });
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+  // **bold** at the start of a tension paragraph becomes a real lead-in
+  const para = (text) => {
+    const p = el('p');
+    const m = /^\*\*(.+?)\.\*\*\s*(.*)$/s.exec(text);
+    if (m) { p.appendChild(el('strong', null, m[1] + '.')); p.append(' ' + m[2]); }
+    else p.textContent = text;
+    return p;
+  };
+  const bar = (label, value, max, colour, note, dim) => {
+    const row = el('div', 'bar-row' + (dim ? ' off' : ''));
+    row.appendChild(el('span', 'bar-name', label));
+    const track = el('span', 'bar-track');
+    const fill = el('i', 'bar-fill');
+    fill.style.width = Math.max(2, (value / (max || 1)) * 100) + '%';
+    fill.style.background = colour;
+    track.appendChild(fill);
+    row.appendChild(track);
+    row.appendChild(el('span', 'bar-num', note));
+    return row;
+  };
 
-  $('btnDownload').addEventListener('click', async () => {
+  function drawRecord(doc, r) {
+    const root = $('record');
+    root.innerHTML = '';
+
+    // the verdict
+    const head = el('div', 'rec-head');
+    head.appendChild(el('span', 'rec-tier', doc.verdict.tier));
+    head.appendChild(el('h1', 'rec-name', doc.verdict.name));
+    const art = el('div', 'rec-art');
+    art.setAttribute('role', 'img');
+    art.setAttribute('aria-label', `${doc.verdict.name}. ${doc.verdict.blend}.`);
+    const glyphs = el('span', 'glyphs');
+    doc.verdict.active.forEach((k) => {
+      const i = el('i');
+      i.style.background = CALLINGS[k].colour;
+      i.style.boxShadow = `0 0 18px ${CALLINGS[k].colour}`;
+      i.title = CALLINGS[k].name;
+      glyphs.appendChild(i);
+    });
+    art.appendChild(glyphs);
+    head.appendChild(art);
+    head.appendChild(el('p', 'rec-blend', doc.verdict.blend));
+    head.appendChild(el('p', 'rec-tag', doc.verdict.tagline));
+    head.appendChild(para(doc.verdict.line));
+    const clarity = el('p', 'rec-clarity');
+    clarity.append(`Profile clarity ${doc.verdict.clarity.score} of 100, read as ${doc.verdict.clarity.band}. `);
+    clarity.append(doc.verdict.clarityNote);
+    head.appendChild(clarity);
+    head.appendChild(el('p', 'rec-date', `Completed ${doc.verdict.when}`));
+    root.appendChild(head);
+
+    // every section
+    for (const s of doc.sections) {
+      if (s.id === 'technical') continue;          // appendix, drawn last
+      const sec = el('section', 'rec-block');
+      sec.appendChild(el('h2', null, s.title));
+
+      if (s.id === 'fivefold') {
+        const bars = el('div', 'bars');
+        s.rows.forEach((row) => {
+          bars.appendChild(bar(row.name, row.rel, 100, row.colour,
+            `${row.raw} pts · ${row.rel} resonance · ${row.status}`, row.status === 'Quiet'));
+          bars.appendChild(el('p', 'bar-note', row.line));
+        });
+        sec.appendChild(bars);
+      }
+
+      if (s.id === 'facets') {
+        const grid = el('div', 'facet-grid');
+        s.rows.forEach((row) => {
+          const card = el('div', 'facet-card');
+          card.appendChild(el('span', 'facet-name', row.name));
+          const track = el('span', 'bar-track');
+          const fill = el('i', 'bar-fill');
+          fill.style.width = Math.max(3, row.value) + '%';
+          fill.style.background = row.colour;
+          track.appendChild(fill);
+          card.appendChild(track);
+          card.appendChild(el('span', 'facet-band', `${row.value} · ${row.band}`));
+          grid.appendChild(card);
+        });
+        sec.appendChild(grid);
+      }
+
+      if (s.id === 'mirror' && s.rows) {
+        const t = el('div', 'gap-list');
+        s.rows.slice(0, 8).forEach((row) => {
+          const line = el('div', 'gap-row');
+          line.appendChild(el('span', 'gap-name', row.name));
+          line.appendChild(el('span', 'gap-num', `you said ${row.self}`));
+          line.appendChild(el('span', 'gap-num', `you chose ${row.acted}`));
+          line.appendChild(el('span', 'gap-tag tag-' + row.label.replace(/\W/g, ''), row.label));
+          t.appendChild(line);
+        });
+        sec.appendChild(t);
+      }
+
+      if (s.id === 'crucible' && s.bars) {
+        const bars = el('div', 'bars');
+        const max = Math.max(...s.bars.map((b) => b.n), 1);
+        const col = { Fight: '#9E3030', Flight: '#2F7D78', Freeze: '#684A87', Assess: '#406A9B' };
+        s.bars.forEach((b) => bars.appendChild(
+          bar(b.label, b.n, max, col[b.label], `${b.n} of ${r.counts.crucible}`)));
+        sec.appendChild(bars);
+      }
+
+      (s.paras || []).forEach((t) => sec.appendChild(para(t)));
+
+      if (s.subs) {
+        s.subs.forEach((sub) => {
+          sec.appendChild(el('h3', null, sub.title));
+          sub.paras.forEach((t) => sec.appendChild(para(t)));
+        });
+      }
+      if (s.prompts) {
+        const ul = el('ul', 'prompts');
+        s.prompts.forEach((t) => ul.appendChild(el('li', null, t)));
+        sec.appendChild(ul);
+      }
+      root.appendChild(sec);
+    }
+
+    // A short limitations line that does not require opening a panel. The
+    // full statement stays in the appendix, as the specification asks.
+    root.appendChild(el('p', 'rec-limits',
+      'A fantasy assessment made for reflection. It is not a validated psychometric test, not an official HEXACO instrument, and not a measure of who you objectively are. It reflects the choices you made today, in these particular scenes.'));
+
+    // actions
+    const actions = el('div', 'rec-actions');
+    const dl = el('button', 'btn primary', 'Download Your Trial Record');
+    dl.id = 'btnDownload';
+    dl.type = 'button';
+    const again = el('button', 'btn', 'Take the Trial Again');
+    again.type = 'button';
+    actions.appendChild(dl);
+    actions.appendChild(again);
+    root.appendChild(actions);
+
+    dl.addEventListener('click', onDownload);
+    again.addEventListener('click', () => {
+      state = fresh(); save(); show('screenGate');
+      lit.clear(); gateway.classList.remove('all-lit');
+      $('seal').classList.remove('opening');
+      sigilName.textContent = REST; sigilName.classList.remove('on');
+      document.querySelectorAll('.sigil').forEach((s) => {
+        s.classList.remove('lit'); s.querySelector('i').style.boxShadow = '';
+      });
+    });
+
+    // the technical appendix, collapsed
+    const tech = doc.sections.find((s) => s.id === 'technical');
+    if (tech) {
+      const det = el('details', 'tech');
+      det.appendChild(el('summary', null, 'Technical record and limitations'));
+      const body = el('div', 'tech-body');
+      tech.lines.forEach((l) => body.appendChild(el('p', null, l)));
+      tech.paras.forEach((t) => body.appendChild(el('p', 'science', t)));
+      det.appendChild(body);
+      root.appendChild(det);
+    }
+  }
+
+  async function onDownload() {
     const btn = $('btnDownload');
-    const label = btn.textContent;
-    btn.disabled = true; btn.textContent = 'Sealing the record…';
+    const was = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Sealing the record...';
     try {
       const { buildTrialRecord } = await import('../../lib/trial-report.js');
-      const blob = await buildTrialRecord(last, {});
+      const blob = await buildTrialRecord(lastDoc, lastResult);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Trial Record - ${last.archetype.name}.pdf`;
+      a.download = `Trial Record - ${lastDoc.verdict.name}.pdf`;
+      document.body.appendChild(a);
       a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-    } catch (e) {
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      btn.textContent = 'Record downloaded';
+      setTimeout(() => { btn.textContent = was; btn.disabled = false; }, 2500);
+    } catch (err) {
       btn.textContent = 'Could not build the record';
-      setTimeout(() => { btn.textContent = label; }, 2500);
-      return;
-    } finally {
       btn.disabled = false;
-      if (btn.textContent === 'Sealing the record…') btn.textContent = label;
+      console.error(err);
     }
-  });
+  }
 
-  // returning mid-Trial, or to a finished record
-  if (state.done && state.answers.every((x) => x !== null)) finish();
-  else if (state.answers.some((x) => x !== null)) { show('screenTrial'); render(); }
+  // ── where to begin ──
+  if (state.done) { finish(); }
+  else if (answeredCount() > 0) { show('screenTrial'); render(); }
+
 </script>
 
 </body>
