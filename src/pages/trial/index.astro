@@ -1,46 +1,670 @@
 ---
-import SectionLayout from '../../layouts/SectionLayout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import { QUESTIONS, CALLINGS, ORDER, CRUCIBLE, CRUCIBLE_PROMPT, SCIENCE_COPY } from '../../data/trial.js';
+
+// Each Trial carries its own light. No artwork is shipped yet, so the scenes
+// are painted in gradient and grain; a real plate can drop into .scene-art
+// later without touching the flow.
+const TONES = [
+  ['#2a1a10', '#0b0806'], ['#3a1512', '#0a0605'], ['#0e1a20', '#05080b'],
+  ['#33270c', '#0b0805'], ['#16202b', '#05080c'], ['#241a2c', '#08060c'],
+  ['#101c18', '#050807'], ['#2b2110', '#0a0806'], ['#2a0f12', '#080505'],
+  ['#301c10', '#080605'],
+];
 ---
-<SectionLayout
-  title="Trial of Character | LASH"
-  description="A coming trial to find which figure of the LASH universe your nature answers to."
-  theme="trial"
-  current="trial"
-  eyebrow="Personality Quiz"
-  heading="Trial of Character"
-  tagline="Every soul in this world was weighed by something. Soon, so will yours be."
-  note="Coming Soon"
->
-  <div class="wrap">
-    <div class="empty reveal">
-      <strong>The trial is not yet open</strong>
-      A set of questions is being prepared. Answer them, and you will be told which figure of
-      the age your nature answers to, and what that costs.
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Trial of Character | LASH</title>
+  <meta name="description" content="Five Callings contend within every soul. Ten choices reveal which voices you heed. A research-informed fantasy assessment, for reflection and entertainment." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Cormorant+SC:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink:#0a0908; --text:#b9b0a2; --bright:#f0e8db; --dim:#6f685c;
+      --oath:#C89B3C; --hearth:#9E3030; --forge:#406A9B; --voice:#2F7D78; --watch:#684A87;
+      --edge:rgba(200,155,60,0.20);
+      --scene-a:#2a1a10; --scene-b:#0b0806;
+    }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      background:var(--ink); color:var(--text);
+      font-family:'EB Garamond',Georgia,serif; font-size:18px; line-height:1.7;
+      overflow-x:hidden; min-height:100vh;
+    }
+    #scene{
+      position:fixed; inset:0; z-index:0; pointer-events:none;
+      background:
+        radial-gradient(ellipse 90% 70% at 50% 18%, var(--scene-a) 0%, transparent 72%),
+        radial-gradient(ellipse 80% 60% at 50% 110%, var(--scene-b) 0%, transparent 70%),
+        var(--ink);
+      transition:background 1400ms ease;
+    }
+    #grain{
+      position:fixed; inset:-200%; z-index:0; pointer-events:none; opacity:.05;
+      background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/></filter><rect width='120' height='120' filter='url(%23n)' opacity='0.55'/></svg>");
+      animation:grain 1.1s steps(3) infinite;
+    }
+    @keyframes grain{0%,100%{transform:translate(0,0)}33%{transform:translate(-2%,1%)}66%{transform:translate(1%,-2%)}}
+    #vig{position:fixed;inset:0;z-index:0;pointer-events:none;
+      background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,.82) 100%)}
+    main{position:relative;z-index:1}
+
+    .screen{display:none}
+    .screen.on{display:block}
+
+    /* ─── the gate ─── */
+    .gate{min-height:100svh;display:flex;flex-direction:column;align-items:center;
+      justify-content:center;text-align:center;padding:7rem 1.2rem 4rem;gap:1.1rem}
+    .gate-eyebrow{font-family:'Cormorant SC',serif;font-size:.68rem;letter-spacing:.42em;
+      text-transform:uppercase;color:var(--oath)}
+    .gate h1{font-family:'Cinzel',serif;font-weight:700;letter-spacing:.05em;line-height:1.1;
+      font-size:clamp(1.9rem,7vw,4rem);color:var(--bright)}
+    .gate-lede{max-width:34rem;font-style:italic;font-size:clamp(1rem,2.3vw,1.2rem)}
+    .gate-lede span{display:block}
+    .gate-small{font-family:'Cormorant SC',serif;font-size:.66rem;letter-spacing:.24em;
+      text-transform:uppercase;color:var(--dim);margin-top:.6rem}
+
+    /* the seal, with the door in it */
+    .seal{position:relative;width:min(20rem,80vw);aspect-ratio:1;margin:1.6rem auto .4rem;
+      display:grid;place-items:center;background:none;border:none;cursor:pointer;color:inherit}
+    .seal-ring{position:absolute;inset:0;border-radius:50%;
+      border:1px solid var(--edge);
+      box-shadow:inset 0 0 60px rgba(0,0,0,.8), 0 0 40px rgba(0,0,0,.6)}
+    .seal-ring.two{inset:9%;border-color:rgba(200,155,60,.14)}
+    .seal-ring.three{inset:18%;border-color:rgba(200,155,60,.10)}
+    .seal-doors{position:absolute;inset:20%;display:flex;overflow:hidden;border-radius:2px}
+    .door{flex:1;background:linear-gradient(180deg,#171310,#0b0908);
+      border:1px solid rgba(200,155,60,.16);transition:transform 900ms cubic-bezier(.6,0,.2,1)}
+    .door.l{border-right:none}.door.r{border-left:none}
+    .seal.opening .door.l{transform:translateX(-101%)}
+    .seal.opening .door.r{transform:translateX(101%)}
+    .seal-word{position:relative;z-index:2;font-family:'Cinzel',serif;font-weight:600;
+      font-size:clamp(.72rem,2.4vw,.9rem);letter-spacing:.3em;text-transform:uppercase;
+      color:var(--bright);text-shadow:0 0 24px rgba(0,0,0,.9);transition:opacity 500ms ease}
+    .seal.opening .seal-word{opacity:0}
+    .sigil{position:absolute;width:12px;height:12px;border-radius:50%;
+      opacity:.22;transition:opacity 600ms ease,box-shadow 600ms ease}
+    .seal:hover .sigil,.seal:focus-visible .sigil{opacity:.6}
+    .sigil.lit{opacity:1}
+    .seal:focus-visible{outline:2px solid var(--oath);outline-offset:6px;border-radius:50%}
+
+    .gate-links{display:flex;flex-wrap:wrap;gap:.7rem;justify-content:center;margin-top:1.4rem}
+    .gate-links button{font-family:'Cormorant SC',serif;font-size:.62rem;letter-spacing:.2em;
+      text-transform:uppercase;color:var(--text);background:none;border:1px solid var(--edge);
+      padding:.55rem .9rem;cursor:pointer;transition:color .3s,border-color .3s}
+    .gate-links button:hover{color:var(--bright);border-color:var(--oath)}
+    .panel{max-width:34rem;margin:1.4rem auto 0;text-align:left;font-size:.95rem;
+      border:1px solid var(--edge);border-left:2px solid var(--oath);padding:1.1rem 1.2rem;
+      background:rgba(0,0,0,.35)}
+    .panel h3{font-family:'Cinzel',serif;font-weight:400;color:var(--bright);
+      font-size:1rem;margin-bottom:.5rem}
+    .panel p{margin-bottom:.7rem;color:var(--dim)}
+    .panel p:last-child{margin-bottom:0}
+
+    /* the passing-through moment */
+    .veil{position:fixed;inset:0;z-index:120;display:grid;place-items:center;
+      background:#050403;opacity:0;pointer-events:none;transition:opacity 500ms ease}
+    .veil.on{opacity:1}
+    .veil span{font-family:'Cinzel',serif;letter-spacing:.42em;text-transform:uppercase;
+      font-size:clamp(.7rem,3vw,1rem);color:var(--bright);opacity:0;transform:scale(.96)}
+    .veil.on span{animation:declare 1400ms ease forwards}
+    @keyframes declare{0%{opacity:0;transform:scale(.96)}30%{opacity:1;transform:scale(1)}
+      75%{opacity:1}100%{opacity:0}}
+
+    /* ─── the trials ─── */
+    .hud{position:sticky;top:0;z-index:20;backdrop-filter:blur(8px);
+      background:linear-gradient(to bottom,rgba(6,5,4,.92),rgba(6,5,4,.4));
+      padding:4.6rem 1.2rem .8rem}
+    .hud-in{max-width:44rem;margin:0 auto;display:flex;align-items:center;gap:1rem}
+    .hud-count{font-family:'Cormorant SC',serif;font-size:.64rem;letter-spacing:.26em;
+      text-transform:uppercase;color:var(--dim);white-space:nowrap}
+    .hud-sigils{display:flex;gap:.42rem;margin-left:auto}
+    .hud-sigils i{width:7px;height:7px;border-radius:50%;opacity:.3;display:block}
+    .track{height:2px;background:rgba(255,255,255,.08);margin-top:.7rem;
+      max-width:44rem;margin-inline:auto}
+    .track i{display:block;height:100%;background:var(--oath);width:0;transition:width 600ms ease}
+
+    .trial{max-width:44rem;margin:0 auto;padding:2.2rem 1.2rem 6rem}
+    .scene-art{height:8.5rem;border:1px solid var(--edge);border-radius:2px;margin-bottom:1.6rem;
+      background:linear-gradient(160deg,var(--scene-a),var(--scene-b));position:relative;overflow:hidden}
+    .scene-art::after{content:'';position:absolute;inset:0;
+      background:radial-gradient(ellipse at 30% 20%,rgba(255,220,160,.10),transparent 60%)}
+    .scene-cap{position:absolute;left:0;right:0;bottom:0;padding:.7rem .9rem;font-size:.86rem;
+      color:var(--text);background:linear-gradient(to top,rgba(0,0,0,.85),transparent);z-index:1}
+    .trial-no{font-family:'Cormorant SC',serif;font-size:.62rem;letter-spacing:.3em;
+      text-transform:uppercase;color:var(--oath);display:block;margin-bottom:.5rem}
+    .trial h2{font-family:'Cinzel',serif;font-weight:600;color:var(--bright);
+      font-size:clamp(1.25rem,4vw,1.9rem);line-height:1.25;margin-bottom:1rem}
+    .prompt{font-size:1.06rem;margin-bottom:1.6rem}
+
+    .choices{display:flex;flex-direction:column;gap:.6rem}
+    .choice{display:flex;gap:.9rem;align-items:flex-start;text-align:left;width:100%;
+      padding:1rem 1.05rem;background:rgba(12,10,8,.72);border:1px solid var(--edge);
+      border-left:2px solid transparent;border-radius:2px;color:var(--text);
+      font:inherit;font-size:1rem;cursor:pointer;
+      transition:border-color .25s,background-color .25s,transform .25s}
+    .choice:hover,.choice:focus-visible{background:rgba(30,24,16,.8);
+      border-left-color:var(--oath);outline:none;transform:translateX(2px)}
+    .choice[aria-pressed="true"]{border-color:var(--oath);border-left-color:var(--oath);
+      background:rgba(45,34,16,.75)}
+    .choice b{font-family:'Cormorant SC',serif;font-size:.7rem;letter-spacing:.2em;
+      color:var(--oath);flex-shrink:0;padding-top:.18rem;font-weight:400}
+
+    .crucible{margin-top:2rem;padding-top:1.4rem;border-top:1px solid var(--edge)}
+    .crucible.locked{opacity:.35;pointer-events:none}
+    .crucible-q{font-family:'Cormorant SC',serif;font-size:.64rem;letter-spacing:.24em;
+      text-transform:uppercase;color:var(--oath);margin-bottom:.9rem;display:block}
+    .cru-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));gap:.5rem}
+    .cru{padding:.8rem .9rem;min-height:44px;text-align:left;background:rgba(12,10,8,.72);
+      border:1px solid var(--edge);border-radius:2px;color:var(--text);font:inherit;
+      font-size:.92rem;cursor:pointer;transition:border-color .25s,background-color .25s}
+    .cru:hover,.cru:focus-visible{border-color:var(--oath);outline:none}
+    .cru[aria-pressed="true"]{border-color:var(--oath);background:rgba(45,34,16,.75)}
+    .cru b{display:block;font-family:'Cinzel',serif;font-size:.86rem;color:var(--bright);
+      font-weight:400;margin-bottom:.2rem}
+
+    .nav{display:flex;gap:.7rem;margin-top:1.8rem;align-items:center;flex-wrap:wrap}
+    .btn{font-family:'Cormorant SC',serif;font-size:.66rem;letter-spacing:.24em;
+      text-transform:uppercase;padding:.75rem 1.3rem;border-radius:2px;cursor:pointer;
+      border:1px solid var(--edge);background:none;color:var(--text);
+      transition:color .3s,border-color .3s,background-color .3s}
+    .btn:hover:not(:disabled){color:var(--bright);border-color:var(--oath)}
+    .btn:disabled{opacity:.35;cursor:default}
+    .btn.primary{background:var(--oath);border-color:var(--oath);color:#12100c}
+    .btn.primary:hover:not(:disabled){background:#e0b45c;border-color:#e0b45c;color:#12100c}
+    .nav-note{font-size:.85rem;color:var(--dim);margin-left:auto}
+
+    /* ─── the record ─── */
+    .result{max-width:44rem;margin:0 auto;padding:6.5rem 1.2rem 6rem}
+    .rec-head{text-align:center;border-bottom:1px solid var(--edge);padding-bottom:2rem;margin-bottom:2rem}
+    .rec-tier{font-family:'Cormorant SC',serif;font-size:.64rem;letter-spacing:.3em;
+      text-transform:uppercase;color:var(--oath)}
+    .rec-name{font-family:'Cinzel',serif;font-weight:700;color:var(--bright);
+      font-size:clamp(1.7rem,6vw,3rem);line-height:1.15;margin:.8rem 0}
+    .rec-tag{font-style:italic;font-size:1.08rem;max-width:32rem;margin:0 auto}
+    .rec-art{height:11rem;margin:1.6rem 0 1.2rem;border:1px solid var(--edge);border-radius:2px;
+      display:grid;place-items:center;position:relative;overflow:hidden;
+      background:linear-gradient(150deg,#1a1510,#08070a)}
+    .rec-art .glyphs{display:flex;gap:1.1rem;z-index:1}
+    .rec-art .glyphs i{width:15px;height:15px;border-radius:50%;
+      box-shadow:0 0 22px currentColor}
+    .rec-art::after{content:'';position:absolute;inset:0;
+      background:radial-gradient(ellipse at center,rgba(255,225,170,.10),transparent 65%)}
+
+    section.block{margin-bottom:2.4rem}
+    .block h3{font-family:'Cormorant SC',serif;font-size:.66rem;letter-spacing:.28em;
+      text-transform:uppercase;color:var(--oath);margin-bottom:.9rem;
+      padding-bottom:.55rem;border-bottom:1px solid var(--edge)}
+    .block p{margin-bottom:.9rem}
+    .block p:last-child{margin-bottom:0}
+
+    .bars{display:flex;flex-direction:column;gap:.85rem}
+    .bar-row{display:grid;grid-template-columns:6.6rem 1fr auto;gap:.8rem;align-items:center}
+    .bar-name{font-size:.92rem;color:var(--bright)}
+    .bar-track{height:9px;background:rgba(255,255,255,.07);border-radius:1px;overflow:hidden}
+    .bar-fill{height:100%;width:0;transition:width 900ms cubic-bezier(.3,0,.2,1)}
+    .bar-num{font-family:'Cormorant SC',serif;font-size:.6rem;letter-spacing:.14em;
+      color:var(--dim);white-space:nowrap}
+    .bar-row.off .bar-name{color:var(--dim)}
+    .legend{margin-top:.9rem;font-size:.86rem;color:var(--dim);font-style:italic}
+
+    .decide li{list-style:none;margin-bottom:.7rem;padding-left:1.1rem;position:relative}
+    .decide li::before{content:'';position:absolute;left:0;top:.62em;width:6px;height:6px;
+      border-radius:50%;background:var(--c)}
+
+    details.tech{border:1px solid var(--edge);border-radius:2px;background:rgba(0,0,0,.3)}
+    details.tech summary{padding:.9rem 1.1rem;cursor:pointer;list-style:none;
+      font-family:'Cormorant SC',serif;font-size:.64rem;letter-spacing:.24em;
+      text-transform:uppercase;color:var(--text)}
+    details.tech summary::-webkit-details-marker{display:none}
+    details.tech .tech-body{padding:0 1.1rem 1.1rem;font-size:.9rem;color:var(--dim)}
+    details.tech table{width:100%;border-collapse:collapse;margin-bottom:.9rem}
+    details.tech td{padding:.32rem 0;border-bottom:1px solid rgba(255,255,255,.06)}
+    details.tech td:last-child{text-align:right;color:var(--text)}
+
+    .science{font-size:.9rem;color:var(--dim);border:1px solid var(--edge);
+      border-left:2px solid var(--oath);padding:1rem 1.1rem;background:rgba(0,0,0,.3)}
+    .rec-actions{display:flex;flex-wrap:wrap;gap:.7rem;margin:2.4rem 0 1.4rem}
+
+    @media (max-width:560px){
+      body{font-size:17px}
+      .hud{padding-top:4.2rem}
+      .bar-row{grid-template-columns:5.2rem 1fr;grid-template-rows:auto auto}
+      .bar-num{grid-column:1/-1;text-align:right}
+      .nav-note{width:100%;margin-left:0}
+    }
+    @media (prefers-reduced-motion:reduce){
+      *{animation-duration:.01ms !important;transition-duration:.01ms !important}
+      html{scroll-behavior:auto}
+      #grain{animation:none}
+      .door{transition:none}
+    }
+  </style>
+</head>
+<body>
+
+<div id="scene"></div>
+<div id="grain" aria-hidden="true"></div>
+<div id="vig" aria-hidden="true"></div>
+<div class="veil" id="veil" aria-hidden="true"><span>The Trial Begins</span></div>
+
+<SiteHeader current="trial" accent="#C89B3C" dim="#6f685c" bright="#f0e8db" bg="rgba(10,9,8,.86)" />
+
+<main>
+  <!-- ── the gate ── -->
+  <section class="screen on gate" id="screenGate">
+    <span class="gate-eyebrow">A Rite of Judgment</span>
+    <h1>The Trial of Character</h1>
+    <p class="gate-lede">
+      <span>Five Callings contend within every soul.</span>
+      <span>Few answer only one.</span>
+      <span>Ten choices will reveal which voices you heed when principle, loyalty, capability, influence and danger collide.</span>
+    </p>
+
+    <button class="seal" id="seal" aria-describedby="sealHint">
+      <span class="seal-ring"></span>
+      <span class="seal-ring two"></span>
+      <span class="seal-ring three"></span>
+      <span class="seal-doors"><span class="door l"></span><span class="door r"></span></span>
+      <span class="seal-word" id="sealWord">Enter the Trial</span>
+    </button>
+    <p class="gate-small" id="sealHint">A research-informed fantasy assessment. Roughly 7 to 10 minutes.</p>
+
+    <div class="gate-links">
+      <button type="button" data-panel="how">How the Trial Works</button>
+      <button type="button" data-panel="science">About the Science</button>
+      <button type="button" data-panel="privacy">Privacy</button>
     </div>
 
-    <div class="ornament reveal">✦</div>
+    <div class="panel" id="panelHow" hidden>
+      <h3>How the Trial works</h3>
+      <p>Ten scenes, each with one decision among five courses, and one quick question about what happens in you when danger arrives.</p>
+      <p>No score is shown while you answer, so nothing nudges you toward a result. You may go back and change any answer before the end. Your progress is kept on this device so a refresh will not lose it.</p>
+    </div>
+    <div class="panel" id="panelScience" hidden>
+      <h3>About the science</h3>
+      <p>{SCIENCE_COPY}</p>
+      <p>The Five Callings are a fantasy translation of themes from trait psychology, especially work on Honesty-Humility, Emotionality, Conscientiousness and Extraversion, together with person-situation research on how people behave differently across circumstances. The Trial does not reproduce the HEXACO-PI-R and is not an official version of it.</p>
+      <p>The Crucible layer draws on research into fight, flight and freeze responses. It is treated as a context-sensitive tendency, never a diagnosis, and it has no effect on which archetype you receive.</p>
+    </div>
+    <div class="panel" id="panelPrivacy" hidden>
+      <h3>Privacy</h3>
+      <p>No account, name or email is required. Your answers stay in this browser, on this device. Nothing is sent to a server and nothing is stored about you elsewhere.</p>
+      <p>Clearing your browser data, or choosing Retake the Trial, removes them.</p>
+    </div>
+  </section>
 
-    <div class="band-head reveal">
-      <span class="band-label">In the meantime</span>
-      <h2 class="band-title">There is plenty already written</h2>
+  <!-- ── the trials ── -->
+  <section class="screen" id="screenTrial">
+    <div class="hud">
+      <div class="hud-in">
+        <span class="hud-count" id="hudCount">Trial 01 / 10</span>
+        <span class="hud-sigils" aria-hidden="true">
+          {ORDER.map((k) => <i style={`background:${CALLINGS[k].colour}`}></i>)}
+        </span>
+      </div>
+      <div class="track"><i id="trackFill"></i></div>
     </div>
 
-    <div class="grid grid-3">
-      <a href="/library" class="tile reveal">
-        <span class="tile-eyebrow">Short Stories</span>
-        <span class="tile-title">Library</span>
-        <p class="tile-blurb">Shorter tales, gathered by the age they belong to.</p>
-      </a>
-      <a href="/codex" class="tile reveal">
-        <span class="tile-eyebrow">Historical Chronicle</span>
-        <span class="tile-title">Codex</span>
-        <p class="tile-blurb">Titans, mortals, realms, and relics, recorded age by age.</p>
-      </a>
-      <a href="/gallery" class="tile reveal">
-        <span class="tile-eyebrow">Image Gallery</span>
-        <span class="tile-title">Hall of Memories</span>
-        <p class="tile-blurb">Faces and places of the world, kept where they can be looked at.</p>
-      </a>
+    <div class="trial">
+      <div class="scene-art" id="sceneArt" role="img" aria-label="" >
+        <span class="scene-cap" id="sceneCap"></span>
+      </div>
+      <span class="trial-no" id="trialNo"></span>
+      <h2 id="trialTitle"></h2>
+      <p class="prompt" id="trialPrompt"></p>
+
+      <div class="choices" id="choices" role="group" aria-label="Choose your course"></div>
+
+      <div class="crucible locked" id="crucible">
+        <span class="crucible-q">{CRUCIBLE_PROMPT}</span>
+        <div class="cru-grid" id="cruGrid" role="group" aria-label="Your first response to danger"></div>
+      </div>
+
+      <div class="nav">
+        <button class="btn" id="btnBack">Back</button>
+        <button class="btn primary" id="btnNext" disabled>Next</button>
+        <span class="nav-note" id="navNote">Choose a course, then answer the Crucible.</span>
+      </div>
     </div>
-  </div>
-</SectionLayout>
+  </section>
+
+  <!-- ── the record ── -->
+  <section class="screen" id="screenResult">
+    <div class="result">
+      <div class="rec-head">
+        <span class="rec-tier" id="recTier"></span>
+        <h1 class="rec-name" id="recName"></h1>
+        <div class="rec-art" id="recArt" role="img" aria-label="">
+          <span class="glyphs" id="recGlyphs"></span>
+        </div>
+        <p class="rec-tag" id="recTag"></p>
+      </div>
+
+      <section class="block">
+        <h3>Your Fivefold Pattern</h3>
+        <div class="bars" id="recBars"></div>
+        <p class="legend">Resonance reads how strongly a Calling answered within this Trial. It is not a percentage of your personality.</p>
+      </section>
+
+      <section class="block"><h3>Why This Archetype Found You</h3><p id="recPortrait"></p></section>
+      <section class="block"><h3>How You Decide</h3><ul class="decide" id="recDecide"></ul></section>
+      <section class="block"><h3>Your Strength</h3><p id="recStrength"></p></section>
+      <section class="block"><h3>Your Shadow</h3><p id="recShadow"></p></section>
+
+      <section class="block">
+        <h3>The Crucible</h3>
+        <div class="bars" id="cruBars"></div>
+        <p id="cruText" style="margin-top:1rem"></p>
+        <p class="legend" id="cruCaveat"></p>
+      </section>
+
+      <section class="block" id="borderBlock" hidden>
+        <h3>Borderland</h3>
+        <p id="borderText"></p>
+      </section>
+
+      <div class="rec-actions">
+        <button class="btn primary" id="btnDownload">Download Your Trial Record</button>
+        <button class="btn" id="btnRetake">Retake the Trial</button>
+      </div>
+
+      <section class="block">
+        <details class="tech">
+          <summary>Technical details</summary>
+          <div class="tech-body" id="techBody"></div>
+        </details>
+      </section>
+
+      <section class="block">
+        <h3>Science and Limitations</h3>
+        <p class="science">{SCIENCE_COPY}</p>
+      </section>
+    </div>
+  </section>
+</main>
+
+<script define:vars={{ TONES }}>
+  window.__TRIAL_TONES = TONES;
+</script>
+
+<script>
+  import { QUESTIONS, CALLINGS, ORDER, CRUCIBLE, BORDERLINE_MESSAGE } from '../../data/trial.js';
+  import { evaluate } from '../../lib/trial-engine.js';
+
+  const TONES = window.__TRIAL_TONES;
+  const KEY = 'lash.trial.v1';
+  const $ = (id) => document.getElementById(id);
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ── state, kept on this device only ──
+  let state = { at: 0, answers: Array(10).fill(null), crucible: Array(10).fill(null), done: false };
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (saved && Array.isArray(saved.answers) && saved.answers.length === 10) state = saved;
+  } catch { /* start fresh */ }
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
+
+  const show = (id) => {
+    ['screenGate', 'screenTrial', 'screenResult'].forEach((s) =>
+      $(s).classList.toggle('on', s === id));
+    window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+  };
+
+  const tone = (i) => {
+    const [a, b] = TONES[i] || TONES[0];
+    document.documentElement.style.setProperty('--scene-a', a);
+    document.documentElement.style.setProperty('--scene-b', b);
+  };
+
+  // ── the gate ──
+  $('seal').addEventListener('click', () => {
+    const seal = $('seal');
+    if (seal.classList.contains('opening')) return;
+    const sigils = [...seal.querySelectorAll('.sigil')];
+    if (reduced) { enter(); return; }
+    seal.classList.add('opening');
+    sigils.forEach((s, i) => setTimeout(() => s.classList.add('lit'), 90 * i));
+    setTimeout(() => { $('veil').classList.add('on'); }, 700);
+    setTimeout(enter, 1500);
+    setTimeout(() => $('veil').classList.remove('on'), 2500);
+  });
+  function enter() { show('screenTrial'); render(); }
+
+  // five sigils set around the seal
+  (function placeSigils() {
+    const seal = $('seal');
+    ORDER.forEach((k, i) => {
+      const s = document.createElement('span');
+      s.className = 'sigil';
+      const angle = (-90 + i * 72) * (Math.PI / 180);
+      s.style.left = `calc(50% + ${Math.cos(angle) * 46}% - 6px)`;
+      s.style.top = `calc(50% + ${Math.sin(angle) * 46}% - 6px)`;
+      s.style.background = CALLINGS[k].colour;
+      s.style.color = CALLINGS[k].colour;
+      s.style.boxShadow = `0 0 14px ${CALLINGS[k].colour}`;
+      seal.appendChild(s);
+    });
+  })();
+
+  document.querySelectorAll('[data-panel]').forEach((b) => {
+    b.addEventListener('click', () => {
+      const id = { how: 'panelHow', science: 'panelScience', privacy: 'panelPrivacy' }[b.dataset.panel];
+      const panel = $(id);
+      const wasOpen = !panel.hidden;
+      ['panelHow', 'panelScience', 'panelPrivacy'].forEach((p) => { $(p).hidden = true; });
+      panel.hidden = wasOpen;
+    });
+  });
+
+  // ── a Trial ──
+  function render() {
+    const i = state.at;
+    const q = QUESTIONS[i];
+    tone(i);
+
+    $('hudCount').textContent = `Trial ${String(i + 1).padStart(2, '0')} / 10`;
+    $('trackFill').style.width = `${(i / 10) * 100}%`;
+    $('trialNo').textContent = `Trial ${String(i + 1).padStart(2, '0')}`;
+    $('trialTitle').textContent = q.title;
+    $('trialPrompt').textContent = q.prompt;
+    $('sceneCap').textContent = q.scene;
+    $('sceneArt').setAttribute('aria-label', q.scene);
+
+    const box = $('choices');
+    box.innerHTML = '';
+    q.choices.forEach((c, n) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'choice';
+      b.setAttribute('aria-pressed', String(state.answers[i] === n));
+      b.innerHTML = `<b>${'ABCDE'[n]}</b><span></span>`;
+      b.querySelector('span').textContent = c.t;
+      b.addEventListener('click', () => {
+        state.answers[i] = n;            // replaces, never accumulates
+        save(); paint();
+      });
+      box.appendChild(b);
+    });
+
+    const grid = $('cruGrid');
+    grid.innerHTML = '';
+    CRUCIBLE.forEach((c) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'cru';
+      b.setAttribute('aria-pressed', String(state.crucible[i] === c.id));
+      b.innerHTML = `<b></b><span></span>`;
+      b.querySelector('b').textContent = c.name;
+      b.querySelector('span').textContent = c.t;
+      b.addEventListener('click', () => { state.crucible[i] = c.id; save(); paint(); });
+      grid.appendChild(b);
+    });
+
+    paint();
+  }
+
+  function paint() {
+    const i = state.at;
+    const picked = state.answers[i] !== null;
+    const cru = state.crucible[i] !== null;
+    [...$('choices').children].forEach((b, n) =>
+      b.setAttribute('aria-pressed', String(state.answers[i] === n)));
+    [...$('cruGrid').children].forEach((b, n) =>
+      b.setAttribute('aria-pressed', String(state.crucible[i] === CRUCIBLE[n].id)));
+    $('crucible').classList.toggle('locked', !picked);
+    $('btnBack').disabled = i === 0;
+    $('btnNext').disabled = !(picked && cru);
+    $('btnNext').textContent = i === 9 ? 'Receive Your Judgment' : 'Next';
+    $('navNote').textContent = !picked ? 'Choose a course, then answer the Crucible.'
+      : !cru ? 'Now the Crucible.' : '';
+  }
+
+  $('btnBack').addEventListener('click', () => {
+    if (state.at > 0) { state.at--; save(); render(); }
+  });
+  $('btnNext').addEventListener('click', () => {
+    if (state.at < 9) { state.at++; save(); render(); }
+    else { state.done = true; save(); finish(); }
+  });
+
+  // ── the record ──
+  let last = null;
+  function finish() {
+    const r = evaluate(state.answers, state.crucible);
+    last = r;
+    const a = r.archetype;
+
+    $('recTier').textContent = r.tier;
+    $('recName').textContent = a.name;
+    $('recTag').textContent = a.tagline;
+    $('recArt').setAttribute('aria-label',
+      `${a.name}. Sigils of ${r.active.map((k) => CALLINGS[k].name).join(', ')}.`);
+
+    const glyphs = $('recGlyphs');
+    glyphs.innerHTML = '';
+    r.active.forEach((k) => {
+      const g = document.createElement('i');
+      g.style.background = CALLINGS[k].colour;
+      g.style.color = CALLINGS[k].colour;
+      glyphs.appendChild(g);
+    });
+
+    const maxRaw = Math.max(...ORDER.map((k) => r.raw[k]), 1);
+    $('recBars').innerHTML = '';
+    ORDER.forEach((k) => {
+      const on = r.active.includes(k);
+      const row = document.createElement('div');
+      row.className = 'bar-row' + (on ? '' : ' off');
+      row.innerHTML =
+        `<span class="bar-name"></span>
+         <span class="bar-track"><span class="bar-fill"></span></span>
+         <span class="bar-num"></span>`;
+      row.querySelector('.bar-name').textContent = CALLINGS[k].name;
+      row.querySelector('.bar-num').textContent =
+        `${r.raw[k]} raw · ${r.resonance[k]} Resonance${on ? ' · active' : ''}`;
+      const fill = row.querySelector('.bar-fill');
+      fill.style.background = on ? CALLINGS[k].colour : 'rgba(255,255,255,.16)';
+      $('recBars').appendChild(row);
+      requestAnimationFrame(() => { fill.style.width = `${(r.raw[k] / maxRaw) * 100}%`; });
+    });
+
+    $('recPortrait').textContent = a.portrait;
+    $('recStrength').textContent = a.strengths;
+    $('recShadow').textContent = a.shadow;
+
+    $('recDecide').innerHTML = '';
+    r.decide.forEach((d) => {
+      const li = document.createElement('li');
+      li.style.setProperty('--c', CALLINGS[d.calling].colour);
+      li.textContent = `${d.name}: ${d.line}`;
+      $('recDecide').appendChild(li);
+    });
+
+    const cruColour = { fight: '#9E3030', flight: '#2F7D78', freeze: '#684A87', assess: '#406A9B' };
+    const cruMax = Math.max(...last.crucible.bars.map((b) => b[1]), 1);
+    $('cruBars').innerHTML = '';
+    last.crucible.bars.forEach(([id, n]) => {
+      const row = document.createElement('div');
+      row.className = 'bar-row';
+      row.innerHTML =
+        `<span class="bar-name"></span>
+         <span class="bar-track"><span class="bar-fill"></span></span>
+         <span class="bar-num"></span>`;
+      row.querySelector('.bar-name').textContent = id.charAt(0).toUpperCase() + id.slice(1);
+      row.querySelector('.bar-num').textContent = `${n} of 10`;
+      const fill = row.querySelector('.bar-fill');
+      fill.style.background = cruColour[id];
+      $('cruBars').appendChild(row);
+      requestAnimationFrame(() => { fill.style.width = `${(n / cruMax) * 100}%`; });
+    });
+    $('cruText').textContent =
+      (last.crucible.label ? `${last.crucible.kind === 'hybrid' ? 'Hybrid' : 'Dominant'}: ${last.crucible.label}. ` : '')
+      + last.crucible.text;
+    $('cruCaveat').textContent = last.crucible.caveat;
+
+    if (r.neighbours.length) {
+      $('borderBlock').hidden = false;
+      $('borderText').textContent = `${BORDERLINE_MESSAGE} ` + r.neighbours.map((n) =>
+        `Were ${CALLINGS[n.calling].name} to answer a little louder, this record would read ${n.archetype.name}. ${n.archetype.tagline}`
+      ).join(' ');
+    } else {
+      $('borderBlock').hidden = true;
+    }
+
+    const rows = ORDER.map((k) =>
+      `<tr><td>${CALLINGS[k].name}</td><td>${r.raw[k]} raw, ${r.resonance[k]} Resonance${r.active.includes(k) ? ', active' : ''}</td></tr>`).join('');
+    $('techBody').innerHTML =
+      `<table>${rows}
+        <tr><td>Active threshold</td><td>${r.cutoff} of ${r.top}</td></tr>
+        <tr><td>Archetype mask</td><td>${r.mask}</td></tr>
+        <tr><td>Crucible counts</td><td>${r.crucible.bars.map(([i2, n]) => `${i2} ${n}`).join(', ')}</td></tr>
+        <tr><td>Completed</td><td>${new Date().toLocaleDateString()}</td></tr>
+      </table>
+      <p>A Calling is active when its raw score reaches 0.75 of the highest. Codes are Oath 1, Hearth 2, Forge 4, Voice 8, Watch 16, summed to give the mask.</p>`;
+
+    show('screenResult');
+  }
+
+  $('btnRetake').addEventListener('click', () => {
+    state = { at: 0, answers: Array(10).fill(null), crucible: Array(10).fill(null), done: false };
+    save();
+    show('screenGate');
+  });
+
+  $('btnDownload').addEventListener('click', async () => {
+    const btn = $('btnDownload');
+    const label = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Sealing the record…';
+    try {
+      const { buildTrialRecord } = await import('../../lib/trial-report.js');
+      const blob = await buildTrialRecord(last, {});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Trial Record - ${last.archetype.name}.pdf`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch (e) {
+      btn.textContent = 'Could not build the record';
+      setTimeout(() => { btn.textContent = label; }, 2500);
+      return;
+    } finally {
+      btn.disabled = false;
+      if (btn.textContent === 'Sealing the record…') btn.textContent = label;
+    }
+  });
+
+  // returning mid-Trial, or to a finished record
+  if (state.done && state.answers.every((x) => x !== null)) finish();
+  else if (state.answers.some((x) => x !== null)) { show('screenTrial'); render(); }
+</script>
+
+</body>
+</html>

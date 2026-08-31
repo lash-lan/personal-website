@@ -537,7 +537,7 @@ export const ENGINES = {
       if (opts.blank) body = body.filter((r) => r.some((c) => c !== ''));
       if (opts.dedupe) {
         const seen = new Set();
-        body = body.filter((r) => { const k = r.join(' '); if (seen.has(k)) return false; seen.add(k); return true; });
+        body = body.filter((r) => { const k = r.join('\u0000'); if (seen.has(k)) return false; seen.add(k); return true; });
       }
       const cleanHead = head.map((h, i) => (h.trim() || `column${i + 1}`));
       out.push({ name: `${stem(f.name)} (clean).csv`,

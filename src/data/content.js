@@ -9,7 +9,7 @@ export const SECTIONS = [
   { slug: 'sagas',   name: 'The Great Sagas',    kind: 'Full Stories',         href: '/sagas' },
   { slug: 'codex',   name: 'Codex',              kind: 'Historical Chronicle', href: '/codex' },
   { slug: 'gallery', name: 'Hall of Memories',   kind: 'Image Gallery',        href: '/gallery' },
-  { slug: 'trial',   name: 'Trial of Character', kind: 'Personality Quiz',     href: '/trial', comingSoon: true },
+  { slug: 'trial',   name: 'Trial of Character', kind: 'Personality Quiz',     href: '/trial' },
   { slug: 'workshop', name: 'The Workshop',     kind: 'Utilities',            href: '/workshop' },
 ];
 

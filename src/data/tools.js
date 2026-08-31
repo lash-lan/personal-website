@@ -63,7 +63,7 @@ export const TOOLS = [
     blurb: 'Break a document into pieces, by page ranges or one file per page.',
     accept: 'application/pdf',
     fields: [
-      { id: 'ranges', type: 'text', label: 'Pages to keep', placeholder: 'e.g. 1-3, 7, 10-12 — leave blank to split every page' },
+      { id: 'ranges', type: 'text', label: 'Pages to keep', placeholder: 'e.g. 1-3, 7, 10-12. Leave blank to split every page' },
     ],
   },
   {
@@ -257,7 +257,7 @@ export const TOOLS = [
     accept: 'audio/*,video/*', multiple: true, quality: true,
     fields: [
       { id: 'start', type: 'text', label: 'Start', placeholder: '0:00' },
-      { id: 'end', type: 'text', label: 'End', placeholder: '1:30 — leave blank for the end' },
+      { id: 'end', type: 'text', label: 'End', placeholder: '1:30. Leave blank for the end' },
       { id: 'format', type: 'select', label: 'Save as', options: [
         { value: 'mp3', label: 'MP3' },
         { value: 'wav', label: 'WAV' },

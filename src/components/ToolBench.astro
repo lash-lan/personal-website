@@ -664,7 +664,7 @@ const hasRange = fields.some((f) => f.id === 'start') && fields.some((f) => f.id
       progress.hidden = false;
       progress.textContent = 'Working…';
       const report = (msg, pct) => {
-        progress.textContent = pct ? `${msg} — ${Math.round(pct * 100)}%` : msg;
+        progress.textContent = pct ? `${msg} · ${Math.round(pct * 100)}%` : msg;
       };
       try {
         const out = await engine(files, readOptions(), report);
