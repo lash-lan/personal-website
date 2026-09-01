@@ -194,12 +194,18 @@ const TONES = [
     .mark-pop i{position:absolute;width:.55rem;height:.55rem;border-radius:50%;
       background:currentColor;top:.95rem;right:.85rem;opacity:.9}
 
-    .gate-resume{margin-top:.2rem}
-    .gate-resume button{font-family:'Cormorant SC',serif;font-size:.64rem;
-      letter-spacing:.2em;text-transform:uppercase;color:var(--oath);
-      background:none;border:none;border-bottom:1px solid rgba(200,155,60,.45);
-      padding:.25rem .1rem;cursor:pointer;transition:color .25s,border-color .25s}
-    .gate-resume button:hover{color:var(--bright);border-color:var(--bright)}
+    .gate-recent{display:flex;flex-direction:column;align-items:center;gap:.25rem;
+      margin:.6rem auto 0;padding:1rem 1.3rem;max-width:26rem;
+      border:1px solid var(--edge);border-radius:16px;background:rgba(0,0,0,.4)}
+    .recent-label{font-family:'Cormorant SC',serif;font-size:.6rem;letter-spacing:.26em;
+      text-transform:uppercase;color:var(--dim)}
+    .recent-name{font-family:'Cinzel',serif;font-size:1.12rem;color:var(--bright);
+      line-height:1.25}
+    .recent-meta{font-family:'Cormorant SC',serif;font-size:.6rem;letter-spacing:.18em;
+      text-transform:uppercase;color:var(--dim)}
+    .recent-actions{display:flex;flex-wrap:wrap;gap:.55rem;justify-content:center;
+      margin-top:.75rem}
+    .recent-actions .btn{font-size:.6rem;padding:.6rem 1.1rem}
 
     .sigil-name{min-height:1.4rem;font-family:'Cormorant SC',serif;font-size:.64rem;
       letter-spacing:.26em;text-transform:uppercase;color:var(--dim);
@@ -547,9 +553,15 @@ const TONES = [
       </div>
     </div>
     <p class="sigil-name" id="sigilName" aria-live="polite">Touch the five marks, or open the gate</p>
-    <p class="gate-resume" id="gateResume" hidden>
-      <button type="button" id="btnResume">View your last record</button>
-    </p>
+    <div class="gate-recent" id="gateRecent" hidden>
+      <span class="recent-label">Your most recent result</span>
+      <span class="recent-name" id="recentName"></span>
+      <span class="recent-meta" id="recentMeta"></span>
+      <div class="recent-actions">
+        <button type="button" class="btn primary" id="btnResume">Read the full record</button>
+        <button type="button" class="btn" id="btnRetake">Take the Trial again</button>
+      </div>
+    </div>
     <p class="gate-small" id="sealHint">A research-informed fantasy assessment. Roughly 7 to 10 minutes.</p>
 
     <div class="gate-links">
@@ -991,13 +1003,41 @@ const TONES = [
     state.step++; save(); render();
   });
 
+  // Beginning again, from either the record or the gate. Wipes the saved
+  // answers and returns the gate to its untouched state.
+  function startOver() {
+    state = fresh();
+    save();
+    $('gateRecent').hidden = true;
+    show('screenGate');
+    lit.clear();
+    gateway.classList.remove('all-lit');
+    $('seal').classList.remove('opening');
+    sigilName.textContent = REST;
+    sigilName.classList.remove('on');
+    document.querySelectorAll('.sigil').forEach((s) => {
+      s.classList.remove('lit');
+      s.querySelector('i').style.boxShadow = '';
+    });
+  }
+
   // ── the record ──
   let lastDoc = null, lastResult = null;
 
+  const longDate = (ms) => new Date(ms).toLocaleDateString(undefined,
+    { year: 'numeric', month: 'long', day: 'numeric' });
+
   function finish() {
-    state.done = true; save();
+    // Stamp the day it was actually taken, once. Reopening an old record
+    // later should not re-date it to today.
+    if (!state.done || !state.completedAt) {
+      state.done = true;
+      state.completedAt = state.completedAt || Date.now();
+    }
+    save();
     lastResult = evaluateDeep(state);
-    lastDoc = buildReport(lastResult);
+    lastDoc = buildReport(lastResult,
+      state.completedAt ? { completedAt: longDate(state.completedAt) } : {});
     drawRecord(lastDoc, lastResult);
     show('screenResult');
   }
@@ -1148,15 +1188,7 @@ const TONES = [
     root.appendChild(actions);
 
     dl.addEventListener('click', onDownload);
-    again.addEventListener('click', () => {
-      state = fresh(); save(); show('screenGate');
-      lit.clear(); gateway.classList.remove('all-lit');
-      $('seal').classList.remove('opening');
-      sigilName.textContent = REST; sigilName.classList.remove('on');
-      document.querySelectorAll('.sigil').forEach((s) => {
-        s.classList.remove('lit'); s.querySelector('i').style.boxShadow = '';
-      });
-    });
+    again.addEventListener('click', startOver);
 
     // the technical appendix, collapsed
     const tech = doc.sections.find((s) => s.id === 'technical');
@@ -1201,8 +1233,25 @@ const TONES = [
   // is disorienting, and it is what put an archetype under the gate.
   // An unfinished one still resumes exactly where it stopped.
   $('btnResume').addEventListener('click', finish);
-  if (state.done) { $('gateResume').hidden = false; }
-  else if (answeredCount() > 0) { show('screenTrial'); render(); }
+  $('btnRetake').addEventListener('click', startOver);
+
+  if (state.done) {
+    // Name the result on the gate, so the card means something before it is
+    // opened. Scored from the saved answers, exactly as the record will be.
+    try {
+      const past = evaluateDeep(state);
+      $('recentName').textContent = past.archetype.name;
+      // For the five Calling result the tier and the name are the same words,
+      // so showing both reads as a stutter. Drop the tier in that one case.
+      const tierWorth = past.archetype.name.includes(past.tier) ? '' : past.tier;
+      const when = state.completedAt ? longDate(state.completedAt) : '';
+      $('recentMeta').textContent = [tierWorth, when].filter(Boolean).join(' · ');
+      $('gateRecent').hidden = false;
+    } catch {
+      // Unreadable saved answers are not worth showing a card for.
+      $('gateRecent').hidden = true;
+    }
+  } else if (answeredCount() > 0) { show('screenTrial'); render(); }
 
 </script>
 
