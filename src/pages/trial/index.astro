@@ -34,6 +34,10 @@ const TONES = [
       --scene-a:#2a1a10; --scene-b:#0b0806;
     }
     *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    /* Anything given the hidden attribute stays hidden. Without this, a class
+       that sets its own display outranks the browser's rule for [hidden] and
+       the element keeps taking up space while appearing to be switched off. */
+    [hidden]{display:none !important}
     html{scroll-behavior:smooth}
     body{
       background:var(--ink); color:var(--text);
@@ -493,6 +497,12 @@ const TONES = [
        when the screen is short rather than shrinking it for everyone. */
     @media (max-height:820px){
       .gate{padding:5.2rem 1.2rem 1.5rem;gap:.55rem}
+      /* A returning visitor carries an extra card, and has already read the
+         opening lines once. Give the space to the card instead. */
+      .gate.with-recent .gate-lede{display:none}
+      .gate.with-recent .gateway{width:min(13.5rem,54vw);margin:.4rem auto 0}
+      .gate.with-recent{gap:.4rem;padding-bottom:.4rem}
+      .gate.with-recent .gate-links{margin-top:.5rem}
       .gateway{width:min(17.5rem,70vw);margin:.7rem auto .1rem}
       .gate-lede{font-size:1rem}
       .gate-lede span:nth-child(2){display:none}
@@ -1009,6 +1019,7 @@ const TONES = [
     state = fresh();
     save();
     $('gateRecent').hidden = true;
+    $('screenGate').classList.remove('with-recent');
     show('screenGate');
     lit.clear();
     gateway.classList.remove('all-lit');
@@ -1247,6 +1258,7 @@ const TONES = [
       const when = state.completedAt ? longDate(state.completedAt) : '';
       $('recentMeta').textContent = [tierWorth, when].filter(Boolean).join(' · ');
       $('gateRecent').hidden = false;
+      $('screenGate').classList.add('with-recent');
     } catch {
       // Unreadable saved answers are not worth showing a card for.
       $('gateRecent').hidden = true;
