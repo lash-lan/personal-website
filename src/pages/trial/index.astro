@@ -60,9 +60,13 @@ const TONES = [
 
     .screen{display:none}
     .screen.on{display:block}
+    /* the gate lays out as a column, but only while it is the screen on
+       show. Setting display on .gate alone outranked .screen{display:none}
+       and left the gate stacked above every later screen. */
+    .screen.on.gate{display:flex}
 
     /* ─── the gate ─── */
-    .gate{min-height:100svh;display:flex;flex-direction:column;align-items:center;
+    .gate{min-height:100svh;flex-direction:column;align-items:center;
       justify-content:center;text-align:center;padding:7rem 1.2rem 4rem;gap:1.1rem}
     .gate-eyebrow{font-family:'Cormorant SC',serif;font-size:.68rem;letter-spacing:.42em;
       text-transform:uppercase;color:var(--oath)}
@@ -72,6 +76,7 @@ const TONES = [
     .gate-lede span{display:block}
     .gate-small{font-family:'Cormorant SC',serif;font-size:.66rem;letter-spacing:.24em;
       text-transform:uppercase;color:var(--dim);margin-top:.6rem}
+
 
     /* ── the gateway: a rune ring, and a real arch with two doors ── */
     .gateway{position:relative;width:min(23rem,88vw);aspect-ratio:1;
@@ -176,6 +181,25 @@ const TONES = [
       color:var(--bright);text-shadow:0 0 20px rgba(0,0,0,.95),0 0 44px rgba(0,0,0,.85);
       transition:opacity 500ms ease}
     .gate-door.opening .seal-word{opacity:0}
+
+    .mark-pop{position:absolute;z-index:6;width:min(15rem,72vw);
+      background:rgba(10,9,8,.97);border:1px solid var(--oath);border-radius:12px;
+      padding:.7rem .85rem;text-align:left;pointer-events:none;
+      box-shadow:0 10px 30px rgba(0,0,0,.65);
+      opacity:0;transform:translateY(4px);transition:opacity .18s ease,transform .18s ease}
+    .mark-pop.on{opacity:1;transform:translateY(0)}
+    .mark-pop b{display:block;font-family:'Cinzel',serif;font-size:.84rem;
+      font-weight:400;color:var(--bright);margin-bottom:.22rem}
+    .mark-pop span{display:block;font-size:.86rem;line-height:1.45;color:var(--text)}
+    .mark-pop i{position:absolute;width:.55rem;height:.55rem;border-radius:50%;
+      background:currentColor;top:.95rem;right:.85rem;opacity:.9}
+
+    .gate-resume{margin-top:.2rem}
+    .gate-resume button{font-family:'Cormorant SC',serif;font-size:.64rem;
+      letter-spacing:.2em;text-transform:uppercase;color:var(--oath);
+      background:none;border:none;border-bottom:1px solid rgba(200,155,60,.45);
+      padding:.25rem .1rem;cursor:pointer;transition:color .25s,border-color .25s}
+    .gate-resume button:hover{color:var(--bright);border-color:var(--bright)}
 
     .sigil-name{min-height:1.4rem;font-family:'Cormorant SC',serif;font-size:.64rem;
       letter-spacing:.26em;text-transform:uppercase;color:var(--dim);
@@ -457,6 +481,23 @@ const TONES = [
       .record{padding-left:.9rem;padding-right:.9rem}
     }
 
+
+    /* On a phone the gate ran past the fold, which put the two lower marks
+       out of reach and left the page scrolling for no reason. Compact it
+       when the screen is short rather than shrinking it for everyone. */
+    @media (max-height:820px){
+      .gate{padding:5.2rem 1.2rem 1.5rem;gap:.55rem}
+      .gateway{width:min(17.5rem,70vw);margin:.7rem auto .1rem}
+      .gate-lede{font-size:1rem}
+      .gate-lede span:nth-child(2){display:none}
+      .gate-links{margin-top:.8rem}
+      .gate-small{margin-top:.3rem}
+    }
+    @media (max-height:680px){
+      .gate{padding:4.6rem 1.2rem 1.8rem}
+      .gateway{width:min(14rem,58vw)}
+      .gate-lede span:nth-child(3){display:none}
+    }
   </style>
 </head>
 <body>
@@ -501,8 +542,14 @@ const TONES = [
         <span class="step" aria-hidden="true"></span>
         <span class="seal-word" id="sealWord">Enter the Trial</span>
       </button>
+      <div class="mark-pop" id="markPop" role="status" aria-live="polite" hidden>
+        <i aria-hidden="true"></i><b></b><span></span>
+      </div>
     </div>
     <p class="sigil-name" id="sigilName" aria-live="polite">Touch the five marks, or open the gate</p>
+    <p class="gate-resume" id="gateResume" hidden>
+      <button type="button" id="btnResume">View your last record</button>
+    </p>
     <p class="gate-small" id="sealHint">A research-informed fantasy assessment. Roughly 7 to 10 minutes.</p>
 
     <div class="gate-links">
@@ -666,9 +713,13 @@ const TONES = [
       const angle = (-90 + i * 72) * (Math.PI / 180);
       b.style.left = `calc(50% + ${Math.cos(angle) * 46}% - 18px)`;
       b.style.top = `calc(50% + ${Math.sin(angle) * 46}% - 18px)`;
+      // one line, in plain terms, of what this Calling is measuring
+      const measures = cal.meaning.replace(/,([^,]*)$/, ' and$1');
       const say = (on) => {
-        sigilName.textContent = on ? `${cal.name} · ${cal.meaning}` : REST;
-        sigilName.classList.toggle('on', on);
+        if (on) openPop(b, cal, measures); else closePop();
+        sigilName.textContent = lit.size === 5
+          ? 'All five answer. The way is open.' : REST;
+        sigilName.classList.toggle('on', lit.size === 5);
       };
       const touch = () => {
         glow(b); lit.add(k); say(true);
@@ -688,6 +739,37 @@ const TONES = [
     });
   })();
 
+  // ── the mark popup ──
+  const pop = $('markPop');
+  function openPop(mark, cal, measures) {
+    pop.hidden = false;
+    pop.style.color = cal.colour;
+    pop.style.borderColor = cal.colour;
+    pop.querySelector('b').textContent = cal.name;
+    pop.querySelector('span').textContent = `Measures ${measures}.`;
+
+    // sit the card beside its mark, and keep it inside the ring's box
+    const box = gateway.getBoundingClientRect();
+    const m = mark.getBoundingClientRect();
+    const cx = m.left - box.left + m.width / 2;
+    const cy = m.top - box.top + m.height / 2;
+    const w = pop.offsetWidth, h = pop.offsetHeight;
+    let left = Math.max(-14, Math.min(cx - w / 2, box.width - w + 14));
+    // below the mark in the upper half, above it in the lower half
+    const top = cy < box.height / 2 ? cy + 26 : cy - h - 26;
+    pop.style.left = left + 'px';
+    pop.style.top = Math.max(-10, top) + 'px';
+    // Force layout so the transition has a start point, rather than waiting
+    // on an animation frame that a backgrounded tab may never deliver.
+    void pop.offsetHeight;
+    pop.classList.add('on');
+  }
+  function closePop() {
+    pop.classList.remove('on');
+    setTimeout(() => { if (!pop.classList.contains('on')) pop.hidden = true; }, 200);
+  }
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePop(); });
+
   if (!reduced) {
     gateway.addEventListener('pointermove', (e) => {
       const r = gateway.getBoundingClientRect();
@@ -701,6 +783,7 @@ const TONES = [
   $('seal').addEventListener('click', () => {
     const seal = $('seal');
     if (seal.classList.contains('opening')) return;
+    closePop();
     if (reduced) { enter(); return; }
     seal.classList.add('opening');
     gateway.classList.add('all-lit');
@@ -733,6 +816,10 @@ const TONES = [
     const step = STEPS[state.step];
     if (!step) return;
     tone(state.step);
+    // Each step starts at the top. Jump rather than glide: the reader wants
+    // to be at the top of the new scene, not to watch the old one scroll past,
+    // and a smooth scroll is cancelled the moment they touch the screen.
+    window.scrollTo({ top: 0, behavior: 'auto' });
     ['stageMirror', 'stageTrial', 'stageTrade'].forEach((s) => { $(s).hidden = true; });
 
     if (step.kind === 'mirror') drawMirror(step.p);
@@ -1110,7 +1197,11 @@ const TONES = [
   }
 
   // ── where to begin ──
-  if (state.done) { finish(); }
+  // A finished Trial no longer opens itself. Arriving at your own old record
+  // is disorienting, and it is what put an archetype under the gate.
+  // An unfinished one still resumes exactly where it stopped.
+  $('btnResume').addEventListener('click', finish);
+  if (state.done) { $('gateResume').hidden = false; }
   else if (answeredCount() > 0) { show('screenTrial'); render(); }
 
 </script>
