@@ -15,7 +15,8 @@
 import { CALLINGS, ORDER, ARCHETYPES, TIERS } from '../data/trial.js';
 import { FACETS, FACET_ORDER, FACETS_BY_CALLING, T, bandOf, clarityBandOf, THEMES }
   from '../data/trial-facets.js';
-import { MIRROR, MIRROR_SCALE, DILEMMAS, TRADEOFFS, CHANNEL } from '../data/trial-items.js';
+import { MIRROR, MIRROR_SCALE, DILEMMAS, TRADEOFFS, CHANNEL, CRUCIBLE_MOMENTS }
+  from '../data/trial-items.js';
 import { crucibleTally, crucibleReading } from './trial-engine.js';
 
 const zeroFacets = () => Object.fromEntries(FACET_ORDER.map((k) => [k, 0]));
@@ -254,6 +255,49 @@ export function evaluateDeep(state) {
   const cruTally = crucibleTally(state.crucible || []);
   const cru = crucibleReading(cruTally);
   cru.tally = cruTally;
+
+  // Where each response happened, so the report can say whether a reaction
+  // belongs to physical danger, social exposure, moral pressure or the
+  // unfamiliar, rather than treating pressure as one undifferentiated thing.
+  const byContext = {};
+  (state.crucible || []).forEach((id, slot) => {
+    const moment = CRUCIBLE_MOMENTS[slot];
+    if (!id || !moment) return;
+    const bucket = (byContext[moment.context] ||= { total: 0 });
+    bucket[id] = (bucket[id] || 0) + 1;
+    bucket.total += 1;
+  });
+  cru.byContext = byContext;
+
+  // Look for any response that clusters in one kind of danger, not just the
+  // dominant one. Someone who mostly assesses but freezes only when exposed
+  // in front of others has told us something the totals cannot: the freezing
+  // is the finding, even though assessing is the bigger number. A cluster has
+  // to beat that response's own overall rate, or every response looks
+  // concentrated somewhere by chance.
+  const cruTotal = Object.values(cruTally).reduce((a, b) => a + b, 0);
+  if (cruTotal >= 8) {
+    const signals = [];
+    for (const [ctx, bucket] of Object.entries(byContext)) {
+      for (const id of Object.keys(cruTally)) {
+        const hits = bucket[id] || 0;
+        if (hits < 2) continue;
+        const rateHere = hits / bucket.total;
+        const rateOverall = cruTally[id] / cruTotal;
+        const lift = rateHere - rateOverall;
+        // Nearly every moment of that kind, and clearly above this response's
+        // own baseline. Two of three is not a pattern, it is a coincidence
+        // with a small sample, and the report should not dress it up as one.
+        if (rateHere >= 0.75 && lift >= 0.3) {
+          signals.push({ ctx, id, hits, of: bucket.total, lift });
+        }
+      }
+    }
+    signals.sort((a, b) => b.lift - a.lift || b.hits - a.hits);
+    cru.strongestContext = signals[0] || null;
+  } else {
+    cru.strongestContext = null;
+  }
 
   const gaps = mirrorTrial(mirror.facet, facetTrial, mirror.answered);
   const flags = contradictions(facetTrial, mirror.facet, callingRel, cru);

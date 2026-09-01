@@ -662,7 +662,7 @@ const TONES = [
 
 <script>
   import { CALLINGS, ORDER, CRUCIBLE, CRUCIBLE_PROMPT } from '../../data/trial.js';
-  import { MIRROR, MIRROR_SCALE, DILEMMAS, TRADEOFFS } from '../../data/trial-items.js';
+  import { MIRROR, MIRROR_SCALE, DILEMMAS, TRADEOFFS, CRUCIBLE_MOMENTS } from '../../data/trial-items.js';
   import { FACETS, FACET_ORDER } from '../../data/trial-facets.js';
   import { evaluateDeep } from '../../lib/trial-engine-deep.js';
   import { buildReport } from '../../lib/trial-report-build.js';
@@ -911,7 +911,9 @@ const TONES = [
     const slot = cruSlot(i);
     $('crucible').hidden = slot === -1;
     if (slot !== -1) {
-      $('crucibleQ').textContent = CRUCIBLE_PROMPT;
+      // each Crucible moment carries its own danger, so the question does
+      // not read as the same sentence ten times over
+      $('crucibleQ').textContent = (CRUCIBLE_MOMENTS[slot] || {}).prompt || CRUCIBLE_PROMPT;
       const grid = $('cruGrid');
       grid.innerHTML = '';
       // Lettered, never named. Showing Fight or Freeze would tell the reader

@@ -7,7 +7,7 @@
 
 import { CALLINGS, ORDER } from '../data/trial.js';
 import { FACETS, FACET_ORDER, FACETS_BY_CALLING, T } from '../data/trial-facets.js';
-import { DILEMMAS } from '../data/trial-items.js';
+import { DILEMMAS, CRUCIBLE_CONTEXT } from '../data/trial-items.js';
 import {
   CALLING_PROSE, FACET_PROSE, CONTRADICTION_PROSE, GAP_PROSE, TENSION_PROSE,
   CRUCIBLE_MEETS, DOMAIN_PROSE, DOMAIN_QUIET, TENSION_MILD, NO_BORDERLAND,
@@ -266,6 +266,17 @@ function crucible(r) {
   }
   if (cru.text) p.push(cru.text);
   if (cru.top && CRUCIBLE_MEETS[cru.top]) p.push(CRUCIBLE_MEETS[cru.top]);
+
+  // The ten pressure moments were not all the same kind of danger. If one
+  // kind drew the leading response more than the others, that is worth more
+  // than the tally, because it says pressure is not one single thing for you.
+  const sc = cru.strongestContext;
+  if (sc && CRUCIBLE_CONTEXT[sc.ctx]) {
+    const label = sc.id.charAt(0).toUpperCase() + sc.id.slice(1);
+    p.push(`The ten moments were not all the same kind of danger, and your answers were not evenly spread across them. ${label} appeared in ${sc.hits} of the ${sc.of} moments involving ${CRUCIBLE_CONTEXT[sc.ctx]}, more than in any other kind. That is a more useful thing to know than the totals, because it suggests pressure is not one single experience for you. The situation decides which version of you arrives.`);
+  } else if (r.counts.crucible >= 8) {
+    p.push('Your responses were spread fairly evenly across the four kinds of danger the Trial put to you: physical, social, moral and unfamiliar. No one kind pulled a different reaction out of you, which suggests a reasonably consistent response to pressure whatever its source.');
+  }
 
   // how it meets this particular archetype
   const top = r.ranked[0][0];

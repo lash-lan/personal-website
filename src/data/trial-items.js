@@ -475,6 +475,35 @@ export const TRADEOFFS = [
     to('Being too soft on people who deserved consequences.', 'H', 'boundaries', 'fairness')),
 ];
 
+// ─── THE TEN CRUCIBLE MOMENTS ────────────────────────────────────────
+// The Master specification repeats one line after every scene. The v2 Audit
+// asks for more than that: it wants to know whether a response appears more
+// under physical threat, social exposure, moral pressure or the unfamiliar.
+// So the four answers stay word for word as specified, and only the danger
+// changes. Each moment is tagged so the report can say where a pattern sat.
+const moment = (context, prompt) => ({ context, prompt });
+
+export const CRUCIBLE_MOMENTS = [
+  moment('physical', 'Steel clears a scabbard somewhere behind you. What happens first?'),
+  moment('social',   'The room turns, and every face is waiting on your answer. What happens first?'),
+  moment('moral',    'You are asked, plainly and in front of others, to do the thing you said you never would. What happens first?'),
+  moment('unknown',  'The ground is wrong underfoot, and nothing here follows rules you know. What happens first?'),
+  moment('social',   'Someone names a failure of yours out loud, in company, and it is true. What happens first?'),
+  moment('physical', 'The timber above you gives, and there is no time to warn anyone. What happens first?'),
+  moment('unknown',  'Something moves at the edge of the firelight that you cannot name. What happens first?'),
+  moment('moral',    'You realise you have already been part of something you would have refused. What happens first?'),
+  moment('social',   'A person you rely on turns on you without warning, in front of the people you lead. What happens first?'),
+  moment('physical', 'The horse goes down under you at speed. What happens first?'),
+];
+
+// what each kind of danger is called, when the record explains a pattern
+export const CRUCIBLE_CONTEXT = {
+  physical: 'sudden physical danger',
+  social:   'being exposed in front of others',
+  moral:    'being cornered morally',
+  unknown:  'situations whose rules you do not yet know',
+};
+
 // How much each channel contributes to the Calling totals that decide the
 // archetype. The Trial dilemmas carry the archetype, because the Master
 // specification defines the archetype as behavioural. Trade-offs count
