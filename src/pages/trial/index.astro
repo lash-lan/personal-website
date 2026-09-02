@@ -1,6 +1,6 @@
 ---
 import SiteHeader from '../../components/SiteHeader.astro';
-import { QUESTIONS, CALLINGS, ORDER, CRUCIBLE, CRUCIBLE_PROMPT, SCIENCE_COPY } from '../../data/trial.js';
+import { CALLINGS, ORDER } from '../../data/fivefold.js';
 
 // Each Trial carries its own light. No artwork is shipped yet, so the scenes
 // are painted in gradient and grain; a real plate can drop into .scene-art
@@ -18,8 +18,8 @@ const TONES = [
   <meta charset="utf-8" />
   <link rel="icon" href="/favicon.ico" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>The Trial of Character | LASH</title>
-  <meta name="description" content="Five Callings contend within every soul. Ten choices reveal which voices you heed. A research-informed fantasy assessment, for reflection and entertainment." />
+  <title>The Fivefold Calling | LASH</title>
+  <meta name="description" content="Five Callings contend within every soul. Forty statements reveal which of them organise you. A research-inspired fantasy personality assessment, for reflection." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Cormorant+SC:wght@300;400;500&display=swap" rel="stylesheet" />
@@ -529,11 +529,11 @@ const TONES = [
   <!-- ── the gate ── -->
   <section class="screen on gate" id="screenGate">
     <span class="gate-eyebrow">A Rite of Judgment</span>
-    <h1>The Trial of Character</h1>
+    <h1>The Fivefold Calling</h1>
     <p class="gate-lede">
       <span>Five Callings contend within every soul.</span>
       <span>Few answer only one.</span>
-      <span>Ten choices will reveal which voices you heed when principle, loyalty, capability, influence and danger collide.</span>
+      <span>Forty statements will reveal which of them actually organise you.</span>
     </p>
 
     <div class="gateway" id="gateway">
@@ -556,7 +556,7 @@ const TONES = [
         </span>
         <span class="keystone" aria-hidden="true"></span>
         <span class="step" aria-hidden="true"></span>
-        <span class="seal-word" id="sealWord">Enter the Trial</span>
+        <span class="seal-word" id="sealWord">Begin the Trial</span>
       </button>
       <div class="mark-pop" id="markPop" role="status" aria-live="polite" hidden>
         <i aria-hidden="true"></i><b></b><span></span>
@@ -572,7 +572,7 @@ const TONES = [
         <button type="button" class="btn" id="btnRetake">Take the Trial again</button>
       </div>
     </div>
-    <p class="gate-small" id="sealHint">A research-informed fantasy assessment. Roughly 7 to 10 minutes.</p>
+    <p class="gate-small" id="sealHint">A research-inspired fantasy assessment. Roughly 8 to 12 minutes.</p>
 
     <div class="gate-links">
       <button type="button" data-panel="how">How the Trial Works</button>
@@ -582,14 +582,15 @@ const TONES = [
 
     <div class="panel" id="panelHow" hidden>
       <h3>How the Trial works</h3>
-      <p>Ten scenes, each with one decision among five courses, and one quick question about what happens in you when danger arrives.</p>
-      <p>No score is shown while you answer, so nothing nudges you toward a result. You may go back and change any answer before the end. Your progress is kept on this device so a refresh will not lose it.</p>
+      <p>Forty statements, five to a page. For each one you say how true it is of you, from strongly disagree to strongly agree.</p>
+      <p>Eight statements stand behind each of the five Callings. Some are written the other way round on purpose, so that simply agreeing with everything does not produce a flattering result.</p>
+      <p>No score is shown while you answer, so nothing nudges you toward a result. You may go back and change any answer before the end. Your progress is kept on this device, so a refresh will not lose it.</p>
     </div>
     <div class="panel" id="panelScience" hidden>
       <h3>About the science</h3>
-      <p>{SCIENCE_COPY}</p>
-      <p>The Five Callings are a fantasy translation of themes from trait psychology, especially work on Honesty-Humility, Emotionality, Conscientiousness and Extraversion, together with person-situation research on how people behave differently across circumstances. The Trial does not reproduce the HEXACO-PI-R and is not an official version of it.</p>
-      <p>The Crucible layer draws on research into fight, flight and freeze responses. It is treated as a context-sensitive tendency, never a diagnosis, and it has no effect on which archetype you receive.</p>
+      <p>A research-inspired fantasy personality assessment. It is not a validated clinical or diagnostic instrument, and it is not a measure of who you objectively are.</p>
+      <p>The Five Callings are a fantasy translation of themes from trait psychology. Each is measured by eight statements on a five point scale, and your score for a Calling is where your answers to those eight fall between the lowest and highest possible totals.</p>
+      <p>Affinity is a score on this test's own scale. A Watch of 80 does not mean you are eighty percent vigilant as an objective fact. It means your answers sat high on the range this test can measure.</p>
     </div>
     <div class="panel" id="panelPrivacy" hidden>
       <h3>Privacy</h3>
@@ -609,35 +610,12 @@ const TONES = [
     </div>
 
     <div class="trial">
-      <!-- the Mirror -->
-      <div id="stageMirror" hidden>
-        <span class="trial-no">The Mirror</span>
-        <h2>How you see yourself</h2>
-        <p class="prompt">Answer quickly and honestly. There are no right answers here, and nothing on this page decides your archetype. It is kept separate so the record can compare what you say with what you later choose.</p>
-        <div id="mirrorList"></div>
-      </div>
-
-      <!-- the Trial -->
-      <div id="stageTrial" hidden>
-        <div class="scene-art" id="sceneArt" role="img" aria-label="">
-          <span class="scene-cap" id="sceneCap"></span>
-        </div>
-        <span class="trial-no" id="trialNo"></span>
-        <h2 id="trialTitle"></h2>
-        <p class="prompt" id="trialPrompt"></p>
-        <div class="choices" id="choices" role="group" aria-label="Choose your course"></div>
-        <div class="crucible locked" id="crucible">
-          <span class="crucible-q" id="crucibleQ"></span>
-          <div class="cru-grid" id="cruGrid" role="group" aria-label="Your first response"></div>
-        </div>
-      </div>
-
-      <!-- the Scales -->
-      <div id="stageTrade" hidden>
-        <span class="trial-no" id="tradeNo"></span>
-        <h2>The Scales</h2>
-        <p class="prompt" id="tradePrompt"></p>
-        <div class="choices" id="tradeChoices" role="group" aria-label="Keep one"></div>
+      <!-- the statements -->
+      <div id="stageAsk">
+        <span class="trial-no" id="askNo"></span>
+        <h2 id="askHead">How true is each of these of you?</h2>
+        <p class="prompt">Answer as you actually are rather than as you would like to be. There are no right answers, and no statement counts for more than any other.</p>
+        <div id="askList"></div>
       </div>
 
       <div class="nav">
@@ -661,50 +639,31 @@ const TONES = [
 </script>
 
 <script>
-  import { CALLINGS, ORDER, CRUCIBLE, CRUCIBLE_PROMPT } from '../../data/trial.js';
-  import { MIRROR, MIRROR_SCALE, DILEMMAS, TRADEOFFS, CRUCIBLE_MOMENTS } from '../../data/trial-items.js';
-  import { FACETS, FACET_ORDER } from '../../data/trial-facets.js';
-  import { evaluateDeep } from '../../lib/trial-engine-deep.js';
-  import { buildReport } from '../../lib/trial-report-build.js';
+  import { CALLINGS, ORDER, QUESTIONS, SCALE } from '../../data/fivefold.js';
+  import { score } from '../../lib/fivefold-engine.js';
+  import { buildFivefold } from '../../lib/fivefold-report.js';
 
   const TONES = window.__TRIAL_TONES;
   const $ = (id) => document.getElementById(id);
-  const KEY = 'lash.trial.v2';
+  const KEY = 'lash.fivefold.v1';
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // ── the shape of the walk ──
   const PER_PAGE = 5;
-  const MIRROR_PAGES = Math.ceil(MIRROR.length / PER_PAGE);
-  const CRUCIBLE_AT = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18];   // ten of the twenty four
-  const cruSlot = (i) => CRUCIBLE_AT.indexOf(i);
+  const PAGES = Math.ceil(QUESTIONS.length / PER_PAGE);
 
-  const STEPS = [
-    ...Array.from({ length: MIRROR_PAGES }, (_, p) => ({ kind: 'mirror', p })),
-    ...DILEMMAS.map((_, i) => ({ kind: 'trial', i })),
-    ...TRADEOFFS.map((_, i) => ({ kind: 'trade', i })),
-  ];
-  const DECISIONS = MIRROR.length + DILEMMAS.length + TRADEOFFS.length;
-
-  // ── state, on this device only ──
-  const fresh = () => ({
-    step: 0,
-    mirror: Array(MIRROR.length).fill(null),
-    trial: Array(DILEMMAS.length).fill(null),
-    tradeoff: Array(TRADEOFFS.length).fill(null),
-    crucible: Array(CRUCIBLE_AT.length).fill(null),
-    done: false,
-  });
+  const fresh = () => ({ page: 0, answers: Array(QUESTIONS.length).fill(null), done: false });
   let state = fresh();
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
-    if (saved && Array.isArray(saved.trial) && saved.trial.length === DILEMMAS.length) state = saved;
+    if (saved && Array.isArray(saved.answers) && saved.answers.length === QUESTIONS.length) state = saved;
   } catch { /* start clean */ }
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
+  const answered = () => state.answers.filter((x) => x !== null).length;
 
   const show = (id) => {
     ['screenGate', 'screenTrial', 'screenResult'].forEach((s) =>
       $(s).classList.toggle('on', s === id));
-    window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'auto' });
   };
   const tone = (i) => {
     const [a, b] = TONES[i % TONES.length] || TONES[0];
@@ -719,70 +678,34 @@ const TONES = [
   const lit = new Set();
   const glow = (s) => {
     s.classList.add('lit');
-    s.querySelector('i').style.boxShadow = `0 0 20px ${s.style.color}, 0 0 42px ${s.style.color}`;
+    s.querySelector('i').style.boxShadow = '0 0 20px ' + s.style.color + ', 0 0 42px ' + s.style.color;
   };
 
-  (function placeSigils() {
-    const ring = $('runeRing');
-    ORDER.forEach((k, i) => {
-      const cal = CALLINGS[k];
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'sigil';
-      b.style.color = cal.colour;
-      b.setAttribute('aria-label', `${cal.name}. ${cal.meaning}`);
-      b.innerHTML = '<i></i>';
-      const angle = (-90 + i * 72) * (Math.PI / 180);
-      b.style.left = `calc(50% + ${Math.cos(angle) * 46}% - 18px)`;
-      b.style.top = `calc(50% + ${Math.sin(angle) * 46}% - 18px)`;
-      // one line, in plain terms, of what this Calling is measuring
-      const measures = cal.meaning.replace(/,([^,]*)$/, ' and$1');
-      const say = (on) => {
-        if (on) openPop(b, cal, measures); else closePop();
-        sigilName.textContent = lit.size === 5
-          ? 'All five answer. The way is open.' : REST;
-        sigilName.classList.toggle('on', lit.size === 5);
-      };
-      const touch = () => {
-        glow(b); lit.add(k); say(true);
-        if (lit.size === 5) {
-          gateway.classList.add('all-lit');
-          sigilName.textContent = 'All five answer. The way is open.';
-          sigilName.classList.add('on');
-        }
-      };
-      b.addEventListener('pointerenter', touch);
-      b.addEventListener('focus', touch);
-      b.addEventListener('click', (e) => { e.stopPropagation(); touch(); });
-      const rest = () => { if (lit.size < 5) say(false); };
-      b.addEventListener('pointerleave', rest);
-      b.addEventListener('blur', rest);
-      ring.appendChild(b);
-    });
-  })();
+  // what each Calling measures, said plainly
+  const MEASURES = {
+    O: 'principle, fairness and keeping your word',
+    H: 'loyalty, attachment and protecting your own',
+    F: 'discipline, preparation and seeing things through',
+    V: 'influence, persuasion and reading a room',
+    W: 'caution, verification and looking for what is hidden',
+  };
 
-  // ── the mark popup ──
   const pop = $('markPop');
   function openPop(mark, cal, measures) {
     pop.hidden = false;
     pop.style.color = cal.colour;
     pop.style.borderColor = cal.colour;
     pop.querySelector('b').textContent = cal.name;
-    pop.querySelector('span').textContent = `Measures ${measures}.`;
-
-    // sit the card beside its mark, and keep it inside the ring's box
+    pop.querySelector('span').textContent = 'Measures ' + measures + '.';
     const box = gateway.getBoundingClientRect();
     const m = mark.getBoundingClientRect();
     const cx = m.left - box.left + m.width / 2;
     const cy = m.top - box.top + m.height / 2;
     const w = pop.offsetWidth, h = pop.offsetHeight;
-    let left = Math.max(-14, Math.min(cx - w / 2, box.width - w + 14));
-    // below the mark in the upper half, above it in the lower half
+    const left = Math.max(-14, Math.min(cx - w / 2, box.width - w + 14));
     const top = cy < box.height / 2 ? cy + 26 : cy - h - 26;
     pop.style.left = left + 'px';
     pop.style.top = Math.max(-10, top) + 'px';
-    // Force layout so the transition has a start point, rather than waiting
-    // on an animation frame that a backgrounded tab may never deliver.
     void pop.offsetHeight;
     pop.classList.add('on');
   }
@@ -792,12 +715,43 @@ const TONES = [
   }
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePop(); });
 
+  (function placeSigils() {
+    const ring = $('runeRing');
+    ORDER.forEach((k, i) => {
+      const cal = CALLINGS[k];
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sigil';
+      b.style.color = cal.colour;
+      b.setAttribute('aria-label', cal.name + '. ' + MEASURES[k]);
+      b.innerHTML = '<i></i>';
+      const angle = (-90 + i * 72) * (Math.PI / 180);
+      b.style.left = 'calc(50% + ' + (Math.cos(angle) * 46) + '% - 18px)';
+      b.style.top = 'calc(50% + ' + (Math.sin(angle) * 46) + '% - 18px)';
+      const touch = () => {
+        glow(b); lit.add(k);
+        openPop(b, cal, MEASURES[k]);
+        sigilName.textContent = lit.size === 5 ? 'All five answer. The way is open.' : REST;
+        sigilName.classList.toggle('on', lit.size === 5);
+        if (lit.size === 5) gateway.classList.add('all-lit');
+      };
+      b.addEventListener('pointerenter', touch);
+      b.addEventListener('focus', touch);
+      b.addEventListener('click', (e) => { e.stopPropagation(); touch(); });
+      const rest = () => { if (lit.size < 5) closePop(); };
+      b.addEventListener('pointerleave', rest);
+      b.addEventListener('blur', rest);
+      ring.appendChild(b);
+    });
+  })();
+
   if (!reduced) {
     gateway.addEventListener('pointermove', (e) => {
       const r = gateway.getBoundingClientRect();
       const dx = (e.clientX - (r.left + r.width / 2)) / r.width;
       const dy = (e.clientY - (r.top + r.height / 2)) / r.height;
-      gateway.style.transform = `perspective(900px) rotateY(${dx * 7}deg) rotateX(${-dy * 7}deg)`;
+      gateway.style.transform =
+        'perspective(900px) rotateY(' + (dx * 7) + 'deg) rotateX(' + (-dy * 7) + 'deg)';
     });
     gateway.addEventListener('pointerleave', () => { gateway.style.transform = ''; });
   }
@@ -827,35 +781,17 @@ const TONES = [
     });
   });
 
-  // ── counting what has been answered ──
-  const answeredCount = () =>
-    state.mirror.filter((x) => x !== null).length +
-    state.trial.filter((x) => x !== null).length +
-    state.tradeoff.filter((x) => x !== null).length;
-
-  // ── drawing a step ──
+  // ── the forty statements, five to a page ──
   function render() {
-    const step = STEPS[state.step];
-    if (!step) return;
-    tone(state.step);
-    // Each step starts at the top. Jump rather than glide: the reader wants
-    // to be at the top of the new scene, not to watch the old one scroll past,
-    // and a smooth scroll is cancelled the moment they touch the screen.
+    tone(state.page);
+    // every page opens at the top
     window.scrollTo({ top: 0, behavior: 'auto' });
-    ['stageMirror', 'stageTrial', 'stageTrade'].forEach((s) => { $(s).hidden = true; });
+    const from = state.page * PER_PAGE;
+    const items = QUESTIONS.slice(from, from + PER_PAGE);
+    $('askNo').textContent = 'Page ' + (state.page + 1) + ' of ' + PAGES;
+    $('hudStage').textContent = 'The Fivefold Calling';
 
-    if (step.kind === 'mirror') drawMirror(step.p);
-    if (step.kind === 'trial') drawTrial(step.i);
-    if (step.kind === 'trade') drawTrade(step.i);
-    paint();
-  }
-
-  function drawMirror(page) {
-    $('stageMirror').hidden = false;
-    $('hudStage').textContent = 'The Mirror';
-    const from = page * PER_PAGE;
-    const items = MIRROR.slice(from, from + PER_PAGE);
-    const box = $('mirrorList');
+    const box = $('askList');
     box.innerHTML = '';
     items.forEach((item, n) => {
       const idx = from + n;
@@ -863,195 +799,85 @@ const TONES = [
       wrap.className = 'mirror-item';
       const q = document.createElement('p');
       q.className = 'mirror-q';
-      q.textContent = item.t;
+      q.textContent = item.n + '. ' + item.t;
       wrap.appendChild(q);
       const row = document.createElement('div');
       row.className = 'scale';
       row.setAttribute('role', 'group');
       row.setAttribute('aria-label', item.t);
-      MIRROR_SCALE.forEach((s, si) => {
+      SCALE.forEach((sc) => {
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'step-btn';
-        b.setAttribute('aria-pressed', String(state.mirror[idx] === si));
+        b.setAttribute('aria-pressed', String(state.answers[idx] === sc.v));
         b.innerHTML = '<i></i><span></span>';
-        b.querySelector('span').textContent = s.t;
-        b.addEventListener('click', () => { state.mirror[idx] = si; save(); paint(); });
+        b.querySelector('span').textContent = sc.t;
+        b.addEventListener('click', () => { state.answers[idx] = sc.v; save(); paint(); });
         row.appendChild(b);
       });
       wrap.appendChild(row);
       box.appendChild(wrap);
     });
+    paint();
   }
 
-  function drawTrial(i) {
-    $('stageTrial').hidden = false;
-    $('hudStage').textContent = 'The Trial';
-    const q = DILEMMAS[i];
-    $('trialNo').textContent = `Scene ${String(i + 1).padStart(2, '0')} of ${DILEMMAS.length}`;
-    $('trialTitle').textContent = q.title;
-    $('trialPrompt').textContent = q.prompt;
-    $('sceneCap').textContent = q.scene;
-    $('sceneArt').setAttribute('aria-label', q.scene);
-
-    const box = $('choices');
-    box.innerHTML = '';
-    q.choices.forEach((c, n) => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'choice';
-      b.setAttribute('aria-pressed', String(state.trial[i] === n));
-      b.innerHTML = '<b></b><span></span>';
-      b.querySelector('b').textContent = 'ABCDE'[n];
-      b.querySelector('span').textContent = c.t;
-      b.addEventListener('click', () => { state.trial[i] = n; save(); paint(); });
-      box.appendChild(b);
-    });
-
-    const slot = cruSlot(i);
-    $('crucible').hidden = slot === -1;
-    if (slot !== -1) {
-      // each Crucible moment carries its own danger, so the question does
-      // not read as the same sentence ten times over
-      $('crucibleQ').textContent = (CRUCIBLE_MOMENTS[slot] || {}).prompt || CRUCIBLE_PROMPT;
-      const grid = $('cruGrid');
-      grid.innerHTML = '';
-      // Lettered, never named. Showing Fight or Freeze would tell the reader
-      // which box they are ticking. The names appear afterwards, on the record.
-      CRUCIBLE.forEach((c, n) => {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'cru';
-        b.setAttribute('aria-pressed', String(state.crucible[slot] === c.id));
-        b.innerHTML = '<b></b><span></span>';
-        b.querySelector('b').textContent = 'ABCD'[n];
-        b.querySelector('span').textContent = c.t;
-        b.addEventListener('click', () => { state.crucible[slot] = c.id; save(); paint(); });
-        grid.appendChild(b);
-      });
-    }
-  }
-
-  function drawTrade(i) {
-    $('stageTrade').hidden = false;
-    $('hudStage').textContent = 'The Scales';
-    const q = TRADEOFFS[i];
-    $('tradeNo').textContent = `Scale ${i + 1} of ${TRADEOFFS.length}`;
-    $('tradePrompt').textContent = q.prompt;
-    const box = $('tradeChoices');
-    box.innerHTML = '';
-    q.choices.forEach((c, n) => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'choice trade';
-      b.setAttribute('aria-pressed', String(state.tradeoff[i] === n));
-      b.innerHTML = '<b></b><span></span>';
-      b.querySelector('b').textContent = 'AB'[n];
-      b.querySelector('span').textContent = c.t;
-      b.addEventListener('click', () => { state.tradeoff[i] = n; save(); paint(); });
-      box.appendChild(b);
-    });
-  }
-
-  // ── the state of the controls, with no scores anywhere ──
   function paint() {
-    const step = STEPS[state.step];
-    let ready = false, note = '';
-
-    if (step.kind === 'mirror') {
-      const from = step.p * PER_PAGE;
-      const idxs = MIRROR.slice(from, from + PER_PAGE).map((_, n) => from + n);
-      idxs.forEach((idx, n) => {
-        const row = $('mirrorList').children[n];
-        if (!row) return;
-        [...row.querySelector('.scale').children].forEach((b, si) =>
-          b.setAttribute('aria-pressed', String(state.mirror[idx] === si)));
-      });
-      const left = idxs.filter((idx) => state.mirror[idx] === null).length;
-      ready = left === 0;
-      note = ready ? '' : `${left} of these still to answer.`;
-    }
-
-    if (step.kind === 'trial') {
-      const i = step.i;
-      [...$('choices').children].forEach((b, n) =>
-        b.setAttribute('aria-pressed', String(state.trial[i] === n)));
-      const slot = cruSlot(i);
-      const picked = state.trial[i] !== null;
-      $('crucible').classList.toggle('locked', !picked);
-      if (slot !== -1) {
-        [...$('cruGrid').children].forEach((b, n) =>
-          b.setAttribute('aria-pressed', String(state.crucible[slot] === CRUCIBLE[n].id)));
-      }
-      const cruDone = slot === -1 || state.crucible[slot] !== null;
-      ready = picked && cruDone;
-      note = !picked ? 'Choose your course.'
-        : !cruDone ? 'One more, quickly, without thinking about it.' : '';
-    }
-
-    if (step.kind === 'trade') {
-      [...$('tradeChoices').children].forEach((b, n) =>
-        b.setAttribute('aria-pressed', String(state.tradeoff[step.i] === n)));
-      ready = state.tradeoff[step.i] !== null;
-      note = ready ? '' : 'One or the other. You cannot keep both.';
-    }
-
-    const done = answeredCount();
-    $('hudCount').textContent = `${done} of ${DECISIONS} answered`;
-    $('trackFill').style.width = `${(done / DECISIONS) * 100}%`;
-    $('btnBack').disabled = state.step === 0;
-    $('btnNext').disabled = !ready;
-    $('btnNext').textContent = state.step === STEPS.length - 1 ? 'Receive Your Record' : 'Next';
-    $('navNote').textContent = note;
+    const from = state.page * PER_PAGE;
+    const idxs = QUESTIONS.slice(from, from + PER_PAGE).map((_, n) => from + n);
+    idxs.forEach((idx, n) => {
+      const row = $('askList').children[n];
+      if (!row) return;
+      [...row.querySelector('.scale').children].forEach((b, si) =>
+        b.setAttribute('aria-pressed', String(state.answers[idx] === SCALE[si].v)));
+    });
+    const left = idxs.filter((i) => state.answers[i] === null).length;
+    const done = answered();
+    $('hudCount').textContent = done + ' of ' + QUESTIONS.length + ' answered';
+    $('trackFill').style.width = ((done / QUESTIONS.length) * 100) + '%';
+    $('btnBack').disabled = state.page === 0;
+    $('btnNext').disabled = left > 0;
+    $('btnNext').textContent = state.page === PAGES - 1 ? 'Receive Your Calling' : 'Next';
+    $('navNote').textContent = left ? left + ' still to answer on this page.' : '';
     save();
   }
 
   $('btnBack').addEventListener('click', () => {
-    if (state.step === 0) return;
-    state.step--; save(); render();          // replaces, never duplicates
+    if (state.page === 0) return;
+    state.page--; save(); render();
   });
   $('btnNext').addEventListener('click', () => {
-    if (state.step === STEPS.length - 1) { finish(); return; }
-    state.step++; save(); render();
+    if (state.page === PAGES - 1) { finish(); return; }
+    state.page++; save(); render();
   });
 
-  // Beginning again, from either the record or the gate. Wipes the saved
-  // answers and returns the gate to its untouched state.
-  function startOver() {
-    state = fresh();
-    save();
-    $('gateRecent').hidden = true;
-    $('screenGate').classList.remove('with-recent');
-    show('screenGate');
-    lit.clear();
-    gateway.classList.remove('all-lit');
-    $('seal').classList.remove('opening');
-    sigilName.textContent = REST;
-    sigilName.classList.remove('on');
-    document.querySelectorAll('.sigil').forEach((s) => {
-      s.classList.remove('lit');
-      s.querySelector('i').style.boxShadow = '';
-    });
-  }
-
-  // ── the record ──
-  let lastDoc = null, lastResult = null;
-
+  // ── the result ──
+  let lastDoc = null, lastScore = null;
   const longDate = (ms) => new Date(ms).toLocaleDateString(undefined,
     { year: 'numeric', month: 'long', day: 'numeric' });
 
+  function startOver() {
+    state = fresh(); save();
+    $('gateRecent').hidden = true;
+    $('screenGate').classList.remove('with-recent');
+    show('screenGate');
+    lit.clear(); gateway.classList.remove('all-lit');
+    $('seal').classList.remove('opening');
+    sigilName.textContent = REST; sigilName.classList.remove('on');
+    document.querySelectorAll('.sigil').forEach((s) => {
+      s.classList.remove('lit'); s.querySelector('i').style.boxShadow = '';
+    });
+  }
+
   function finish() {
-    // Stamp the day it was actually taken, once. Reopening an old record
-    // later should not re-date it to today.
     if (!state.done || !state.completedAt) {
       state.done = true;
       state.completedAt = state.completedAt || Date.now();
     }
     save();
-    lastResult = evaluateDeep(state);
-    lastDoc = buildReport(lastResult,
+    lastScore = score(state.answers);
+    lastDoc = buildFivefold(lastScore,
       state.completedAt ? { completedAt: longDate(state.completedAt) } : {});
-    drawRecord(lastDoc, lastResult);
+    drawRecord(lastDoc, lastScore);
     show('screenResult');
   }
 
@@ -1061,153 +887,81 @@ const TONES = [
     if (text !== undefined) n.textContent = text;
     return n;
   };
-  // **bold** at the start of a tension paragraph becomes a real lead-in
-  const para = (text) => {
-    const p = el('p');
-    const m = /^\*\*(.+?)\.\*\*\s*(.*)$/s.exec(text);
-    if (m) { p.appendChild(el('strong', null, m[1] + '.')); p.append(' ' + m[2]); }
-    else p.textContent = text;
-    return p;
-  };
-  const bar = (label, value, max, colour, note, dim) => {
-    const row = el('div', 'bar-row' + (dim ? ' off' : ''));
-    row.appendChild(el('span', 'bar-name', label));
-    const track = el('span', 'bar-track');
-    const fill = el('i', 'bar-fill');
-    fill.style.width = Math.max(2, (value / (max || 1)) * 100) + '%';
-    fill.style.background = colour;
-    track.appendChild(fill);
-    row.appendChild(track);
-    row.appendChild(el('span', 'bar-num', note));
-    return row;
-  };
 
   function drawRecord(doc, r) {
     const root = $('record');
     root.innerHTML = '';
 
-    // the verdict
     const head = el('div', 'rec-head');
     head.appendChild(el('span', 'rec-tier', doc.verdict.tier));
     head.appendChild(el('h1', 'rec-name', doc.verdict.name));
     const art = el('div', 'rec-art');
     art.setAttribute('role', 'img');
-    art.setAttribute('aria-label', `${doc.verdict.name}. ${doc.verdict.blend}.`);
+    art.setAttribute('aria-label', doc.verdict.name + '. ' + doc.verdict.blend + '.');
     const glyphs = el('span', 'glyphs');
     doc.verdict.active.forEach((k) => {
       const i = el('i');
       i.style.background = CALLINGS[k].colour;
-      i.style.boxShadow = `0 0 18px ${CALLINGS[k].colour}`;
+      i.style.boxShadow = '0 0 18px ' + CALLINGS[k].colour;
       i.title = CALLINGS[k].name;
       glyphs.appendChild(i);
     });
     art.appendChild(glyphs);
     head.appendChild(art);
     head.appendChild(el('p', 'rec-blend', doc.verdict.blend));
-    head.appendChild(el('p', 'rec-tag', doc.verdict.tagline));
-    head.appendChild(para(doc.verdict.line));
-    const clarity = el('p', 'rec-clarity');
-    clarity.append(`Profile clarity ${doc.verdict.clarity.score} of 100, read as ${doc.verdict.clarity.band}. `);
-    clarity.append(doc.verdict.clarityNote);
-    head.appendChild(clarity);
-    head.appendChild(el('p', 'rec-date', `Completed ${doc.verdict.when}`));
+    head.appendChild(el('p', 'rec-tag', doc.verdict.reveal));
+    head.appendChild(el('p', 'rec-date', 'Completed ' + doc.verdict.when));
     root.appendChild(head);
 
-    // every section
+    // all five, always, whether they counted or not
+    const barBlock = el('section', 'rec-block');
+    barBlock.appendChild(el('h2', null, 'Your Five Affinities'));
+    const bars = el('div', 'bars');
+    doc.bars.forEach((b) => {
+      const row = el('div', 'bar-row' + (b.active ? '' : ' off'));
+      row.appendChild(el('span', 'bar-name', b.name));
+      const track = el('span', 'bar-track');
+      const fill = el('i', 'bar-fill');
+      fill.style.width = Math.max(2, b.affinity) + '%';
+      fill.style.background = b.colour;
+      track.appendChild(fill);
+      row.appendChild(track);
+      row.appendChild(el('span', 'bar-num',
+        b.affinity + ' · ' + b.band + (b.active ? ' · active' : '')));
+      bars.appendChild(row);
+    });
+    barBlock.appendChild(bars);
+    root.appendChild(barBlock);
+
     for (const s of doc.sections) {
-      if (s.id === 'technical') continue;          // appendix, drawn last
+      if (s.id === 'technical') continue;
       const sec = el('section', 'rec-block');
       sec.appendChild(el('h2', null, s.title));
-
-      if (s.id === 'fivefold') {
-        const bars = el('div', 'bars');
-        s.rows.forEach((row) => {
-          bars.appendChild(bar(row.name, row.rel, 100, row.colour,
-            `${row.raw} pts · ${row.rel} resonance · ${row.status}`, row.status === 'Quiet'));
-          bars.appendChild(el('p', 'bar-note', row.line));
-        });
-        sec.appendChild(bars);
-      }
-
-      if (s.id === 'facets') {
-        const grid = el('div', 'facet-grid');
-        s.rows.forEach((row) => {
-          const card = el('div', 'facet-card');
-          card.appendChild(el('span', 'facet-name', row.name));
-          const track = el('span', 'bar-track');
-          const fill = el('i', 'bar-fill');
-          fill.style.width = Math.max(3, row.value) + '%';
-          fill.style.background = row.colour;
-          track.appendChild(fill);
-          card.appendChild(track);
-          card.appendChild(el('span', 'facet-band', `${row.value} · ${row.band}`));
-          grid.appendChild(card);
-        });
-        sec.appendChild(grid);
-      }
-
-      if (s.id === 'mirror' && s.rows) {
-        const t = el('div', 'gap-list');
-        s.rows.slice(0, 8).forEach((row) => {
-          const line = el('div', 'gap-row');
-          line.appendChild(el('span', 'gap-name', row.name));
-          line.appendChild(el('span', 'gap-num', `you said ${row.self}`));
-          line.appendChild(el('span', 'gap-num', `you chose ${row.acted}`));
-          line.appendChild(el('span', 'gap-tag tag-' + row.label.replace(/\W/g, ''), row.label));
-          t.appendChild(line);
-        });
-        sec.appendChild(t);
-      }
-
-      if (s.id === 'crucible' && s.bars) {
-        const bars = el('div', 'bars');
-        const max = Math.max(...s.bars.map((b) => b.n), 1);
-        const col = { Fight: '#9E3030', Flight: '#2F7D78', Freeze: '#684A87', Assess: '#406A9B' };
-        s.bars.forEach((b) => bars.appendChild(
-          bar(b.label, b.n, max, col[b.label], `${b.n} of ${r.counts.crucible}`)));
-        sec.appendChild(bars);
-      }
-
-      (s.paras || []).forEach((t) => sec.appendChild(para(t)));
-
-      if (s.subs) {
-        s.subs.forEach((sub) => {
-          sec.appendChild(el('h3', null, sub.title));
-          sub.paras.forEach((t) => sec.appendChild(para(t)));
-        });
-      }
-      if (s.prompts) {
+      (s.paras || []).forEach((t) => sec.appendChild(el('p', null, t)));
+      if (s.items && s.items.length) {
         const ul = el('ul', 'prompts');
-        s.prompts.forEach((t) => ul.appendChild(el('li', null, t)));
+        s.items.forEach((t) => ul.appendChild(el('li', null, t)));
         sec.appendChild(ul);
       }
       root.appendChild(sec);
     }
 
-    // A short limitations line that does not require opening a panel. The
-    // full statement stays in the appendix, as the specification asks.
-    root.appendChild(el('p', 'rec-limits',
-      'A fantasy assessment made for reflection. It is not a validated psychometric test, not an official HEXACO instrument, and not a measure of who you objectively are. It reflects the choices you made today, in these particular scenes.'));
+    root.appendChild(el('p', 'rec-limits', doc.verdict.footer));
 
-    // actions
     const actions = el('div', 'rec-actions');
-    const dl = el('button', 'btn primary', 'Download Your Trial Record');
-    dl.id = 'btnDownload';
-    dl.type = 'button';
+    const dl = el('button', 'btn primary', 'Download Your Record');
+    dl.id = 'btnDownload'; dl.type = 'button';
     const again = el('button', 'btn', 'Take the Trial Again');
     again.type = 'button';
-    actions.appendChild(dl);
-    actions.appendChild(again);
+    actions.appendChild(dl); actions.appendChild(again);
     root.appendChild(actions);
-
     dl.addEventListener('click', onDownload);
     again.addEventListener('click', startOver);
 
-    // the technical appendix, collapsed
     const tech = doc.sections.find((s) => s.id === 'technical');
     if (tech) {
       const det = el('details', 'tech');
-      det.appendChild(el('summary', null, 'Technical record and limitations'));
+      det.appendChild(el('summary', null, 'How this was scored, and what it does not claim'));
       const body = el('div', 'tech-body');
       tech.lines.forEach((l) => body.appendChild(el('p', null, l)));
       tech.paras.forEach((t) => body.appendChild(el('p', 'science', t)));
@@ -1223,14 +977,13 @@ const TONES = [
     btn.textContent = 'Sealing the record...';
     try {
       const { buildTrialRecord } = await import('../../lib/trial-report.js');
-      const blob = await buildTrialRecord(lastDoc, lastResult);
+      const blob = await buildTrialRecord(lastDoc, lastScore);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Trial Record - ${lastDoc.verdict.name}.pdf`;
+      a.download = 'The Fivefold Calling - ' + lastDoc.verdict.name + '.pdf';
       document.body.appendChild(a);
-      a.click();
-      a.remove();
+      a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 4000);
       btn.textContent = 'Record downloaded';
       setTimeout(() => { btn.textContent = was; btn.disabled = false; }, 2500);
@@ -1242,31 +995,22 @@ const TONES = [
   }
 
   // ── where to begin ──
-  // A finished Trial no longer opens itself. Arriving at your own old record
-  // is disorienting, and it is what put an archetype under the gate.
-  // An unfinished one still resumes exactly where it stopped.
   $('btnResume').addEventListener('click', finish);
   $('btnRetake').addEventListener('click', startOver);
 
   if (state.done) {
-    // Name the result on the gate, so the card means something before it is
-    // opened. Scored from the saved answers, exactly as the record will be.
     try {
-      const past = evaluateDeep(state);
+      const past = score(state.answers);
       $('recentName').textContent = past.archetype.name;
-      // For the five Calling result the tier and the name are the same words,
-      // so showing both reads as a stutter. Drop the tier in that one case.
       const tierWorth = past.archetype.name.includes(past.tier) ? '' : past.tier;
       const when = state.completedAt ? longDate(state.completedAt) : '';
       $('recentMeta').textContent = [tierWorth, when].filter(Boolean).join(' · ');
       $('gateRecent').hidden = false;
       $('screenGate').classList.add('with-recent');
     } catch {
-      // Unreadable saved answers are not worth showing a card for.
       $('gateRecent').hidden = true;
     }
-  } else if (answeredCount() > 0) { show('screenTrial'); render(); }
-
+  } else if (answered() > 0) { show('screenTrial'); render(); }
 </script>
 
 </body>
