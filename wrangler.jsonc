@@ -1,6 +1,6 @@
 {
 	"compatibility_date": "2026-04-20",
-	"compatibility_flags": ["global_fetch_strictly_public"],
+	"compatibility_flags": ["global_fetch_strictly_public", "nodejs_compat"],
 	"name": "personal-website",
 	"main": "@astrojs/cloudflare/entrypoints/server",
 	"assets": {
@@ -9,5 +9,21 @@
 	},
 	"observability": {
 		"enabled": true
-	}
+	},
+
+	// The reader database. Create it once with:
+	//     npx wrangler d1 create blood-of-icetear
+	// then paste the id it prints into database_id below.
+	// Locally, wrangler keeps its own copy under .wrangler and needs no id.
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "blood-of-icetear",
+			"database_id": "REPLACE_WITH_YOUR_DATABASE_ID"
+		}
+	]
+
+	// Sign in also needs two values, which are secrets and must never be
+	// committed to GitHub. Set them in the Cloudflare dashboard, under the
+	// Worker's Settings, as GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.
 }
