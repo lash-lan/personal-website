@@ -1,0 +1,343 @@
+---
+// A one-time age check for the Great Sagas.
+//
+// Two things about how this is built are deliberate:
+//
+//   1. The gate is visible by default, in CSS, and JavaScript only takes it
+//      away once a date of birth has been accepted. Doing it the other way
+//      round would let the stories paint first and flash on screen before the
+//      gate appeared, which would defeat the point.
+//   2. The script is inline rather than bundled, so it runs while the page is
+//      still parsing instead of after the first paint.
+//
+// This is a self declaration, in the way that every age gate on the web is.
+// It records a reader's own answer. It is not identity verification, and the
+// page's HTML still contains the story for anyone determined to read the
+// source. Treated as a courtesy and a clear warning, which is what it is.
+const { returnTo = '/' } = Astro.props;
+---
+
+<div class="age-gate" id="ageGate" role="dialog" aria-modal="true"
+     aria-labelledby="ageGateHeading">
+  <div class="age-card">
+    <!-- the question -->
+    <div id="ageAsk">
+      <span class="age-eyebrow">The Great Sagas</span>
+      <h2 id="ageGateHeading">Before you enter</h2>
+      <p class="age-lede">
+        These are the long tellings, and they do not look away from war, cruelty
+        or grief. They are written for adult readers. Please confirm your date of
+        birth to continue.
+      </p>
+
+      <div class="age-fields">
+        <label class="age-field">
+          <span>Day</span>
+          <select id="ageDay" aria-label="Day of birth"></select>
+        </label>
+        <label class="age-field">
+          <span>Month</span>
+          <select id="ageMonth" aria-label="Month of birth"></select>
+        </label>
+        <label class="age-field">
+          <span>Year</span>
+          <select id="ageYear" aria-label="Year of birth"></select>
+        </label>
+      </div>
+
+      <p class="age-note" id="ageNote" aria-live="polite"></p>
+
+      <div class="age-actions">
+        <button type="button" class="age-btn primary" id="ageEnter">Enter the Sagas</button>
+        <a class="age-btn" href={returnTo}>Go back</a>
+      </div>
+
+      <p class="age-small">
+        Your answer is kept on this device only. Nothing is sent anywhere and no
+        account is needed. You will not be asked again on this device.
+      </p>
+    </div>
+
+    <!-- the refusal -->
+    <div id="ageDenied" hidden>
+      <span class="age-eyebrow">Not yet</span>
+      <h2>Come back when you are eighteen</h2>
+      <p class="age-lede">
+        The Great Sagas carry war, cruelty and loss at a weight written for adult
+        readers, and it would not be right of me to hand them to you sooner.
+      </p>
+      <p class="age-lede">
+        You are genuinely welcome everywhere else. The Library holds the shorter
+        stories, and the Codex holds the history of the whole world. Both are
+        worth your time, and both will still be here.
+      </p>
+      <div class="age-actions">
+        <a class="age-btn primary" href="/">Return to the homepage</a>
+        <a class="age-btn" href="/library">Visit the Library</a>
+      </div>
+      <p class="age-small">
+        <button type="button" class="age-again" id="ageAgain">I entered my date of birth wrongly</button>
+      </p>
+    </div>
+  </div>
+</div>
+
+<style is:global>
+  /* Visible from the first paint. Nothing behind it can be read until the
+     script decides otherwise. */
+  .age-gate {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: grid;
+    place-items: center;
+    padding: 1.2rem;
+    background: #07090c;
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(40, 60, 90, 0.35), transparent 70%),
+      radial-gradient(ellipse 70% 50% at 50% 100%, rgba(10, 14, 20, 0.9), transparent 70%);
+    overflow-y: auto;
+  }
+  .age-gate[hidden] { display: none; }
+
+  /* While the gate is up, the page behind it must not scroll. */
+  html:has(.age-gate:not([hidden])) { overflow: hidden; }
+
+  .age-card {
+    width: min(34rem, 100%);
+    border: 1px solid rgba(200, 175, 120, 0.22);
+    border-radius: 18px;
+    background: rgba(8, 10, 14, 0.92);
+    padding: clamp(1.4rem, 5vw, 2.4rem);
+    text-align: center;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+    font-family: 'EB Garamond', Georgia, serif;
+    color: #b9b0a2;
+  }
+  .age-eyebrow {
+    display: block;
+    font-family: 'Cormorant SC', 'Cormorant Garamond', Georgia, serif;
+    font-size: 0.64rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: #c8af78;
+    margin-bottom: 0.7rem;
+  }
+  .age-card h2 {
+    font-family: 'Cinzel', Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(1.3rem, 4.5vw, 1.9rem);
+    line-height: 1.2;
+    color: #f0e8db;
+    margin: 0 0 0.9rem;
+    text-wrap: balance;
+  }
+  .age-lede {
+    font-size: 1rem;
+    line-height: 1.65;
+    margin: 0 auto 0.9rem;
+    max-width: 30rem;
+  }
+
+  .age-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    justify-content: center;
+    margin: 1.5rem 0 0.5rem;
+  }
+  .age-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    text-align: left;
+    flex: 1 1 6rem;
+    min-width: 5.5rem;
+    max-width: 9rem;
+  }
+  .age-field > span {
+    font-family: 'Cormorant SC', 'Cormorant Garamond', Georgia, serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #7d7466;
+  }
+  .age-field select {
+    appearance: none;
+    width: 100%;
+    padding: 0.7rem 0.75rem;
+    min-height: 48px;
+    border: 1px solid rgba(200, 175, 120, 0.28);
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.45);
+    color: #f0e8db;
+    font: inherit;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .age-field select:hover { border-color: rgba(200, 175, 120, 0.6); }
+  .age-field select:focus-visible {
+    outline: 2px solid #c8af78;
+    outline-offset: 2px;
+    border-color: #c8af78;
+  }
+
+  .age-note {
+    min-height: 1.4rem;
+    font-size: 0.88rem;
+    font-style: italic;
+    color: #cf8f6b;
+    margin: 0.4rem 0 0;
+  }
+
+  .age-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    justify-content: center;
+    margin: 1.3rem 0 1rem;
+  }
+  .age-btn {
+    font-family: 'Cormorant SC', 'Cormorant Garamond', Georgia, serif;
+    font-size: 0.66rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    padding: 0.8rem 1.5rem;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid rgba(200, 175, 120, 0.35);
+    background: none;
+    color: #b9b0a2;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.25s, border-color 0.25s, background-color 0.25s, transform 0.12s;
+  }
+  .age-btn:hover { color: #f0e8db; border-color: #c8af78; }
+  .age-btn:active { transform: scale(0.97); }
+  .age-btn:focus-visible { outline: 2px solid #c8af78; outline-offset: 3px; }
+  .age-btn.primary { background: #c8af78; border-color: #c8af78; color: #12100c; }
+  .age-btn.primary:hover { background: #ddc48c; border-color: #ddc48c; color: #12100c; }
+
+  .age-small {
+    font-size: 0.8rem;
+    color: #6f685c;
+    line-height: 1.6;
+    margin: 0.6rem auto 0;
+    max-width: 28rem;
+  }
+  .age-again {
+    font: inherit;
+    color: #8f8574;
+    background: none;
+    border: none;
+    border-bottom: 1px solid rgba(200, 175, 120, 0.4);
+    padding: 0.15rem 0;
+    cursor: pointer;
+  }
+  .age-again:hover { color: #f0e8db; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .age-btn { transition: none; }
+  }
+</style>
+
+<script is:inline>
+  (function () {
+    var KEY = 'lash.age.v1';
+    var MIN_AGE = 18;
+    var gate = document.getElementById('ageGate');
+    if (!gate) return;
+
+    // Already answered on this device, so never ask again.
+    try {
+      var saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (saved && saved.ok === true) { gate.hidden = true; return; }
+    } catch (e) { /* fall through and ask */ }
+
+    var ask = document.getElementById('ageAsk');
+    var denied = document.getElementById('ageDenied');
+    var note = document.getElementById('ageNote');
+    var dEl = document.getElementById('ageDay');
+    var mEl = document.getElementById('ageMonth');
+    var yEl = document.getElementById('ageYear');
+
+    var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'];
+
+    var opt = function (el, value, label) {
+      var o = document.createElement('option');
+      o.value = value;
+      o.textContent = label;
+      el.appendChild(o);
+    };
+
+    opt(dEl, '', 'Day');
+    for (var d = 1; d <= 31; d++) opt(dEl, String(d), String(d));
+    opt(mEl, '', 'Month');
+    for (var m = 0; m < 12; m++) opt(mEl, String(m + 1), MONTHS[m]);
+    opt(yEl, '', 'Year');
+    var thisYear = new Date().getFullYear();
+    for (var y = thisYear; y >= 1920; y--) opt(yEl, String(y), String(y));
+
+    function fullYearsSince(day, month, year) {
+      var now = new Date();
+      var age = now.getFullYear() - year;
+      // not yet had this year's birthday
+      var monthGap = (now.getMonth() + 1) - month;
+      if (monthGap < 0 || (monthGap === 0 && now.getDate() < day)) age--;
+      return age;
+    }
+
+    function realDate(day, month, year) {
+      var probe = new Date(year, month - 1, day);
+      return probe.getFullYear() === year &&
+             probe.getMonth() === month - 1 &&
+             probe.getDate() === day;
+    }
+
+    document.getElementById('ageEnter').addEventListener('click', function () {
+      var day = parseInt(dEl.value, 10);
+      var month = parseInt(mEl.value, 10);
+      var year = parseInt(yEl.value, 10);
+
+      if (!day || !month || !year) {
+        note.textContent = 'Please choose a day, a month and a year.';
+        return;
+      }
+      if (!realDate(day, month, year)) {
+        note.textContent = 'That date does not exist. Please check it.';
+        return;
+      }
+      var age = fullYearsSince(day, month, year);
+      if (age < 0 || age > 120) {
+        note.textContent = 'That date does not look right. Please check it.';
+        return;
+      }
+
+      if (age >= MIN_AGE) {
+        try { localStorage.setItem(KEY, JSON.stringify({ ok: true, at: Date.now() })); }
+        catch (e) { /* a blocked store just means being asked again */ }
+        gate.hidden = true;
+        return;
+      }
+
+      // Too young. The refusal is shown but not remembered, so an honest
+      // mistyping is not a permanent lockout.
+      note.textContent = '';
+      ask.hidden = true;
+      denied.hidden = false;
+      denied.querySelector('h2').focus && denied.querySelector('h2').focus();
+    });
+
+    document.getElementById('ageAgain').addEventListener('click', function () {
+      denied.hidden = true;
+      ask.hidden = false;
+      note.textContent = '';
+      dEl.value = ''; mEl.value = ''; yEl.value = '';
+      dEl.focus();
+    });
+  })();
+</script>

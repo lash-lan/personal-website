@@ -4,6 +4,7 @@ import MoodAtmosphere from '../../../../components/MoodAtmosphere.astro';
 import ReadAloud from '../../../../components/ReadAloud.astro';
 import saga from '../../../../data/last-days-of-legends.json';
 import { sagaTracks } from '../../../../data/narration.js';
+import AgeGate from '../../../../components/AgeGate.astro';
 
 export function getStaticPaths() {
   return saga.parts.map((part, i) => ({
@@ -271,6 +272,7 @@ const tracks = sagaTracks(part.slug, part.chapters);
   </style>
 </head>
 <body>
+<AgeGate returnTo="/sagas/elves/last-days-of-legends" />
 
 <div id="rail" aria-hidden="true"><div id="railfill"></div></div>
 

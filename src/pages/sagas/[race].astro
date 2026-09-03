@@ -1,6 +1,7 @@
 ---
 import SectionLayout from '../../layouts/SectionLayout.astro';
 import { SAGA_RACES, SAGAS } from '../../data/content.js';
+import AgeGate from '../../components/AgeGate.astro';
 
 export function getStaticPaths() {
   return SAGA_RACES.map((race) => ({ params: { race: race.slug }, props: { race } }));
@@ -20,6 +21,7 @@ const sagas = SAGAS.filter((s) => s.race === race.slug);
   heading={race.name}
   tagline={race.blurb}
 >
+  <AgeGate returnTo="/sagas" />
   <div class="wrap">
 
     {sagas.length > 0 ? (

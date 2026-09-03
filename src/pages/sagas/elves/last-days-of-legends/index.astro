@@ -2,6 +2,7 @@
 import SectionLayout from '../../../../layouts/SectionLayout.astro';
 import { SAGAS } from '../../../../data/content.js';
 import saga from '../../../../data/last-days-of-legends.json';
+import AgeGate from '../../../../components/AgeGate.astro';
 
 const meta = SAGAS.find((s) => s.slug === 'last-days-of-legends');
 
@@ -32,6 +33,7 @@ const totalWords = parts.reduce((n, p) => n + p.words, 0);
   tagline={meta.blurb}
   note={`${parts.length} parts · ${totalWords.toLocaleString()} words`}
 >
+  <AgeGate returnTo="/sagas" />
   <div class="wrap">
 
     <div class="grid grid-3">
