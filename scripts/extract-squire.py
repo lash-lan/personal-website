@@ -107,7 +107,10 @@ for idx, (num, (start, title)) in enumerate(ordered):
     chapters.append({
         "n": num,
         "numeral": ROMAN[num],
-        "slug": re.sub(r'[^a-z0-9]+', '-', clean(title).lower()).strip('-'),
+        # An apostrophe is dropped rather than turned into a separator, so the
+        # address reads the-captains-breakfast and not the-captain-s-breakfast.
+        "slug": re.sub(r'[^a-z0-9]+', '-',
+                       clean(title).lower().replace("'", "")).strip('-'),
         "title": clean(title),
         "plate": plates.get(num),
         "paras": paras,
