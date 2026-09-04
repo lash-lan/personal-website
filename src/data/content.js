@@ -71,6 +71,7 @@ export const SAGA_RACES = [
   { slug: 'beast-lords',        name: 'Beast Lords',        blurb: 'Shaped to cull corruption, and never asked whether they wished to be.' },
   { slug: 'other-fae-races',    name: 'Other Fae Races',    blurb: 'Tylons, Sprites, Nymphs, and the smaller powers that hold the natural order.' },
   { slug: 'other-mortal-races', name: 'Other Mortal Races', blurb: 'Giants, dwarves, the stone-born, and every people the histories forgot to centre.' },
+  { slug: 'red-rangers',        name: 'The Red Rangers',    blurb: 'The crimson order of the Verdant Gate, and the outsiders handed to them.' },
 ];
 
 // Full sagas. `race` must match a SAGA_RACES slug.
@@ -81,6 +82,13 @@ export const SAGAS = [
     title: 'The Last Days of Legends',
     eyebrow: 'Saga I',
     blurb: 'Hansall, first High King of the Elves, remembers a shoulder buckle, a tournament that became an arena, and the war that took the people he was supposed to outlive.',
+  },
+  {
+    slug: 'the-squire',
+    race: 'red-rangers',
+    title: 'The Squire',
+    eyebrow: 'Red Rangers I',
+    blurb: 'Alfar Chandralon, nephew of the man who burned Ashwinter, is delivered to the elven fortress that wants his family dead, and handed to the captain they fear most.',
   },
 ];
 

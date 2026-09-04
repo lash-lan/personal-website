@@ -1,0 +1,108 @@
+---
+import SectionLayout from '../../../../layouts/SectionLayout.astro';
+import AgeGate from '../../../../components/AgeGate.astro';
+import story from '../../../../data/the-squire.json';
+
+const total = story.chapters.reduce((n, c) => n + c.words, 0);
+const minutes = Math.max(1, Math.round(total / 230));
+---
+<SectionLayout
+  title="The Squire | The Red Rangers | LASH"
+  description="Alfar Chandralon, nephew of the man who burned Ashwinter, is delivered to the elven fortress that wants his family dead."
+  theme="sagas"
+  current="sagas"
+  compact={true}
+  back={{ href: "/sagas/red-rangers", label: "The Red Rangers" }}
+  eyebrow="Red Rangers I"
+  heading="The Squire"
+  tagline="Fifteen chapters. A human boy handed to the captain the elves fear most."
+>
+  <AgeGate returnTo="/sagas/red-rangers" />
+  <div class="wrap">
+    <p class="saga-meta">
+      {story.chapters.length} chapters &middot; {total.toLocaleString()} words &middot; about {minutes} minutes of reading
+    </p>
+
+    <div class="chapter-list">
+      {story.chapters.map((c) => (
+        <a href={`/sagas/red-rangers/the-squire/${c.slug}`} class="chapter-row reveal">
+          {c.plate && (
+            <span class="chapter-plate"
+                  style={`background-image:url(/images/sagas/the-squire/${c.plate})`}></span>
+          )}
+          {!c.plate && <span class="chapter-plate empty"></span>}
+          <span class="chapter-text">
+            <small>Chapter {c.numeral}</small>
+            <b>{c.title}</b>
+            <em>{c.words.toLocaleString()} words</em>
+          </span>
+        </a>
+      ))}
+    </div>
+  </div>
+</SectionLayout>
+
+<style is:global>
+  .saga-meta {
+    font-family: 'Cormorant SC', Georgia, serif;
+    font-size: .68rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    opacity: .7;
+    margin-bottom: 2rem;
+  }
+  .chapter-list { display: flex; flex-direction: column; gap: .7rem; }
+  .chapter-row {
+    display: flex;
+    align-items: stretch;
+    gap: 1rem;
+    border: 1px solid rgba(180, 69, 63, .22);
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, .28);
+    text-decoration: none;
+    color: inherit;
+    transition: border-color .25s, transform .18s, background-color .25s;
+  }
+  .chapter-row:hover {
+    border-color: rgba(180, 69, 63, .6);
+    background: rgba(28, 8, 8, .5);
+    transform: translateY(-2px);
+  }
+  .chapter-row:focus-visible { outline: 2px solid #b4453f; outline-offset: 3px; }
+  .chapter-plate {
+    flex: 0 0 7.5rem;
+    min-height: 5.5rem;
+    background-size: cover;
+    background-position: center 30%;
+  }
+  .chapter-plate.empty {
+    background: linear-gradient(140deg, #2a0f0f, #0b0505);
+  }
+  .chapter-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: .2rem;
+    padding: .9rem 1rem .9rem 0;
+  }
+  .chapter-text small {
+    font-family: 'Cormorant SC', Georgia, serif;
+    font-size: .6rem;
+    letter-spacing: .24em;
+    text-transform: uppercase;
+    opacity: .65;
+  }
+  .chapter-text b {
+    font-family: 'Cinzel', Georgia, serif;
+    font-weight: 500;
+    font-size: 1.05rem;
+    line-height: 1.25;
+  }
+  .chapter-text em { font-style: normal; font-size: .78rem; opacity: .5; }
+
+  @media (max-width: 560px) {
+    .chapter-plate { flex-basis: 5rem; min-height: 4.6rem; }
+    .chapter-text b { font-size: .95rem; }
+  }
+</style>

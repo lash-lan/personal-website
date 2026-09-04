@@ -1,0 +1,184 @@
+---
+import SiteHeader from '../../../../components/SiteHeader.astro';
+import MoodAtmosphere from '../../../../components/MoodAtmosphere.astro';
+import ReadAloud from '../../../../components/ReadAloud.astro';
+import AgeGate from '../../../../components/AgeGate.astro';
+import story from '../../../../data/the-squire.json';
+
+const BASE = '/sagas/red-rangers/the-squire';
+
+export function getStaticPaths() {
+  return story.chapters.map((c, i) => ({
+    params: { chapter: c.slug },
+    props: {
+      chapter: c,
+      index: i,
+      prev: i > 0 ? story.chapters[i - 1] : null,
+      next: i < story.chapters.length - 1 ? story.chapters[i + 1] : null,
+    },
+  }));
+}
+
+const { chapter, index, prev, next } = Astro.props;
+const total = story.chapters.length;
+
+const esc = (s) => String(s)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// The chapter is cut into mood zones. The atmosphere engine watches these as
+// the reader scrolls and shifts the colour, the drifting motes and the ambient
+// sound to match, which is why the sound changes as the story turns.
+const zones = chapter.zones?.length
+  ? chapter.zones
+  : [{ mood: chapter.mood || 'dread', start: 0, end: chapter.paras.length - 1 }];
+
+const body = zones.map((z) => {
+  const inner = chapter.paras.slice(z.start, z.end + 1)
+    .map((p) => `<p>${esc(p.x)}</p>`).join('');
+  return `<section class="zone" data-mood="${z.mood}">${inner}</section>`;
+}).join('');
+
+const openingMood = zones[0].mood;
+const minutes = Math.max(1, Math.round(chapter.words / 230));
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{chapter.title} | The Squire | LASH</title>
+  <meta name="description" content={`Chapter ${chapter.numeral} of The Squire, the first telling of the Red Rangers.`} />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Cormorant+SC:wght@300;400&display=swap" rel="stylesheet" />
+
+  <style is:global>
+    /* The prose. MoodAtmosphere supplies the colour variables these use, and
+       swaps them as the reader passes from one zone into the next. */
+    body {
+      font-family: 'EB Garamond', Georgia, serif;
+      font-size: 19px;
+      line-height: 1.78;
+      color: var(--text);
+      transition: color 1400ms ease;
+      overflow-x: hidden;
+    }
+    main { position: relative; z-index: 1; }
+
+    .chapter { max-width: 40rem; margin: 0 auto; padding: 5.5rem 1.6rem 0; }
+    .chapter-head { text-align: center; margin-bottom: 2.6rem; }
+    .chapter-plate {
+      width: 100%;
+      aspect-ratio: 3 / 2;
+      border-radius: 16px;
+      border: 1px solid rgba(180, 69, 63, .28);
+      background-size: cover;
+      background-position: center 32%;
+      margin-bottom: 2rem;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, .55);
+    }
+    .chapter-num {
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: .66rem; letter-spacing: .34em; text-transform: uppercase;
+      color: var(--accent); display: block; margin-bottom: .7rem;
+      transition: color 1400ms ease;
+    }
+    .chapter-title {
+      font-family: 'Cinzel', Georgia, serif; font-weight: 500;
+      font-size: clamp(1.5rem, 5vw, 2.3rem); line-height: 1.18;
+      color: var(--text-bright); text-wrap: balance;
+      transition: color 1400ms ease;
+    }
+    .chapter-meta {
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: .6rem; letter-spacing: .24em; text-transform: uppercase;
+      opacity: .55; margin-top: .8rem;
+    }
+
+    .chapter p {
+      margin-bottom: 1.15rem;
+      letter-spacing: var(--track);
+      transition: letter-spacing var(--line-dur) ease;
+    }
+    .chapter .zone:first-of-type p:first-of-type::first-letter {
+      font-family: 'Cinzel', Georgia, serif;
+      font-size: 3.1em; float: left; line-height: .82;
+      padding: .06em .1em 0 0; color: var(--text-bright);
+    }
+
+    .closing-plate {
+      max-width: 40rem; margin: 3.5rem auto 0;
+      width: calc(100% - 3.2rem); aspect-ratio: 3 / 2;
+      border-radius: 16px; border: 1px solid rgba(180, 69, 63, .28);
+      background-size: cover; background-position: center 32%;
+    }
+
+    .chapter-nav {
+      max-width: 40rem; margin: 4rem auto 0; padding: 2.2rem 1.6rem 5rem;
+      border-top: 1px solid rgba(180, 69, 63, .2);
+      display: flex; flex-wrap: wrap; gap: .7rem; align-items: center;
+    }
+    .chapter-nav a, .chapter-nav span {
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: .62rem; letter-spacing: .2em; text-transform: uppercase;
+      padding: .7rem 1.2rem; border-radius: 999px;
+      border: 1px solid rgba(180, 69, 63, .3);
+      color: var(--text); text-decoration: none;
+      transition: color .25s, border-color .25s;
+    }
+    .chapter-nav a:hover { color: var(--text-bright); border-color: rgba(180, 69, 63, .75); }
+    .chapter-nav .spacer { flex: 1; border: none; padding: 0; }
+
+    @media (max-width: 640px) {
+      body { font-size: 18px; }
+      .chapter { padding-left: 1.3rem; padding-right: 1.3rem; }
+      .closing-plate { width: calc(100% - 2.6rem); }
+    }
+  </style>
+</head>
+<body>
+
+<AgeGate returnTo={BASE} />
+
+<MoodAtmosphere initial={openingMood} />
+
+<SiteHeader back={{ href: BASE, label: "The Squire" }} current="sagas"
+  accent="#b4453f" dim="#7d5a54" bright="#f2ded6" bg="rgba(11,5,5,0.82)" />
+
+<!-- Scoped to the zones, not to .chapter p. The header carries a metadata
+     line that is also a paragraph, and the reader would speak it aloud. -->
+<ReadAloud selector=".chapter .zone p" title={chapter.title} />
+
+<main>
+  <article class="chapter">
+    <header class="chapter-head">
+      {chapter.plate && (
+        <div class="chapter-plate" role="img" aria-label={`Plate for ${chapter.title}`}
+             style={`background-image:url(/images/sagas/the-squire/${chapter.plate})`}></div>
+      )}
+      <span class="chapter-num">Chapter {chapter.numeral} of {total}</span>
+      <h1 class="chapter-title">{chapter.title}</h1>
+      <p class="chapter-meta">The Squire &middot; Red Rangers &middot; about {minutes} min</p>
+    </header>
+
+    <Fragment set:html={body} />
+  </article>
+
+  {!next && story.closingPlate && (
+    <div class="closing-plate" role="img" aria-label="The closing plate of The Squire"
+         style={`background-image:url(/images/sagas/the-squire/${story.closingPlate})`}></div>
+  )}
+
+  <nav class="chapter-nav" aria-label="Chapters">
+    {prev
+      ? <a href={`${BASE}/${prev.slug}`}>&larr; {prev.title}</a>
+      : <a href={BASE}>&larr; Contents</a>}
+    <span class="spacer"></span>
+    <a href={BASE}>All chapters</a>
+    {next && <a href={`${BASE}/${next.slug}`}>{next.title} &rarr;</a>}
+  </nav>
+</main>
+
+</body>
+</html>
