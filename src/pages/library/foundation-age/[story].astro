@@ -190,9 +190,11 @@ const tracks = storyTracks(story.slug);
 
   <div class="foot">
     <div class="foot-links">
-      {prev && <a href={hrefFor(prev)} title={prev.title}>← {prev.title}</a>}
+      {prev && <a href={hrefFor(prev)} title={prev.title}
+                aria-label={`Previous story: ${prev.title}`}>← Previous Story</a>}
       <a href="/library/foundation-age">All stories</a>
-      {next && <a href={hrefFor(next)} title={next.title}>{next.title} →</a>}
+      {next && <a href={hrefFor(next)} title={next.title}
+                aria-label={`Next story: ${next.title}`}>Next Story →</a>}
     </div>
   </div>
 </main>

@@ -172,11 +172,13 @@ const minutes = Math.max(1, Math.round(chapter.words / 230));
 
   <nav class="chapter-nav" aria-label="Chapters">
     {prev
-      ? <a href={`${BASE}/${prev.slug}`}>&larr; {prev.title}</a>
+      ? <a href={`${BASE}/${prev.slug}`} title={prev.title}
+           aria-label={`Previous chapter: ${prev.title}`}>&larr; Previous Chapter</a>
       : <a href={BASE}>&larr; Contents</a>}
     <span class="spacer"></span>
     <a href={BASE}>All chapters</a>
-    {next && <a href={`${BASE}/${next.slug}`}>{next.title} &rarr;</a>}
+    {next && <a href={`${BASE}/${next.slug}`} title={next.title}
+                aria-label={`Next chapter: ${next.title}`}>Next Chapter &rarr;</a>}
   </nav>
 </main>
 

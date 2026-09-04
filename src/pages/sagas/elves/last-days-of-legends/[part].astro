@@ -321,9 +321,11 @@ const tracks = sagaTracks(part.slug, part.chapters);
   <div class="foot">
     <span class="foot-end">End of {part.eyebrow}</span>
     <div class="foot-links">
-      {prev && <a href={`${base}/${prev.slug}`}>← {prev.title}</a>}
+      {prev && <a href={`${base}/${prev.slug}`} title={prev.title}
+                aria-label={`Previous part: ${prev.title}`}>← Previous Part</a>}
       <a href={base}>All parts</a>
-      {next && <a href={`${base}/${next.slug}`}>{next.title} →</a>}
+      {next && <a href={`${base}/${next.slug}`} title={next.title}
+                aria-label={`Next part: ${next.title}`}>Next Part →</a>}
     </div>
   </div>
 </main>
