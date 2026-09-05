@@ -38,8 +38,18 @@ export async function buildTrialRecord(doc, result) {
   };
   const need = (h) => { if (y - h < M + 34) newPage(); };
 
+  // The standard PDF fonts only cover WinAnsi. Anything outside it is folded
+  // down here rather than thrown, so an unusual character cannot break a
+  // reader's download.
+  const safe = (t) => String(t ?? '')
+    .replace(/\*\*/g, '')
+    .replace(/→/g, 'then').replace(/[–—]/g, ', ')
+    .replace(/[“”]/g, '"').replace(/[‘’]/g, "'")
+    .replace(/…/g, '...')
+    .replace(/[^\x20-\x7E\xA0-\xFF]/g, '');
+
   const wrap = (text, font, size, width = W) => {
-    const words = String(text ?? '').split(/\s+/).filter(Boolean);
+    const words = safe(text).split(/\s+/).filter(Boolean);
     const lines = [];
     let line = '';
     for (const w of words) {
@@ -67,7 +77,7 @@ export async function buildTrialRecord(doc, result) {
   const heading = (text) => {
     need(48);
     y -= 8;
-    page.drawText(String(text).toUpperCase(), { x: M, y, size: 9, font: serifB, color: C(MUTE) });
+    page.drawText(safe(text).toUpperCase(), { x: M, y, size: 9, font: serifB, color: C(MUTE) });
     y -= 9;
     page.drawLine({ start: { x: M, y }, end: { x: A4[0] - M, y }, thickness: 0.7, color: C(RULE) });
     y -= 17;
@@ -77,12 +87,12 @@ export async function buildTrialRecord(doc, result) {
     need(20);
     const trackX = M + 96;
     const trackW = W - 96 - 150;
-    page.drawText(String(label), { x: M, y, size: 9.5, font: serif, color: C(INK) });
+    page.drawText(safe(label), { x: M, y, size: 9.5, font: serif, color: C(INK) });
     page.drawRectangle({ x: trackX, y: y - 2, width: trackW, height: 8, color: C('#e6dfcd') });
     const filled = Math.max(2, (value / 100) * trackW);
     page.drawRectangle({ x: trackX, y: y - 2, width: filled, height: 8,
       color: C(dim ? '#b8b0a0' : colour) });
-    page.drawText(String(note), { x: trackX + trackW + 9, y, size: 8.5, font: serif, color: C(MUTE) });
+    page.drawText(safe(note), { x: trackX + trackW + 9, y, size: 8.5, font: serif, color: C(MUTE) });
     y -= 18;
   };
 
@@ -94,7 +104,7 @@ export async function buildTrialRecord(doc, result) {
   page.drawText('A RECORD OF JUDGMENT', { x: M, y, size: 8, font: serif, color: C(MUTE) });
   y -= 56;
 
-  page.drawText(String(doc.verdict.tier).toUpperCase(),
+  page.drawText(safe(doc.verdict.tier).toUpperCase(),
     { x: M, y, size: 9, font: serifB, color: C(MUTE) });
   y -= 30;
   for (const ln of wrap(doc.verdict.name.toUpperCase(), serifB, 30)) {
@@ -102,45 +112,88 @@ export async function buildTrialRecord(doc, result) {
     y -= 34;
   }
   y -= 2;
-  page.drawText(String(doc.verdict.blend), { x: M, y, size: 10, font: serif, color: C(MUTE) });
+  page.drawText(safe(doc.verdict.blend), { x: M, y, size: 10, font: serif, color: C(MUTE) });
   y -= 26;
 
   let sx = M;
   for (const k of doc.verdict.active) {
     page.drawCircle({ x: sx + 5, y: y + 3, size: 5, color: C(CALLINGS[k].colour) });
-    page.drawText(CALLINGS[k].name, { x: sx + 15, y, size: 9.5, font: serif, color: C(INK) });
+    page.drawText(safe(CALLINGS[k].name), { x: sx + 15, y, size: 9.5, font: serif, color: C(INK) });
     sx += 18 + serif.widthOfTextAtSize(CALLINGS[k].name, 9.5) + 16;
   }
   y -= 30;
 
-  para(doc.verdict.reveal, { font: serifI, size: 13, lead: 18, gap: 20 });
-
-  // all five, always, whether they counted or not
-  heading('Your five affinities');
-  for (const b of doc.bars) {
-    bar(b.name, b.affinity, b.colour,
-      `${b.affinity} · ${b.band}${b.active ? ' · active' : ''}`, !b.active);
+  para(doc.verdict.motto, { font: serifI, size: 13, lead: 18, gap: 20 });
+  if (doc.verdict.reader) {
+    para(`Prepared for ${doc.verdict.reader}. Completed ${doc.verdict.when}.`,
+      { font: serifI, size: 9.5, colour: MUTE, gap: 14 });
+  } else {
+    para(`Completed ${doc.verdict.when}.`, { font: serifI, size: 9.5, colour: MUTE, gap: 14 });
   }
-  y -= 6;
-  para(`Completed ${doc.verdict.when}.`, { font: serifI, size: 9.5, colour: MUTE });
 
-  // ── the written sections ──
-  for (const s of doc.sections) {
-    if (s.id === 'technical') continue;
-    if (y < M + 190) newPage(); else y -= 14;
-    heading(s.title);
+  const bullets = (label, items) => {
+    if (!items || !items.length) return;
+    need(30);
+    y -= 2;
+    page.drawText(safe(label).toUpperCase(),
+      { x: M, y, size: 8, font: serifB, color: C(MUTE) });
+    y -= 14;
+    for (const t of items) para('·  ' + t, { gap: 5, indent: 8 });
+    y -= 3;
+  };
+  // a labelled card, printed as a run-in line rather than a box
+  const card = (label, text) => {
+    if (!text) return;
+    para(`${label}. ${text}`, { gap: 7, indent: 8 });
+  };
+
+  // ── the eight pages of the record ──
+  for (const s of doc.pages) {
+    if (y < M + 210) newPage(); else y -= 14;
+    heading(`${s.n}. ${s.title}`);
+
+    if (s.bars) {
+      for (const b of s.bars) {
+        bar(b.name, b.affinity, b.colour,
+          `${b.affinity} · ${b.band}${b.active ? ' · active' : ''}`, !b.active);
+        para(b.modifier, { size: 9, lead: 12.4, gap: 8, indent: 96, colour: MUTE });
+      }
+      y -= 4;
+    }
+
     for (const t of (s.paras || [])) para(t);
-    for (const t of (s.items || [])) para('•  ' + t, { gap: 6, indent: 6 });
+
+    for (const c of (s.cards || [])) card(c.label, c.text);
+
+    if (s.flow) {
+      para('Decision pathway. ' + s.flow.map((f) => f.name).join(', then '),
+        { font: serifI, gap: 10 });
+    }
+    if (s.scales) {
+      for (const sc of s.scales) bar(sc.low, sc.value, '#8a6d2f', sc.high, false);
+      y -= 4;
+    }
+
+    bullets('What you mean, and what they may hear', s.perception);
+    bullets('Ideal conditions', s.ideal);
+    bullets('Bad environment', s.bad);
+    bullets('Your place in the party', s.party);
+
+    for (const q of (s.sequence || [])) card(q.label, q.text);
+
+    bullets('Growth roadmap', s.growth);
+
+    if (s.closing) { y -= 4; para(s.closing, { font: serifI, lead: 15.6 }); }
   }
 
   // ── the appendix ──
-  const tech = doc.sections.find((s) => s.id === 'technical');
-  if (tech) {
-    if (y < M + 230) newPage(); else y -= 16;
-    heading(tech.title);
-    for (const l of tech.lines) para(l, { size: 9, lead: 12.6, gap: 7, colour: MUTE });
+  const last = doc.pages[doc.pages.length - 1];
+  if (last && last.technical) {
+    if (y < M + 200) newPage(); else y -= 16;
+    heading('How this was scored');
+    for (const l of last.technical) para(l, { size: 9, lead: 12.6, gap: 7, colour: MUTE });
     y -= 4;
-    for (const t of tech.paras) para(t, { font: serifI, size: 9.5, lead: 13.4, colour: MUTE });
+    para(last.disclaimer, { font: serifI, size: 9.5, lead: 13.4, colour: MUTE });
   }
 
   // ── footers, once the count is known ──

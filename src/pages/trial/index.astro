@@ -198,6 +198,22 @@ const TONES = [
     .mark-pop i{position:absolute;width:.55rem;height:.55rem;border-radius:50%;
       background:currentColor;top:.95rem;right:.85rem;opacity:.9}
 
+    .name-wrap{max-width:34rem;margin:0 auto;padding:7rem 1.2rem 4rem;text-align:center}
+    .name-head{font-family:'Cinzel',serif;font-weight:600;color:var(--bright);
+      font-size:clamp(1.4rem,5vw,2.1rem);line-height:1.2;margin-bottom:.9rem}
+    .name-field{display:flex;flex-direction:column;gap:.45rem;text-align:left;
+      max-width:22rem;margin:1.8rem auto 0}
+    .name-field>span{font-family:'Cormorant SC',serif;font-size:.6rem;
+      letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+    .name-field input{width:100%;padding:.85rem 1rem;min-height:52px;
+      border:1px solid var(--edge);border-radius:14px;background:rgba(0,0,0,.45);
+      color:var(--bright);font:inherit;font-size:1.05rem;
+      transition:border-color .2s}
+    .name-field input:hover{border-color:rgba(200,155,60,.5)}
+    .name-field input:focus-visible{outline:2px solid var(--oath);outline-offset:2px;
+      border-color:var(--oath)}
+    #screenName .nav{justify-content:center;margin-top:1.6rem}
+
     .gate-recent{display:flex;flex-direction:column;align-items:center;gap:.25rem;
       margin:.6rem auto 0;padding:1rem 1.3rem;max-width:26rem;
       border:1px solid var(--edge);border-radius:16px;background:rgba(0,0,0,.4)}
@@ -425,6 +441,8 @@ const TONES = [
       text-transform:uppercase;color:var(--dim);margin-top:1rem}
 
     .rec-block{margin:0 0 2.8rem}
+    .page-no{display:block;font-family:'Cormorant SC',serif;font-size:.6rem;
+      letter-spacing:.28em;text-transform:uppercase;color:var(--dim);margin-bottom:.45rem}
     .rec-block h2{font-family:'Cinzel',serif;font-weight:600;color:var(--bright);
       font-size:clamp(1.1rem,3.4vw,1.5rem);margin-bottom:1rem;padding-bottom:.55rem;
       border-bottom:1px solid rgba(200,155,60,.22)}
@@ -600,6 +618,26 @@ const TONES = [
   </section>
 
   <!-- ── the assessment: the Mirror, the Trial, the Scales ── -->
+  <!-- Asked before every attempt, including a retake, because the record is
+       addressed to whoever is taking it now. -->
+  <section class="screen" id="screenName">
+    <div class="name-wrap">
+      <span class="trial-no">Before the first question</span>
+      <h2 class="name-head">What should the record call you?</h2>
+      <p class="prompt">Your name is written into the record itself. It is kept on this device with your answers and is never sent anywhere.</p>
+      <label class="name-field">
+        <span>Your name</span>
+        <input type="text" id="nameInput" maxlength="40" autocomplete="given-name"
+               placeholder="Alfar" aria-describedby="nameNote" />
+      </label>
+      <p class="age-note" id="nameNote" aria-live="polite"></p>
+      <div class="nav">
+        <button class="btn primary" id="btnName" type="button">Begin</button>
+        <button class="btn" id="btnNameSkip" type="button">Continue without a name</button>
+      </div>
+    </div>
+  </section>
+
   <section class="screen" id="screenTrial">
     <div class="hud">
       <div class="hud-in">
@@ -640,28 +678,33 @@ const TONES = [
 
 <script>
   import { CALLINGS, ORDER, QUESTIONS, SCALE } from '../../data/fivefold.js';
-  import { score } from '../../lib/fivefold-engine.js';
+  import { analyse, DEPTH } from '../../lib/fivefold-deep.js';
   import { buildFivefold } from '../../lib/fivefold-report.js';
 
   const TONES = window.__TRIAL_TONES;
   const $ = (id) => document.getElementById(id);
-  const KEY = 'lash.fivefold.v1';
+  const KEY = 'lash.fivefold.v2';
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  // The forty core statements decide the archetype. The ten Depth Module
+  // statements only sharpen the report and can never change the result.
+  const ALL = [...QUESTIONS, ...DEPTH];
+  const CORE = QUESTIONS.length;
   const PER_PAGE = 5;
-  const PAGES = Math.ceil(QUESTIONS.length / PER_PAGE);
+  const PAGES = Math.ceil(ALL.length / PER_PAGE);
 
-  const fresh = () => ({ page: 0, answers: Array(QUESTIONS.length).fill(null), done: false });
+  const fresh = () => ({ page: 0, answers: Array(ALL.length).fill(null),
+                         name: '', done: false });
   let state = fresh();
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
-    if (saved && Array.isArray(saved.answers) && saved.answers.length === QUESTIONS.length) state = saved;
+    if (saved && Array.isArray(saved.answers) && saved.answers.length === ALL.length) state = saved;
   } catch { /* start clean */ }
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
   const answered = () => state.answers.filter((x) => x !== null).length;
 
   const show = (id) => {
-    ['screenGate', 'screenTrial', 'screenResult'].forEach((s) =>
+    ['screenGate', 'screenName', 'screenTrial', 'screenResult'].forEach((s) =>
       $(s).classList.toggle('on', s === id));
     window.scrollTo({ top: 0, behavior: 'auto' });
   };
@@ -680,8 +723,6 @@ const TONES = [
     s.classList.add('lit');
     s.querySelector('i').style.boxShadow = '0 0 20px ' + s.style.color + ', 0 0 42px ' + s.style.color;
   };
-
-  // what each Calling measures, said plainly
   const MEASURES = {
     O: 'principle, fairness and keeping your word',
     H: 'loyalty, attachment and protecting your own',
@@ -689,7 +730,6 @@ const TONES = [
     V: 'influence, persuasion and reading a room',
     W: 'caution, verification and looking for what is hidden',
   };
-
   const pop = $('markPop');
   function openPop(mark, cal, measures) {
     pop.hidden = false;
@@ -769,7 +809,32 @@ const TONES = [
     setTimeout(enter, 1800);
     setTimeout(() => $('veil').classList.remove('on'), 2800);
   });
-  function enter() { show('screenTrial'); render(); }
+
+  // Past the gate the reader is asked their name, every time, including on a
+  // retake, because the record is addressed to whoever is sitting there now.
+  function enter() {
+    if (answered() > 0 && state.name) { show('screenTrial'); render(); return; }
+    show('screenName');
+    $('nameInput').value = state.name || '';
+    setTimeout(() => $('nameInput').focus(), 60);
+  }
+
+  function acceptName(name) {
+    state.name = (name || '').trim().slice(0, 40);
+    save();
+    show('screenTrial');
+    render();
+  }
+  $('btnName').addEventListener('click', () => {
+    const v = $('nameInput').value.trim();
+    if (!v) { $('nameNote').textContent = 'Enter a name, or continue without one.'; return; }
+    $('nameNote').textContent = '';
+    acceptName(v);
+  });
+  $('btnNameSkip').addEventListener('click', () => acceptName(''));
+  $('nameInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); $('btnName').click(); }
+  });
 
   document.querySelectorAll('[data-panel]').forEach((b) => {
     b.addEventListener('click', () => {
@@ -781,15 +846,14 @@ const TONES = [
     });
   });
 
-  // ── the forty statements, five to a page ──
+  // ── the statements, five to a page ──
   function render() {
     tone(state.page);
-    // every page opens at the top
     window.scrollTo({ top: 0, behavior: 'auto' });
     const from = state.page * PER_PAGE;
-    const items = QUESTIONS.slice(from, from + PER_PAGE);
+    const items = ALL.slice(from, from + PER_PAGE);
     $('askNo').textContent = 'Page ' + (state.page + 1) + ' of ' + PAGES;
-    $('hudStage').textContent = 'The Fivefold Calling';
+    $('hudStage').textContent = from >= CORE ? 'Depth' : 'The Fivefold Calling';
 
     const box = $('askList');
     box.innerHTML = '';
@@ -823,7 +887,7 @@ const TONES = [
 
   function paint() {
     const from = state.page * PER_PAGE;
-    const idxs = QUESTIONS.slice(from, from + PER_PAGE).map((_, n) => from + n);
+    const idxs = ALL.slice(from, from + PER_PAGE).map((_, n) => from + n);
     idxs.forEach((idx, n) => {
       const row = $('askList').children[n];
       if (!row) return;
@@ -832,8 +896,8 @@ const TONES = [
     });
     const left = idxs.filter((i) => state.answers[i] === null).length;
     const done = answered();
-    $('hudCount').textContent = done + ' of ' + QUESTIONS.length + ' answered';
-    $('trackFill').style.width = ((done / QUESTIONS.length) * 100) + '%';
+    $('hudCount').textContent = done + ' of ' + ALL.length + ' answered';
+    $('trackFill').style.width = ((done / ALL.length) * 100) + '%';
     $('btnBack').disabled = state.page === 0;
     $('btnNext').disabled = left > 0;
     $('btnNext').textContent = state.page === PAGES - 1 ? 'Receive Your Calling' : 'Next';
@@ -850,8 +914,8 @@ const TONES = [
     state.page++; save(); render();
   });
 
-  // ── the result ──
-  let lastDoc = null, lastScore = null;
+  // ── the record ──
+  let lastDoc = null, lastResult = null;
   const longDate = (ms) => new Date(ms).toLocaleDateString(undefined,
     { year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -868,16 +932,22 @@ const TONES = [
     });
   }
 
+  const readResult = () => analyse(
+    state.answers.slice(0, CORE),
+    state.answers.slice(CORE),
+    { name: state.name }
+  );
+
   function finish() {
     if (!state.done || !state.completedAt) {
       state.done = true;
       state.completedAt = state.completedAt || Date.now();
     }
     save();
-    lastScore = score(state.answers);
-    lastDoc = buildFivefold(lastScore,
+    lastResult = readResult();
+    lastDoc = buildFivefold(lastResult,
       state.completedAt ? { completedAt: longDate(state.completedAt) } : {});
-    drawRecord(lastDoc, lastScore);
+    drawRecord(lastDoc, lastResult);
     show('screenResult');
   }
 
@@ -887,11 +957,20 @@ const TONES = [
     if (text !== undefined) n.textContent = text;
     return n;
   };
+  // a **lead-in.** at the start of a paragraph becomes a real bold opening
+  const para = (text) => {
+    const p = el('p');
+    const m = /^\*\*(.+?)\*\*\s*(.*)$/s.exec(String(text));
+    if (m) { p.appendChild(el('strong', null, m[1])); p.append(' ' + m[2]); }
+    else p.textContent = text;
+    return p;
+  };
 
   function drawRecord(doc, r) {
     const root = $('record');
     root.innerHTML = '';
 
+    // the verdict
     const head = el('div', 'rec-head');
     head.appendChild(el('span', 'rec-tier', doc.verdict.tier));
     head.appendChild(el('h1', 'rec-name', doc.verdict.name));
@@ -909,44 +988,114 @@ const TONES = [
     art.appendChild(glyphs);
     head.appendChild(art);
     head.appendChild(el('p', 'rec-blend', doc.verdict.blend));
-    head.appendChild(el('p', 'rec-tag', doc.verdict.reveal));
+    head.appendChild(el('p', 'rec-tag', doc.verdict.motto));
     head.appendChild(el('p', 'rec-date', 'Completed ' + doc.verdict.when));
     root.appendChild(head);
 
-    // all five, always, whether they counted or not
-    const barBlock = el('section', 'rec-block');
-    barBlock.appendChild(el('h2', null, 'Your Five Affinities'));
-    const bars = el('div', 'bars');
-    doc.bars.forEach((b) => {
-      const row = el('div', 'bar-row' + (b.active ? '' : ' off'));
-      row.appendChild(el('span', 'bar-name', b.name));
-      const track = el('span', 'bar-track');
-      const fill = el('i', 'bar-fill');
-      fill.style.width = Math.max(2, b.affinity) + '%';
-      fill.style.background = b.colour;
-      track.appendChild(fill);
-      row.appendChild(track);
-      row.appendChild(el('span', 'bar-num',
-        b.affinity + ' · ' + b.band + (b.active ? ' · active' : '')));
-      bars.appendChild(row);
-    });
-    barBlock.appendChild(bars);
-    root.appendChild(barBlock);
-
-    for (const s of doc.sections) {
-      if (s.id === 'technical') continue;
+    for (const page of doc.pages) {
       const sec = el('section', 'rec-block');
-      sec.appendChild(el('h2', null, s.title));
-      (s.paras || []).forEach((t) => sec.appendChild(el('p', null, t)));
-      if (s.items && s.items.length) {
+      sec.appendChild(el('span', 'page-no', 'Page ' + page.n + ' of ' + doc.pages.length));
+      sec.appendChild(el('h2', null, page.title));
+
+      // all five affinities, always
+      if (page.bars) {
+        const bars = el('div', 'bars');
+        page.bars.forEach((b) => {
+          const row = el('div', 'bar-row' + (b.active ? '' : ' off'));
+          row.appendChild(el('span', 'bar-name', b.name));
+          const track = el('span', 'bar-track');
+          const fill = el('i', 'bar-fill');
+          fill.style.width = Math.max(2, b.affinity) + '%';
+          fill.style.background = b.colour;
+          track.appendChild(fill);
+          row.appendChild(track);
+          row.appendChild(el('span', 'bar-num',
+            b.affinity + ' · ' + b.band + (b.active ? ' · active' : '')));
+          bars.appendChild(row);
+          bars.appendChild(el('p', 'bar-note', b.modifier));
+        });
+        sec.appendChild(bars);
+      }
+
+      (page.paras || []).forEach((t) => sec.appendChild(para(t)));
+
+      // the identity cards
+      if (page.cards) {
+        const grid = el('div', 'facet-grid');
+        page.cards.forEach((c) => {
+          const card = el('div', 'facet-card');
+          card.appendChild(el('span', 'facet-name', c.label));
+          card.appendChild(el('span', 'facet-band', c.text));
+          grid.appendChild(card);
+        });
+        sec.appendChild(grid);
+      }
+
+      // the decision pathway and the six scales
+      if (page.flow) {
+        const f = el('p', 'bar-note',
+          page.flow.map((x) => x.name).join('  →  '));
+        sec.appendChild(f);
+      }
+      if (page.scales) {
+        const bars = el('div', 'bars');
+        page.scales.forEach((s) => {
+          const row = el('div', 'bar-row');
+          row.appendChild(el('span', 'bar-name', s.low));
+          const track = el('span', 'bar-track');
+          const fill = el('i', 'bar-fill');
+          fill.style.width = Math.max(2, s.value) + '%';
+          fill.style.background = 'var(--oath)';
+          track.appendChild(fill);
+          row.appendChild(track);
+          row.appendChild(el('span', 'bar-num', s.high));
+          bars.appendChild(row);
+        });
+        sec.appendChild(bars);
+      }
+
+      // what you mean against what others may hear
+      if (page.perception && page.perception.length) {
+        sec.appendChild(el('h3', null, 'What you mean, and what they may hear'));
         const ul = el('ul', 'prompts');
-        s.items.forEach((t) => ul.appendChild(el('li', null, t)));
+        page.perception.forEach((t) => ul.appendChild(el('li', null, t)));
         sec.appendChild(ul);
       }
+
+      for (const [label, key] of [['Ideal conditions', 'ideal'], ['Bad environment', 'bad'],
+                                  ['Your place in the party', 'party']]) {
+        if (page[key] && page[key].length) {
+          sec.appendChild(el('h3', null, label));
+          const ul = el('ul', 'prompts');
+          page[key].forEach((t) => ul.appendChild(el('li', null, t)));
+          sec.appendChild(ul);
+        }
+      }
+
+      // balanced, strained, shadow, return
+      if (page.sequence) {
+        const grid = el('div', 'facet-grid');
+        page.sequence.forEach((s) => {
+          const card = el('div', 'facet-card');
+          card.appendChild(el('span', 'facet-name', s.label));
+          card.appendChild(el('span', 'facet-band', s.text));
+          grid.appendChild(card);
+        });
+        sec.appendChild(grid);
+      }
+
+      if (page.growth && page.growth.length) {
+        sec.appendChild(el('h3', null, 'Growth roadmap'));
+        const ul = el('ul', 'prompts');
+        page.growth.forEach((t) => ul.appendChild(el('li', null, t)));
+        sec.appendChild(ul);
+      }
+
+      if (page.closing) sec.appendChild(para(page.closing));
       root.appendChild(sec);
     }
 
-    root.appendChild(el('p', 'rec-limits', doc.verdict.footer));
+    root.appendChild(el('p', 'rec-limits', doc.pages[doc.pages.length - 1].disclaimer));
 
     const actions = el('div', 'rec-actions');
     const dl = el('button', 'btn primary', 'Download Your Record');
@@ -958,13 +1107,12 @@ const TONES = [
     dl.addEventListener('click', onDownload);
     again.addEventListener('click', startOver);
 
-    const tech = doc.sections.find((s) => s.id === 'technical');
+    const tech = doc.pages[doc.pages.length - 1].technical;
     if (tech) {
       const det = el('details', 'tech');
       det.appendChild(el('summary', null, 'How this was scored, and what it does not claim'));
       const body = el('div', 'tech-body');
-      tech.lines.forEach((l) => body.appendChild(el('p', null, l)));
-      tech.paras.forEach((t) => body.appendChild(el('p', 'science', t)));
+      tech.forEach((l) => body.appendChild(el('p', null, l)));
       det.appendChild(body);
       root.appendChild(det);
     }
@@ -977,7 +1125,7 @@ const TONES = [
     btn.textContent = 'Sealing the record...';
     try {
       const { buildTrialRecord } = await import('../../lib/trial-report.js');
-      const blob = await buildTrialRecord(lastDoc, lastScore);
+      const blob = await buildTrialRecord(lastDoc, lastResult);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -1000,17 +1148,19 @@ const TONES = [
 
   if (state.done) {
     try {
-      const past = score(state.answers);
-      $('recentName').textContent = past.archetype.name;
-      const tierWorth = past.archetype.name.includes(past.tier) ? '' : past.tier;
+      const past = readResult();
+      $('recentName').textContent = past.chapter.name
+        .toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+      const tierWorth = past.chapter.name.toLowerCase().includes(past.tier.toLowerCase())
+        ? '' : past.tier;
       const when = state.completedAt ? longDate(state.completedAt) : '';
-      $('recentMeta').textContent = [tierWorth, when].filter(Boolean).join(' · ');
+      $('recentMeta').textContent = [state.name, tierWorth, when].filter(Boolean).join(' · ');
       $('gateRecent').hidden = false;
       $('screenGate').classList.add('with-recent');
     } catch {
       $('gateRecent').hidden = true;
     }
-  } else if (answered() > 0) { show('screenTrial'); render(); }
+  } else if (answered() > 0 && state.name) { show('screenTrial'); render(); }
 </script>
 
 </body>

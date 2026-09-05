@@ -1,149 +1,201 @@
-// Assembles the result from the workbook's report library plus the reader's
-// own scores. Deterministic: the same answers always give the same document.
+// Assembles the eight-page Fivefold Calling report.
 //
-// Section order follows the workbook's "Recommended Result Page Structure".
+// This is a rules engine, not a generative one. The guide allows "an AI or
+// rules engine", and every sentence below comes from the guide's own copy
+// library, chosen by the reader's actual scores. The same answers always
+// produce the same report, and nothing is invented that the scores do not
+// support.
+//
+// The page architecture is the guide's, section by section.
 
-import { CALLINGS, ORDER, ARCHETYPES, RULES, SCIENCE_NOTE, AFFINITY_NOTE, bandOf }
-  from '../data/fivefold.js';
+import { CALLINGS, ORDER } from '../data/fivefold.js';
+import { GUIDE, bandFor } from './fivefold-deep.js';
 
 const cname = (k) => CALLINGS[k].name;
-const list = (arr) => arr.length <= 1 ? (arr[0] || '')
-  : arr.slice(0, -1).join(', ') + ' and ' + arr[arr.length - 1];
-// The library writes lists as "a; b; c". This site does not use semicolons.
-const sentences = (text) => String(text || '')
-  .split(/;\s*/).map((s) => s.trim()).filter(Boolean)
-  .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-  .map((s) => (/[.!?]$/.test(s) ? s : s + '.'));
+const list = (a) => a.length <= 1 ? (a[0] || '')
+  : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
+const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+// The guide stores archetype names in capitals. Readers should not be shouted at.
+const SMALL = new Set(['of', 'the', 'and']);
+const titleCase = (s) => String(s || '').toLowerCase().split(' ')
+  .map((w, i) => (i > 0 && SMALL.has(w) ? w : cap(w))).join(' ');
+// the guide writes lists with semicolons, which this site does not use
+const sentences = (t) => String(t || '').split(/\.\s+|;\s*/)
+  .map((s) => s.trim()).filter(Boolean)
+  .map((s) => cap(s).replace(/\.$/, '') + '.');
 
 export function buildFivefold(r, opts = {}) {
-  const A = r.archetype;
   const when = opts.completedAt || new Date().toLocaleDateString(undefined,
     { year: 'numeric', month: 'long', day: 'numeric' });
+  const A = r.chapter;
+  const who = r.name || '';
+  // The guide asks for the name three to six times. These are its suggested
+  // placements: the opening, the core drive, relationships, the shadow and
+  // the closing. Without a name the sentences still read properly.
+  const named = (text, fallback) => (who ? `${who}, ${text}` : cap(fallback || text));
 
-  // 2. all five, always, active or not
   const bars = r.ranked.map((k) => ({
-    calling: k,
-    name: cname(k),
-    dimension: CALLINGS[k].dimension,
-    raw: r.raw[k],
-    affinity: r.display[k],
-    band: r.bands[k],
-    active: r.active[k],
-    colour: CALLINGS[k].colour,
+    calling: k, name: cname(k), dimension: CALLINGS[k].dimension,
+    affinity: r.display[k], band: r.callingBands[k], active: r.active[k],
+    colour: CALLINGS[k].colour, modifier: r.modifierFor(k),
   }));
 
-  const sections = [];
+  const pages = [];
 
-  // The pattern, in the reader's own numbers. The workbook supplies band
-  // language precisely so the five scores can be described without
-  // overclaiming, so that is what this uses.
-  const top = r.ranked[0], bottom = r.ranked[r.ranked.length - 1];
-  const strongInactive = r.ranked.filter((k) => !r.active[k] && r.affinity[k] >= RULES.activeMin);
+  // ── 1. Your Calling ──
+  pages.push({
+    n: 1, id: 'calling', title: 'Your Calling',
+    paras: [
+      named(`your result is ${titleCase(A.name)}.`,
+        `Your result is ${titleCase(A.name)}.`),
+      A.baseIdentity.replace(/\{NAME\}/g, who || 'You').replace(/^You,\s*/, ''),
+    ],
+    motto: A.motto,
+  });
+
+  // ── 2. Your Fivefold Pattern ──
+  const shape = {
+    balanced: 'Your active Callings operate almost as peers. No single one of them is the master motive.',
+    led: `${cname(r.primary)} leads, and the other active Callings constrain and support it rather than competing with it.`,
+    dominant: `${cname(r.primary)} is the organising motive inside this archetype. The others operate underneath it.`,
+  }[r.blendShape];
   const patternParas = [
-    `Your highest is ${cname(top)} at ${r.display[top]}, which reads as ${r.bands[top]}. Your quietest is ${cname(bottom)} at ${r.display[bottom]}, which reads as ${r.bands[bottom]}. ${bandOf(r.affinity[bottom]).meaning}`,
+    `Five Callings were measured. ${list(r.activeKeys.map(cname))} reached the line that defines an archetype. ${shape}`,
+    `A Calling counts toward the title at ${r.activationFloor} affinity, which is the higher of 62.5 and fifteen points below your strongest. Your strongest was ${Math.round(r.max * 10) / 10}.`,
   ];
-  if (r.activeKeys.length === 1) {
-    patternParas.push(`Only ${cname(r.activeKeys[0])} reached the line that defines an archetype, which is why your result rests on a single Calling rather than a blend.`);
-  } else {
-    const both = r.activeKeys.length === 2 ? 'both' : 'all';
-    patternParas.push(`${list(r.activeKeys.map(cname))} ${both} reached the line and sit close enough together to count as one pattern. That is what makes this a ${A.tier.toLowerCase()} rather than a single motive.`);
+  const emerging = ORDER.filter((k) => !r.active[k] && r.affinity[k] >= 55 && r.affinity[k] < 62.5);
+  if (emerging.length) {
+    patternParas.push(`${list(emerging.map(cname))} sat just below the line. Not part of the title, but strong enough to colour particular relationships and decisions, which is why ${emerging.length > 1 ? 'they appear' : 'it appears'} later in this record.`);
   }
-  if (strongInactive.length) {
-    patternParas.push(`${list(strongInactive.map(cname))} scored strongly without counting toward the archetype, being more than ${RULES.activeDistance} points below your highest. Read those as real capacities that are not, on this test, what organises you.`);
+  const quiet = ORDER.filter((k) => r.affinity[k] < 45);
+  if (quiet.length) {
+    patternParas.push(`${list(quiet.map(cname))} came out quiet. Read that as a counterweight you can borrow when your usual strengths begin to overreach, never as a defect.`);
   }
-  patternParas.push(AFFINITY_NOTE);
-  sections.push({ id: 'pattern', title: 'Your Fivefold Pattern', paras: patternParas });
+  pages.push({ n: 2, id: 'pattern', title: 'Your Fivefold Pattern', bars, paras: patternParas });
 
-  // 3. essence
-  sections.push({
-    id: 'essence', title: 'Your Essence',
+  // ── 3. Inside the Archetype ──
+  pages.push({
+    n: 3, id: 'inside', title: 'Inside the Archetype',
+    cards: [
+      { label: 'Core drive', text: A.drive },
+      { label: 'Seeks', text: A.seeks },
+      { label: 'Fears', text: A.fears },
+      { label: 'Needs', text: A.needs },
+      { label: 'Resists', text: A.resists },
+    ],
     paras: [
-      A.essence + (A.essence.endsWith('.') ? '' : '.'),
-      `${A.reveal} In the world of the books, this is the shape of ${A.role}.`,
+      `The drive underneath this archetype is simple to state and harder to live. ${A.drive}`,
+      `**Your central tension.** ${A.contradiction}`,
+      ...A.callingsSpeak.slice(0, 5),
     ],
   });
 
-  // 4. how you decide
-  sections.push({
-    id: 'decide', title: 'How You Decide',
-    paras: sentences(A.decide),
-  });
+  // ── 4. How Your Mind Works ──
+  const flowLine = r.flow.map((f) => `${f.name} ${f.does}`).join(', then ');
+  const mindParas = [`Your decisions tend to run in one order: ${flowLine}.`];
+  if (r.sideInfluences.length) {
+    mindParas.push(`${list(r.sideInfluences.map((s) => s.name))} sits below the line but above 55, so ${r.sideInfluences.length > 1 ? 'they quietly influence' : 'it quietly influences'} the outcome without leading it.`);
+  }
+  for (const s of r.splits) {
+    const tpl = GUIDE.facetSplits.find((t) =>
+      t.when.toLowerCase().includes(s.high.name.split(' ').pop().toLowerCase()) &&
+      t.when.toLowerCase().includes(s.low.name.split(' ').pop().toLowerCase()));
+    mindParas.push(tpl ? tpl.text
+      : `Inside ${cname(s.calling)}, ${s.high.name} reached ${s.high.affinity} while ${s.low.name} stayed at ${s.low.affinity}. That ${s.gap} point split is worth naming rather than averaging away.`);
+  }
+  pages.push({ n: 4, id: 'mind', title: 'How Your Mind Works',
+    flow: r.flow, scales: r.scales, paras: mindParas });
 
-  // 5. strengths
-  sections.push({
-    id: 'strengths', title: 'Your Strengths',
-    items: sentences(A.strengths).map((s) => s.replace(/\.$/, '')),
-    paras: [],
-  });
-
-  // 6. relationships
-  sections.push({
-    id: 'relationships', title: 'How You Relate to People',
-    paras: sentences(A.relationships),
-  });
-
-  // 7. leadership and work
-  sections.push({
-    id: 'work', title: 'Leadership and Work',
-    paras: sentences(A.work),
-  });
-
-  // 8. under pressure
-  sections.push({
-    id: 'shadow', title: 'Under Pressure',
+  // ── 5. You & Other People ──
+  pages.push({
+    n: 5, id: 'people', title: 'You and Other People',
     paras: [
-      ...sentences(A.shadow),
-      'This is the predictable distortion of your own strengths rather than a flaw sitting beside them. It shows up most when you are certain, tired or pushed.',
+      named(`this is where the pattern is felt by everyone else. ${A.care}`, `This is where the pattern is felt by everyone else. ${A.care}`),
+      `**How you build trust.** ${cap(A.trust)}.`,
+      `**What you need from others.** ${cap(A.needFromOthers)}.`,
+      `**Where it becomes difficult.** ${sentences(A.difficult.join('. ')).join(' ')}`,
     ],
+    perception: A.perception,
   });
 
-  // 9. growth
-  sections.push({
-    id: 'growth', title: 'Your Growth Path',
-    paras: [...sentences(A.growth),
-      'That is a counterweight, not a correction. It is offered for reflection and is not advice of any clinical kind.'],
+  // ── 6. Leadership and Purpose ──
+  pages.push({
+    n: 6, id: 'purpose', title: 'Leadership and Purpose',
+    paras: [...A.leadership.map((l) => cap(l))],
+    ideal: A.idealRole,
+    bad: A.badEnvironment,
+    party: A.party,
   });
 
-  // 10. the nearest Calling that did not make the archetype
+  // ── 7. Your Shadow ──
+  const shadowParas = [
+    named(`nothing here is a separate defect. Every line below is one of your strengths pushed past its useful range.`,
+      `Nothing here is a separate defect. Every line below is one of your strengths pushed past its useful range.`),
+  ];
+  // the guide intensifies only where a Calling is 85 or above
+  const defining = ORDER.filter((k) => r.affinity[k] >= 85);
+  for (const k of defining) {
+    shadowParas.push(`${cname(k)} reached ${r.display[k]}, which the guide treats as defining and difficult to ignore. At that strength it carries a matching cost, and this is the one to watch.`);
+  }
+  if (A.warning) shadowParas.push(`The sentence you are most likely to say to yourself: ${A.warning}`);
+  pages.push({
+    n: 7, id: 'shadow', title: 'Your Shadow',
+    sequence: [
+      { label: 'Balanced', text: A.balanced },
+      { label: 'Strained', text: A.strained },
+      { label: 'Shadow', text: A.shadow },
+      { label: 'Return', text: A.ret },
+    ],
+    paras: shadowParas,
+  });
+
+  // ── 8. Growth and Record ──
+  const pathParas = [];
   if (r.nearest) {
     const n = r.nearest;
-    const p = [
-      `Your strongest Calling outside the result is ${cname(n.calling)}, at ${Math.round(n.affinity * 10) / 10} affinity, which reads as ${bandOf(n.affinity).label}. ${bandOf(n.affinity).meaning}`,
-    ];
-    if (n.wouldBecome) {
-      p.push(n.shortBy > 0
-        ? `It fell ${Math.round(n.shortBy * 10) / 10} points short of counting toward your archetype. Had it reached the line, your result would read ${n.wouldBecome.name} instead of ${A.name}.`
-        : `Had it counted toward your archetype, your result would read ${n.wouldBecome.name} instead of ${A.name}.`);
-    }
-    p.push('A Calling can be a real capacity without being one of the motives that organises you. That gap is often where people find they are capable of more than they reach for.');
-    sections.push({ id: 'nearest', title: 'Your Nearest Calling', paras: p });
+    const emphasis = {
+      bordering: `You are on the border. ${n.name} is only ${n.gap} affinity points from counting toward your title, which makes ${titleCase(n.becomes.name)} a genuinely close reading of you.`,
+      nearby: `${n.name} sits ${n.gap} points below the line. Near enough to be worth knowing.`,
+      secondary: `${n.name} is ${n.gap} points below the line. A real capacity rather than a near miss.`,
+      stable: `${n.name} is ${n.gap} points below the line, so your result is settled rather than borderline.`,
+    }[r.pathCloseness] || '';
+    pathParas.push(emphasis);
+    pathParas.push(`Were it to cross, this record would read ${titleCase(n.becomes.name)} instead. ${n.becomes.motto}`);
+    pathParas.push('This is not a suggestion that you should become another personality. A neighbouring result appears when one Calling becomes strong enough, or quiet enough, to cross the boundary.');
   }
-
-  // the technical appendix
-  sections.push({
-    id: 'technical', title: 'Technical Record',
-    lines: [
-      'Raw scores, out of a possible 8 to 40 per Calling: ' +
-        ORDER.map((k) => `${cname(k)} ${r.raw[k]}`).join(', ') + '.',
-      'Affinity, being (raw minus 8) divided by 32, as a percentage: ' +
-        ORDER.map((k) => `${cname(k)} ${r.display[k]}`).join(', ') + '.',
-      `A Calling counts toward the archetype at ${RULES.activeMin} affinity or above, and within ${RULES.activeDistance} points of your highest. Your highest was ${Math.round(r.max * 10) / 10}.`,
-      `Active Callings: ${list(r.activeKeys.map(cname))}. Archetype code ${r.code} of 31.`,
-      `Completed ${when}. ${RULES.itemsPerCalling} statements per Calling, ${ORDER.length * RULES.itemsPerCalling} in total.`,
+  if (r.contraction && r.contraction.becomes) {
+    pathParas.push(`In the other direction, ${r.contraction.name} sits only ${r.contraction.above} points above the line. Were it to fall below, the result would read ${titleCase(r.contraction.becomes.name)}.`);
+  }
+  pages.push({
+    n: 8, id: 'growth', title: 'Growth and Record',
+    growth: A.growth,
+    paras: [
+      named(`this is the useful part. ${A.atBest}`, `This is the useful part. ${A.atBest}`),
+      ...pathParas,
     ],
-    paras: [AFFINITY_NOTE, SCIENCE_NOTE],
+    closing: GUIDE.closing.replace(/\{NAME\}/g, who || 'Reader').replace(/^Reader,\s*/, ''),
+    technical: [
+      'Affinities: ' + ORDER.map((k) => `${cname(k)} ${r.display[k]}`).join(', ') + '.',
+      `Active: ${list(r.activeKeys.map(cname))}. Archetype code ${r.code} of 31. Activation floor ${r.activationFloor}.`,
+      r.nearest ? `Nearest path: ${r.nearest.name}, ${r.nearest.gap} points short.` : 'No expansion path remains.',
+      'Facets: ' + r.facets.map((f) => `${f.name} ${f.affinity}`).join(', ') + '.',
+      `Depth Module ${r.depthAnswered ? 'answered' : 'not answered'}. Completed ${when}.`,
+    ],
+    disclaimer: GUIDE.disclaimer,
   });
 
-  const words = sections.reduce((n, s) => n +
-    [...(s.paras || []), ...(s.items || []), ...(s.lines || [])]
+  const words = pages.reduce((n, p) => n +
+    [...(p.paras || []), ...(p.growth || []), ...(p.technical || []),
+     ...(p.ideal || []), ...(p.bad || []), ...(p.party || []),
+     p.closing || '', p.disclaimer || '']
       .join(' ').split(/\s+/).filter(Boolean).length, 0);
 
   return {
     verdict: {
-      name: A.name, tier: A.tier, blend: A.blend, reveal: A.reveal,
-      legacy: A.legacy, role: A.role, footer: A.footer,
-      active: r.activeKeys, code: r.code, when,
+      name: titleCase(A.name), tier: A.tier, blend: A.blend,
+      motto: A.motto, reader: who, active: r.activeKeys, code: r.code, when,
     },
-    bars, sections, words,
+    // the page and the PDF both render from pages, so they cannot disagree
+    bars, pages, words,
   };
 }
