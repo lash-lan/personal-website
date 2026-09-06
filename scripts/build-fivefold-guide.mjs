@@ -25,9 +25,23 @@ const lines = xml
   .filter(Boolean);
 
 // The site does not use these anywhere, so they are converted on the way in.
-const clean = (s) => String(s)
-  .replace(/[\u201c\u201d]/g, '"').replace(/[\u2018\u2019]/g, "'")
-  .replace(/\u2014/g, ', ').replace(/\u2013/g, ', ')
+// A dash doing the work of a full stop must become one. The guide writes
+// things like: Oath: "What should be done?" [dash] You are pulled toward...
+// Turning every dash into a comma produced '?" , You', which reads as a typo.
+const dashes = (s) => String(s)
+  // after a closing quote or sentence punctuation, the dash is redundant
+  .replace(/([?!.]["']?|["'])\s*[\u2014\u2013]\s*(?=[A-Z])/g, '$1 ')
+  // before a new capitalised clause, it is a full stop
+  .replace(/\s*[\u2014\u2013]\s*(?=[A-Z])/g, '. ')
+  // otherwise it is parenthetical, and a comma carries it
+  .replace(/\s*[\u2014\u2013]\s*/g, ', ');
+
+const clean = (s) => dashes(String(s)
+  .replace(/[\u201c\u201d]/g, '"').replace(/[\u2018\u2019]/g, "'"))
+  // The source document capitalises this pronoun mid sentence in 75 places,
+  // for example "When lower, You preserve more independence". Left alone it
+  // reaches the reader as a typo in their own report.
+  .replace(/,\s+You\b/g, ', you')
   .replace(/;\s*([a-z])/g, (_, c) => '. ' + c.toUpperCase())
   .replace(/;/g, '.')
   .replace(/\s+/g, ' ')

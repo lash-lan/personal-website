@@ -83,17 +83,66 @@ export async function buildTrialRecord(doc, result) {
     y -= 17;
   };
 
-  const bar = (label, value, colour, note, dim) => {
+  const label = (text) => {
+    need(28);
+    y -= 2;
+    page.drawText(safe(text).toUpperCase(), { x: M, y, size: 8, font: serifB, color: C(MUTE) });
+    y -= 14;
+  };
+
+  const bar = (name, value, colour, note, dim) => {
     need(20);
     const trackX = M + 96;
     const trackW = W - 96 - 150;
-    page.drawText(safe(label), { x: M, y, size: 9.5, font: serif, color: C(INK) });
+    page.drawText(safe(name), { x: M, y, size: 9.5, font: serif, color: C(INK) });
     page.drawRectangle({ x: trackX, y: y - 2, width: trackW, height: 8, color: C('#e6dfcd') });
     const filled = Math.max(2, (value / 100) * trackW);
     page.drawRectangle({ x: trackX, y: y - 2, width: filled, height: 8,
       color: C(dim ? '#b8b0a0' : colour) });
     page.drawText(safe(note), { x: trackX + trackW + 9, y, size: 8.5, font: serif, color: C(MUTE) });
     y -= 18;
+  };
+
+  // ── two columns with an arrow between them ──
+  // What a reader means on the left, what it can land as on the right. Ten
+  // alternating bullets made the reader work out the pairing for themselves.
+  const arrowRight = (x, yy, w) => {
+    page.drawLine({ start: { x, y: yy }, end: { x: x + w, y: yy }, thickness: 0.7, color: C(RULE) });
+    page.drawLine({ start: { x: x + w - 3.5, y: yy + 2.5 }, end: { x: x + w, y: yy }, thickness: 0.7, color: C(RULE) });
+    page.drawLine({ start: { x: x + w - 3.5, y: yy - 2.5 }, end: { x: x + w, y: yy }, thickness: 0.7, color: C(RULE) });
+  };
+  const pairRow = (left, right) => {
+    const gap = 30;
+    const colW = (W - gap) / 2;
+    const l = wrap(left, serif, 9.5, colW);
+    const rr = wrap(right, serifI, 9.5, colW);
+    const h = Math.max(l.length, rr.length) * 13 + 7;
+    need(h);
+    const top = y;
+    l.forEach((ln, i) => page.drawText(ln, { x: M, y: top - i * 13, size: 9.5, font: serif, color: C(INK) }));
+    rr.forEach((ln, i) => page.drawText(ln, { x: M + colW + gap, y: top - i * 13, size: 9.5, font: serifI, color: C(MUTE) }));
+    arrowRight(M + colW + 7, top + 3, gap - 14);
+    y = top - h;
+  };
+
+  // ── a downward progression ──
+  // Balanced to Strained to Shadow to Return, each stage carrying one term per
+  // active Calling, so the reader can see their own strength turning into its
+  // own cost.
+  const arrowDown = (x, top, h) => {
+    page.drawLine({ start: { x, y: top }, end: { x, y: top - h }, thickness: 0.7, color: C(RULE) });
+    page.drawLine({ start: { x: x - 2.5, y: top - h + 3.5 }, end: { x, y: top - h }, thickness: 0.7, color: C(RULE) });
+    page.drawLine({ start: { x: x + 2.5, y: top - h + 3.5 }, end: { x, y: top - h }, thickness: 0.7, color: C(RULE) });
+  };
+  const stage = (row, isLast) => {
+    const terms = (row.terms || []).map((t) => (t.calling ? t.calling + ' ' : '') + t.term);
+    const body = wrap(terms.join('   ·   '), serif, 9.5, W - 74);
+    need(body.length * 13 + 26);
+    const top = y;
+    page.drawText(safe(row.label).toUpperCase(), { x: M, y: top, size: 8, font: serifB, color: C(MUTE) });
+    body.forEach((ln, i) => page.drawText(ln, { x: M + 74, y: top - i * 13, size: 9.5, font: serif, color: C(INK) }));
+    y = top - body.length * 13 - 4;
+    if (!isLast) { arrowDown(M + 16, y - 1, 12); y -= 20; }
   };
 
   // ── the verdict ──
@@ -124,27 +173,20 @@ export async function buildTrialRecord(doc, result) {
   y -= 30;
 
   para(doc.verdict.motto, { font: serifI, size: 13, lead: 18, gap: 20 });
-  if (doc.verdict.reader) {
-    para(`Prepared for ${doc.verdict.reader}. Completed ${doc.verdict.when}.`,
-      { font: serifI, size: 9.5, colour: MUTE, gap: 14 });
-  } else {
-    para(`Completed ${doc.verdict.when}.`, { font: serifI, size: 9.5, colour: MUTE, gap: 14 });
-  }
+  para(doc.verdict.reader
+    ? `Prepared for ${doc.verdict.reader}. Completed ${doc.verdict.when}.`
+    : `Completed ${doc.verdict.when}.`,
+    { font: serifI, size: 9.5, colour: MUTE, gap: 14 });
 
-  const bullets = (label, items) => {
+  const bullets = (title, items) => {
     if (!items || !items.length) return;
-    need(30);
-    y -= 2;
-    page.drawText(safe(label).toUpperCase(),
-      { x: M, y, size: 8, font: serifB, color: C(MUTE) });
-    y -= 14;
+    label(title);
     for (const t of items) para('·  ' + t, { gap: 5, indent: 8 });
     y -= 3;
   };
-  // a labelled card, printed as a run-in line rather than a box
-  const card = (label, text) => {
+  const card = (name, text) => {
     if (!text) return;
-    para(`${label}. ${text}`, { gap: 7, indent: 8 });
+    para(`${name}. ${text}`, { gap: 7, indent: 8 });
   };
 
   // ── the eight pages of the record ──
@@ -165,23 +207,49 @@ export async function buildTrialRecord(doc, result) {
 
     for (const c of (s.cards || [])) card(c.label, c.text);
 
+    if (s.voices && s.voices.length) {
+      label(s.voicesTitle || 'How your Callings speak');
+      for (const v of s.voices) para(v, { gap: 6, indent: 8 });
+      y -= 3;
+    }
+
     if (s.flow) {
-      para('Decision pathway. ' + s.flow.map((f) => f.name).join(', then '),
-        { font: serifI, gap: 10 });
+      label('Decision pathway');
+      para(s.flow.map((f) => f.name).join('  then  '), { font: serifI, gap: 6, indent: 8 });
+      if (!s.flowCertain) {
+        para('Shown as the default for this archetype. Your scores did not select this order.',
+          { size: 9, lead: 12.4, gap: 8, indent: 8, colour: MUTE });
+      }
+      y -= 2;
     }
     if (s.scales) {
       for (const sc of s.scales) bar(sc.low, sc.value, '#8a6d2f', sc.high, false);
       y -= 4;
+      if (s.scalesNote) para(s.scalesNote, { font: serifI, size: 9.5, lead: 13.4, colour: MUTE });
     }
 
-    bullets('What you mean, and what they may hear', s.perception);
+    if (s.perceptionPairs && s.perceptionPairs.length) {
+      label('What you mean, and what they may hear');
+      for (const p of s.perceptionPairs) pairRow(p.mean, p.hear);
+      y -= 6;
+    }
+
     bullets('Ideal conditions', s.ideal);
     bullets('Bad environment', s.bad);
     bullets('Your place in the party', s.party);
 
-    for (const q of (s.sequence || [])) card(q.label, q.text);
+    if (s.sequence && s.sequence.length) {
+      y -= 4;
+      s.sequence.forEach((row, i) => stage(row, i === s.sequence.length - 1));
+      y -= 10;
+    }
 
     bullets('Growth roadmap', s.growth);
+
+    if (s.stability) {
+      label(s.stability.title);
+      para(s.stability.text, { gap: 10, indent: 8 });
+    }
 
     if (s.closing) { y -= 4; para(s.closing, { font: serifI, lead: 15.6 }); }
   }

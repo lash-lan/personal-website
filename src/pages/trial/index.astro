@@ -488,6 +488,54 @@ const TONES = [
     .tag-HiddenStrength{color:#7fd6a0;border-color:rgba(127,214,160,.4)}
     .tag-Idealized{color:#d9a55f;border-color:rgba(217,165,95,.4)}
 
+    /* ── the decision pathway, as steps ── */
+    .chain{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem;margin:.2rem 0 1.2rem}
+    .chain-step{border:1px solid var(--edge);border-left-width:3px;border-radius:10px;
+      padding:.34rem .7rem;font-family:'Cormorant SC',serif;font-size:.72rem;
+      letter-spacing:.12em;text-transform:uppercase;color:var(--bright);
+      background:rgba(0,0,0,.3)}
+    .chain-arrow{color:var(--dim);font-size:.9rem}
+
+    /* ── what you mean, against what they may hear ── */
+    .pairs{margin:.2rem 0 1.4rem;border-top:1px solid var(--edge)}
+    .pair-head,.pair-row{display:grid;grid-template-columns:1fr 2rem 1fr;
+      gap:.5rem;align-items:center;padding:.62rem 0;border-bottom:1px solid var(--edge)}
+    .pair-head{font-family:'Cormorant SC',serif;font-size:.58rem;letter-spacing:.22em;
+      text-transform:uppercase;color:var(--dim)}
+    .pair-gap{text-align:center;color:var(--dim)}
+    .pair-mean{color:var(--bright)}
+    .pair-hear{font-style:italic;color:var(--text)}
+
+    /* ── balanced, strained, shadow, return ── */
+    .stages{margin:.6rem 0 1.4rem;display:flex;flex-direction:column;align-items:stretch}
+    .stage{border:1px solid var(--edge);border-radius:14px;padding:.75rem .9rem;
+      background:rgba(0,0,0,.28)}
+    .stage-label{display:block;font-family:'Cormorant SC',serif;font-size:.58rem;
+      letter-spacing:.24em;text-transform:uppercase;color:var(--dim);margin-bottom:.5rem}
+    .stage-terms{display:flex;flex-wrap:wrap;gap:.4rem}
+    .term{border:1px solid var(--edge);border-left-width:3px;border-radius:9px;
+      padding:.26rem .58rem;font-size:.86rem;color:var(--text)}
+    .term b{color:var(--dim);font-weight:400;font-family:'Cormorant SC',serif;
+      font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;margin-right:.4rem}
+    .stage-arrow{align-self:center;color:var(--dim);line-height:1;padding:.3rem 0}
+    .stage-shadow{border-color:rgba(158,48,48,.34)}
+    .stage-shadow .stage-label{color:#b06a6a}
+    .stage-return{border-color:rgba(200,155,60,.34)}
+    .stage-return .stage-label{color:var(--oath)}
+
+    /* ── the stability note, when a tie makes a path unanswerable ── */
+    .stability{border:1px solid var(--edge);border-radius:14px;padding:.85rem 1rem;
+      margin:.6rem 0 1.2rem;background:rgba(0,0,0,.28)}
+    .stability p{margin:0}
+
+    @media (max-width:640px){
+      .pair-head,.pair-row{grid-template-columns:1fr;gap:.15rem;text-align:left}
+      .pair-head .pair-gap,.pair-head span:last-child{display:none}
+      .pair-head span:first-child::after{content:', and what they may hear'}
+      .pair-row .pair-gap{text-align:left;transform:rotate(90deg);
+        transform-origin:left center;height:1rem}
+    }
+
     .rec-limits{max-width:40rem;margin:2.4rem auto 0;text-align:center;font-style:italic;
       font-size:.88rem;color:var(--dim);padding-top:1.4rem;
       border-top:1px solid rgba(200,155,60,.15)}
@@ -1031,11 +1079,29 @@ const TONES = [
         sec.appendChild(grid);
       }
 
-      // the decision pathway and the six scales
+      // the individual Callings, secondary to what the combination produces
+      if (page.voices && page.voices.length) {
+        sec.appendChild(el('h3', null, page.voicesTitle || 'How your Callings speak'));
+        const ul = el('ul', 'prompts');
+        page.voices.forEach((t) => ul.appendChild(el('li', null, t)));
+        sec.appendChild(ul);
+      }
+
+      // the decision pathway, as steps rather than one run-on line
       if (page.flow) {
-        const f = el('p', 'bar-note',
-          page.flow.map((x) => x.name).join('  →  '));
-        sec.appendChild(f);
+        sec.appendChild(el('h3', null, 'Decision pathway'));
+        const chain = el('div', 'chain');
+        page.flow.forEach((x, i) => {
+          if (i) chain.appendChild(el('span', 'chain-arrow', '→'));
+          const step = el('span', 'chain-step', x.name);
+          step.style.borderColor = CALLINGS[x.calling].colour;
+          chain.appendChild(step);
+        });
+        sec.appendChild(chain);
+        if (!page.flowCertain) {
+          sec.appendChild(el('p', 'bar-note',
+            'Shown as the default for this archetype. Your scores did not select this order.'));
+        }
       }
       if (page.scales) {
         const bars = el('div', 'bars');
@@ -1052,14 +1118,26 @@ const TONES = [
           bars.appendChild(row);
         });
         sec.appendChild(bars);
+        if (page.scalesNote) sec.appendChild(el('p', 'bar-note', page.scalesNote));
       }
 
-      // what you mean against what others may hear
-      if (page.perception && page.perception.length) {
+      // what you mean set directly against what it can land as
+      if (page.perceptionPairs && page.perceptionPairs.length) {
         sec.appendChild(el('h3', null, 'What you mean, and what they may hear'));
-        const ul = el('ul', 'prompts');
-        page.perception.forEach((t) => ul.appendChild(el('li', null, t)));
-        sec.appendChild(ul);
+        const table = el('div', 'pairs');
+        const head = el('div', 'pair-head');
+        head.appendChild(el('span', null, 'What you mean'));
+        head.appendChild(el('span', 'pair-gap', ''));
+        head.appendChild(el('span', null, 'What they may hear'));
+        table.appendChild(head);
+        page.perceptionPairs.forEach((p) => {
+          const row = el('div', 'pair-row');
+          row.appendChild(el('span', 'pair-mean', p.mean));
+          row.appendChild(el('span', 'pair-gap', '→'));
+          row.appendChild(el('span', 'pair-hear', p.hear));
+          table.appendChild(row);
+        });
+        sec.appendChild(table);
       }
 
       for (const [label, key] of [['Ideal conditions', 'ideal'], ['Bad environment', 'bad'],
@@ -1072,16 +1150,29 @@ const TONES = [
         }
       }
 
-      // balanced, strained, shadow, return
-      if (page.sequence) {
-        const grid = el('div', 'facet-grid');
-        page.sequence.forEach((s) => {
-          const card = el('div', 'facet-card');
-          card.appendChild(el('span', 'facet-name', s.label));
-          card.appendChild(el('span', 'facet-band', s.text));
-          grid.appendChild(card);
+      // balanced, then strained, then shadow, then the way back, with one
+      // term per active Calling at every stage
+      if (page.sequence && page.sequence.length) {
+        const flowBox = el('div', 'stages');
+        page.sequence.forEach((s, i) => {
+          const stage = el('div', 'stage stage-' + s.label.toLowerCase());
+          stage.appendChild(el('span', 'stage-label', s.label));
+          const terms = el('div', 'stage-terms');
+          (s.terms || []).forEach((t) => {
+            const chip = el('span', 'term');
+            if (t.calling) {
+              const key = { Oath: 'O', Hearth: 'H', Forge: 'F', Voice: 'V', Watch: 'W' }[t.calling];
+              if (key && CALLINGS[key]) chip.style.borderColor = CALLINGS[key].colour;
+              chip.appendChild(el('b', null, t.calling));
+            }
+            chip.append(t.term);
+            terms.appendChild(chip);
+          });
+          stage.appendChild(terms);
+          flowBox.appendChild(stage);
+          if (i < page.sequence.length - 1) flowBox.appendChild(el('span', 'stage-arrow', '↓'));
         });
-        sec.appendChild(grid);
+        sec.appendChild(flowBox);
       }
 
       if (page.growth && page.growth.length) {
@@ -1089,6 +1180,13 @@ const TONES = [
         const ul = el('ul', 'prompts');
         page.growth.forEach((t) => ul.appendChild(el('li', null, t)));
         sec.appendChild(ul);
+      }
+
+      if (page.stability) {
+        const box = el('div', 'stability');
+        box.appendChild(el('span', 'stage-label', page.stability.title));
+        box.appendChild(el('p', null, page.stability.text));
+        sec.appendChild(box);
       }
 
       if (page.closing) sec.appendChild(para(page.closing));
