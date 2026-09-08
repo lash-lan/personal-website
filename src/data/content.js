@@ -95,8 +95,25 @@ export const SAGAS = [
 export const sagaHref = (s) => `/sagas/${s.race}/${s.slug}`;
 
 // ─── HALL OF MEMORIES ────────────────────────────────────────
-// Images live in /images/codex/<img>.jpg
-const T = (img, name, note) => ({ img, name, note });
+// Thumbnails live in /images/codex/<img>.jpg, full versions in
+// /images/gallery/full/<img>.jpg.
+//
+// The fourth argument lists further images of the same subject, each as
+// [name, caption]. Give someone a second image and they stop being a single
+// plate: they get a page of their own at /gallery/<race>/<img>, and the race
+// grid links to it instead of enlarging. Leave it off and nothing changes.
+//
+// The captions sit under each image on that page, where repeating the person's
+// name would be pointless — the heading already says it.
+const T = (img, name, note, more = [], cover = '') => ({
+  img, name, note,
+  shots: [
+    { img, label: cover },
+    ...more.map(([shot, label]) => ({ img: shot, label })),
+  ],
+});
+
+export const galleryItemHref = (cat, item) => `/gallery/${cat.slug}/${item.img}`;
 
 export const GALLERY_CATEGORIES = [
   {
@@ -137,7 +154,12 @@ export const GALLERY_CATEGORIES = [
     slug: 'humans', name: 'Humans',
     blurb: 'The first family, and the defenders who came after them.',
     items: [
-      T('adamas',           'Adamas',           'Father of Humanity'),
+      T('adamas',           'Adamas',           'Father of Humanity', [
+        ['adamas-full-figure', 'Full figure'],
+        ['adamas-portrait',    'Upper body'],
+        ['adamas-face',        'Face'],
+        ['adamas-profile',     'Profile'],
+      ], 'In the garden'),
       T('evalon',           'Evalon',           'Mother of Humanity'),
       T('cainan',           'Cainan',           'First Son, First Fracture'),
       T('abel',             'Abel',             'The Fallen Son'),

@@ -1,0 +1,38 @@
+---
+import SectionLayout from '../../../layouts/SectionLayout.astro';
+import PlateGrid from '../../../components/PlateGrid.astro';
+import { GALLERY_CATEGORIES } from '../../../data/content.js';
+
+// Only people carrying more than one image get a page. A single plate has
+// nothing to open into, so it keeps enlarging in place on the race grid.
+export function getStaticPaths() {
+  return GALLERY_CATEGORIES.flatMap((cat) =>
+    cat.items
+      .filter((item) => item.shots.length > 1)
+      .map((item) => ({
+        params: { category: cat.slug, item: item.img },
+        props: { cat, item },
+      }))
+  );
+}
+
+const { cat, item } = Astro.props;
+
+// The heading already names him, so each plate is captioned by what it shows.
+const plates = item.shots.map((shot) => ({ img: shot.img, name: shot.label }));
+---
+<SectionLayout
+  title={`${item.name} | ${cat.name} | LASH`}
+  description={`${item.name} — ${item.note}. ${item.shots.length} images.`}
+  theme="gallery"
+  current="gallery"
+  compact={true}
+  back={{ href: `/gallery/${cat.slug}`, label: cat.name }}
+  eyebrow={cat.name}
+  heading={item.name}
+  tagline={item.note}
+>
+  <div class="wrap">
+    <PlateGrid plates={plates} />
+  </div>
+</SectionLayout>
