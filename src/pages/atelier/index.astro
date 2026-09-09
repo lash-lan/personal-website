@@ -21,6 +21,16 @@ const problem = {
   <meta name="robots" content="noindex, nofollow" />
   <title>Atelier</title>
   <link rel="icon" href="/favicon.ico" />
+
+  <!-- Installable to a phone's home screen, where it opens without the
+       browser's bars — which is both the point of an app and the end of the
+       address bar shuffling the layout about. -->
+  <link rel="manifest" href="/atelier.webmanifest" />
+  <meta name="theme-color" content="#0a0908" />
+  <link rel="apple-touch-icon" href="/atelier-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Atelier" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Cormorant+SC:wght@300;400&display=swap" rel="stylesheet" />
@@ -157,10 +167,24 @@ const problem = {
 
     /* Action and speech, told apart. Narration leans; what is actually said
        aloud sits upright and bright, the way it does on a printed page. */
-    /* Narration is set back from speech, but only a little. Pushed further it
-       becomes the murk that made this hard to read in the first place. */
-    .said em { font-style: italic; color: color-mix(in srgb, var(--text) 88%, var(--bg)); }
-    .said .speech { color: var(--textBright); font-style: normal; }
+    /* Two voices in one bubble, and they must not be mistaken for each other.
+       The scene leans, set slightly back and smaller. What is said aloud sits
+       upright, brighter and a size larger, inside gold quotation marks. */
+    .said em.narration {
+      font-style: italic;
+      font-size: 0.94em;
+      color: color-mix(in srgb, var(--text) 82%, var(--bg));
+    }
+    .said .speech {
+      font-style: normal;
+      font-size: 1.06em;
+      color: var(--textBright);
+    }
+    .said .qm {
+      color: var(--accent);
+      font-family: 'Cinzel', Georgia, serif;
+      padding: 0 0.04em;
+    }
 
     .dots { display: inline-flex; gap: 0.28rem; padding: 0.15rem 0; }
     .dots i {
@@ -325,6 +349,13 @@ const problem = {
 
 <script>
   import { shrinkPortrait, readDocument, KINDS } from '../../lib/atelier-files.js';
+
+  // Registering this is what makes the page installable. It caches nothing.
+  if ('serviceWorker' in navigator) {
+    addEventListener('load', () => {
+      navigator.serviceWorker.register('/atelier/sw.js', { scope: '/atelier' }).catch(() => {});
+    });
+  }
 
   const $ = (id) => document.getElementById(id);
   const log = $('log');
@@ -500,26 +531,59 @@ const problem = {
      * eye, "speech" stands up bright. Built from text nodes rather than markup,
      * so nothing the model writes can become HTML.
      */
+    function narration(el, raw) {
+      const text = raw.replace(/\*/g, '');
+      if (!text.trim()) return;
+      const em = document.createElement('em');
+      em.className = 'narration';
+      em.textContent = text;
+      el.append(em);
+    }
+
+    function speech(el, inner, unclosed) {
+      const span = document.createElement('span');
+      span.className = 'speech';
+      const open = document.createElement('span');
+      open.className = 'qm';
+      open.textContent = '“';
+      span.append(open, document.createTextNode(inner));
+      if (!unclosed) {
+        const close = document.createElement('span');
+        close.className = 'qm';
+        close.textContent = '”';
+        span.append(close);
+      }
+      el.append(span);
+    }
+
+    /**
+     * What is inside quotation marks was said aloud; everything else is the
+     * scene around it. Asterisks are dropped, since the leaning type already
+     * says what they were there to say.
+     *
+     * Built from text nodes, never markup, so a reply cannot smuggle in HTML.
+     */
     function renderProse(el, text) {
       el.textContent = '';
-      const marks = /(\*[^*\n]+\*)|("[^"\n]+")|(“[^”\n]+”)/g;
+      const quoted = /"([^"]*)"|“([^”]*)”/g;
       let at = 0, m;
-      while ((m = marks.exec(text))) {
-        if (m.index > at) el.append(text.slice(at, m.index));
-        const piece = m[0];
-        if (piece.startsWith('*')) {
-          const em = document.createElement('em');
-          em.textContent = piece.slice(1, -1);
-          el.append(em);
-        } else {
-          const said = document.createElement('span');
-          said.className = 'speech';
-          said.textContent = piece;
-          el.append(said);
-        }
-        at = m.index + piece.length;
+      while ((m = quoted.exec(text))) {
+        if (m.index > at) narration(el, text.slice(at, m.index));
+        speech(el, m[1] ?? m[2] ?? '');
+        at = m.index + m[0].length;
       }
-      if (at < text.length) el.append(text.slice(at));
+
+      // Mid-stream a line may be part-said. Anything after a lone opening mark
+      // is treated as speech already, so words do not change colour as they land.
+      const tail = text.slice(at);
+      const marks = tail.match(/["“]/g) ?? [];
+      const opened = tail.search(/["“]/);
+      if (marks.length % 2 === 1 && opened !== -1) {
+        narration(el, tail.slice(0, opened));
+        speech(el, tail.slice(opened + 1), true);
+      } else if (tail) {
+        narration(el, tail);
+      }
     }
 
     function bubble(role, text) {
