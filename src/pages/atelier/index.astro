@@ -24,7 +24,11 @@ const problem = {
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Cormorant+SC:wght@300;400&display=swap" rel="stylesheet" />
-  <style>
+  <!-- Global, not scoped: the conversation, the document rows and the waiting
+       dots are all built by script as you go, so they never carry the marker
+       Astro's scoped styles match on. This page owns its whole document, so
+       there is nothing here for global rules to leak into. -->
+  <style is:global>
     :root {
       --bg: #0a0908; --panel: #131110; --line: rgba(196,149,42,0.18);
       --accent: #c4952a; --accentLight: #e8c875;
@@ -86,7 +90,7 @@ const problem = {
     }
     .side, .main { background: var(--bg); min-height: 0; }
     .side { padding: 1.5rem 1.3rem; display: flex; flex-direction: column; gap: 1.1rem; overflow-y: auto; }
-    .main { display: flex; flex-direction: column; min-height: 0; }
+    .main { display: flex; flex-direction: column; min-height: 0; position: relative; overflow: hidden; }
     .topbar, .only-small { display: none; }
     .head { display: flex; align-items: center; gap: 0.6rem; }
 
@@ -98,16 +102,79 @@ const problem = {
     }
     .who input { font-family: 'Cinzel', Georgia, serif; }
 
-    .log { flex: 1; overflow-y: auto; padding: 1.6rem clamp(1rem, 4vw, 3rem); display: flex; flex-direction: column; gap: 1.3rem; }
-    .turn { display: flex; gap: 0.9rem; max-width: 46rem; }
-    .turn.me { align-self: flex-end; flex-direction: row-reverse; }
-    .turn img, .turn .blank {
-      width: 2.2rem; height: 2.2rem; flex: none; border-radius: 50%;
-      border: 1px solid var(--line); object-fit: cover;
+    /* The character's own portrait, thrown far out of focus behind the
+       conversation. Present enough to feel like a room you are in, faint
+       enough that the words stay the brightest thing on the screen. */
+    .stage {
+      position: absolute; inset: -8%;
+      background-size: cover; background-position: 50% 20%;
+      filter: blur(28px) saturate(0.75) brightness(0.34);
+      opacity: 0; transition: opacity 1.2s ease;
+      pointer-events: none; z-index: 0;
     }
-    .said { white-space: pre-wrap; line-height: 1.65; }
-    .turn.me .said { color: var(--textBright); }
-    .turn .said em { color: var(--accentLight); font-style: italic; }
+    .stage.lit { opacity: 1; }
+    .stage::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(180deg,
+        color-mix(in srgb, var(--bg) 55%, transparent) 0%,
+        color-mix(in srgb, var(--bg) 82%, transparent) 100%);
+    }
+    .topbar, .log, .ask { position: relative; z-index: 1; }
+
+    .log {
+      flex: 1; overflow-y: auto;
+      padding: 1.6rem clamp(1rem, 4vw, 3rem);
+      display: flex; flex-direction: column; gap: 1.15rem;
+    }
+    .turn { display: flex; gap: 0.75rem; max-width: 44rem; align-items: flex-start; }
+    .turn.me { align-self: flex-end; flex-direction: row-reverse; }
+    .turn img {
+      width: 2.4rem; height: 2.4rem; flex: none; border-radius: 50%;
+      border: 1px solid var(--line); object-fit: cover;
+      margin-top: 0.2rem;
+    }
+    .turn .blank { display: none; }
+
+    .said {
+      white-space: pre-wrap;
+      font-size: 1.03rem; line-height: 1.78;
+      padding: 0.85rem 1.05rem;
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--panel) 88%, transparent);
+      border: 1px solid var(--line);
+      color: var(--text);
+      backdrop-filter: blur(6px);
+    }
+    /* Yours reads as an aside; theirs is the page you are reading. */
+    .turn.me { max-width: 32rem; }
+    .turn.me .said {
+      background: color-mix(in srgb, var(--accentDim, #8a5a2b) 22%, var(--panel));
+      border-color: color-mix(in srgb, var(--accent) 32%, transparent);
+      color: var(--textBright);
+      border-bottom-right-radius: 4px;
+    }
+    .turn:not(.me) .said { border-bottom-left-radius: 4px; }
+
+    /* Action and speech, told apart. Narration leans; what is actually said
+       aloud sits upright and bright, the way it does on a printed page. */
+    /* Narration is set back from speech, but only a little. Pushed further it
+       becomes the murk that made this hard to read in the first place. */
+    .said em { font-style: italic; color: color-mix(in srgb, var(--text) 88%, var(--bg)); }
+    .said .speech { color: var(--textBright); font-style: normal; }
+
+    .dots { display: inline-flex; gap: 0.28rem; padding: 0.15rem 0; }
+    .dots i {
+      width: 0.34rem; height: 0.34rem; border-radius: 50%;
+      background: var(--accent); opacity: 0.35;
+      animation: pulse 1.25s ease-in-out infinite;
+    }
+    .dots i:nth-child(2) { animation-delay: 0.18s; }
+    .dots i:nth-child(3) { animation-delay: 0.36s; }
+    @keyframes pulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) {
+      .dots i { animation: none; opacity: 0.6; }
+      .stage { transition: none; }
+    }
 
     .ask { border-top: 1px solid var(--line); padding: 1rem clamp(1rem, 4vw, 3rem); display: flex; gap: 0.7rem; align-items: flex-end; }
     .ask textarea { flex: 1; min-height: 3rem; max-height: 12rem; }
@@ -246,6 +313,7 @@ const problem = {
         <div class="whoami" id="whoami">Unnamed</div>
         <button type="button" id="panel">Character</button>
       </div>
+      <div class="stage" id="stage" aria-hidden="true"></div>
       <div class="log" id="log"></div>
       <form class="ask" id="ask">
         <textarea id="say" rows="1" placeholder="Say something…" autofocus></textarea>
@@ -316,6 +384,11 @@ const problem = {
         el.style.backgroundSize = 'cover';
         el.style.backgroundPosition = 'center';
         el.textContent = '';
+      }
+      const stage = $('stage');
+      if (stage) {
+        stage.style.backgroundImage = `url(${dataUrl})`;
+        stage.classList.add('lit');
       }
     }
 
@@ -422,18 +495,56 @@ const problem = {
     const dropHint = () => log.querySelector('.empty-hint')?.remove();
 
     // ─── the conversation ───
+    /**
+     * Lay out a reply the way prose is laid out: *action* leans away from the
+     * eye, "speech" stands up bright. Built from text nodes rather than markup,
+     * so nothing the model writes can become HTML.
+     */
+    function renderProse(el, text) {
+      el.textContent = '';
+      const marks = /(\*[^*\n]+\*)|("[^"\n]+")|(“[^”\n]+”)/g;
+      let at = 0, m;
+      while ((m = marks.exec(text))) {
+        if (m.index > at) el.append(text.slice(at, m.index));
+        const piece = m[0];
+        if (piece.startsWith('*')) {
+          const em = document.createElement('em');
+          em.textContent = piece.slice(1, -1);
+          el.append(em);
+        } else {
+          const said = document.createElement('span');
+          said.className = 'speech';
+          said.textContent = piece;
+          el.append(said);
+        }
+        at = m.index + piece.length;
+      }
+      if (at < text.length) el.append(text.slice(at));
+    }
+
     function bubble(role, text) {
       const turn = document.createElement('div');
       turn.className = 'turn' + (role === 'user' ? ' me' : '');
       const face = document.createElement(role === 'assistant' && portrait ? 'img' : 'div');
-      if (face.tagName === 'IMG') face.src = portrait; else face.className = 'blank';
+      if (face.tagName === 'IMG') { face.src = portrait; face.alt = ''; }
+      else face.className = 'blank';
       const said = document.createElement('div');
       said.className = 'said';
-      said.textContent = text;
+      if (role === 'user') said.textContent = text;
+      else renderProse(said, text);
       turn.append(face, said);
       log.append(turn);
       log.scrollTop = log.scrollHeight;
       return said;
+    }
+
+    /** Three quiet dots while the character is thinking. */
+    function waiting(el) {
+      el.textContent = '';
+      const dots = document.createElement('span');
+      dots.className = 'dots';
+      dots.append(document.createElement('i'), document.createElement('i'), document.createElement('i'));
+      el.append(dots);
     }
 
     $('ask').addEventListener('submit', async (e) => {
@@ -449,7 +560,8 @@ const problem = {
 
       busy = true;
       $('send').disabled = true;
-      const out = bubble('assistant', '…');
+      const out = bubble('assistant', '');
+      waiting(out);
       let reply = '';
 
       try {
@@ -486,7 +598,7 @@ const problem = {
             if (!payload || payload === '[DONE]') continue;
             try {
               const piece = JSON.parse(payload).choices?.[0]?.delta?.content;
-              if (piece) { reply += piece; out.textContent = reply; log.scrollTop = log.scrollHeight; }
+              if (piece) { reply += piece; renderProse(out, reply); log.scrollTop = log.scrollHeight; }
             } catch {}
           }
         }
