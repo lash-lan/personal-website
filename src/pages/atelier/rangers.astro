@@ -1,0 +1,531 @@
+---
+// The Squire, played rather than read. Locked behind the same password as the
+// rest of the atelier, and never shown to search engines.
+import { env } from 'cloudflare:workers';
+import { ticketHolds, ticketFrom } from '../../lib/session.js';
+import { STORY, CHAPTERS } from '../../data/rangers.js';
+
+export const prerender = false;
+
+const unlocked = await ticketHolds(env.ATELIER_SESSION_SECRET, ticketFrom(Astro.cookies));
+---
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Red Rangers</title>
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="theme-color" content="#0a0706" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style is:global>
+    :root {
+      --bg: #0a0706; --panel: #14100e; --line: rgba(178,58,42,0.22);
+      --accent: #b23a2a; --accentLight: #e0785f;
+      --text: #c4b6ab; --textDim: #7d6a60; --textBright: #f0e4da;
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    /* Any display rule of our own outranks the hidden attribute's own quiet
+       display:none, which would leave the door standing over the game. */
+    [hidden] { display: none !important; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      font-size: 16px; -webkit-font-smoothing: antialiased;
+      min-height: 100dvh;
+    }
+    body.playing { height: 100dvh; overflow: hidden; }
+    h1 { font-family: 'Cinzel', Georgia, serif; font-weight: 600; color: var(--textBright); letter-spacing: 0.04em; }
+    input, textarea {
+      width: 100%; background: #0a0706; color: var(--text);
+      border: 1px solid var(--line); border-radius: 4px;
+      padding: 0.65rem 0.75rem; font-family: inherit; font-size: 1rem;
+    }
+    input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+    button {
+      font-family: inherit; font-weight: 600;
+      font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
+      background: transparent; color: var(--text);
+      border: 1px solid var(--line); border-radius: 4px;
+      padding: 0.6rem 1rem; cursor: pointer;
+      transition: color 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+    }
+    button:hover:not(:disabled) { color: var(--accentLight); border-color: var(--accent); }
+    button:disabled { opacity: 0.35; cursor: default; }
+
+    /* ─── DOOR ─── */
+    .door { min-height: 100dvh; display: grid; place-items: center; padding: 2rem; }
+    .door form, .door .well { width: min(24rem, 100%); display: flex; flex-direction: column; gap: 1.1rem; text-align: center; }
+    .door h1 { font-size: 1.35rem; }
+    .door .saga {
+      font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent);
+    }
+    .door p { color: var(--textDim); font-size: 0.9rem; line-height: 1.6; }
+
+    /* ─── PLAY ─── */
+    .play { display: flex; flex-direction: column; height: 100dvh; }
+    .bar {
+      display: flex; align-items: center; gap: 0.7rem; flex: none;
+      padding: 0.6rem 0.9rem; border-bottom: 1px solid var(--line);
+    }
+    .bar .where { flex: 1; min-width: 0; }
+    .bar .ch {
+      font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent);
+    }
+    .bar .title {
+      font-family: 'Cinzel', Georgia, serif; color: var(--textBright);
+      font-size: 0.98rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    .scroll { flex: 1; overflow-y: auto; padding: 1.3rem clamp(1rem, 5vw, 3rem); }
+    .inner { max-width: 42rem; margin: 0 auto; display: flex; flex-direction: column; gap: 1.15rem; }
+
+    .plate {
+      width: 100%; border-radius: 6px; display: block;
+      border: 1px solid var(--line);
+      opacity: 0; transition: opacity 0.9s ease;
+    }
+    .plate.lit { opacity: 1; }
+    .brief {
+      border-left: 2px solid var(--accent);
+      padding: 0.2rem 0 0.2rem 1rem;
+      color: var(--textDim); line-height: 1.7; font-size: 0.95rem;
+    }
+    .brief b {
+      display: block; font-weight: 600; font-size: 0.62rem;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.35rem;
+    }
+
+    .beat { white-space: pre-wrap; font-size: 1.06rem; line-height: 1.72; }
+    .beat .speech { font-weight: 600; font-size: 1.08em; color: var(--textBright); }
+    .beat .qm { color: var(--accent); font-weight: 400; padding: 0 0.05em; }
+    .beat em.narration { font-style: normal; font-weight: 400; font-size: 0.94em; color: color-mix(in srgb, var(--text) 78%, var(--bg)); }
+
+    .mine {
+      align-self: flex-end; max-width: 30rem;
+      background: color-mix(in srgb, var(--accent) 16%, var(--panel));
+      border: 1px solid color-mix(in srgb, var(--accent) 34%, transparent);
+      border-radius: 12px; border-bottom-right-radius: 4px;
+      padding: 0.6rem 0.9rem; color: var(--textBright);
+      font-size: 0.98rem; line-height: 1.6;
+    }
+
+    .choices { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .choices button {
+      flex: 1 1 12rem; text-transform: none; letter-spacing: 0.01em;
+      font-size: 0.92rem; font-weight: 500; text-align: left;
+      padding: 0.7rem 0.9rem; line-height: 1.4;
+      background: color-mix(in srgb, var(--panel) 85%, transparent);
+    }
+    .choices button:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 12%, var(--panel)); }
+
+    .gate {
+      border: 1px solid var(--accent); border-radius: 6px;
+      padding: 1rem; display: flex; flex-direction: column; gap: 0.8rem;
+      background: color-mix(in srgb, var(--accent) 8%, var(--panel));
+    }
+    .gate p { color: var(--textBright); line-height: 1.6; font-size: 0.95rem; }
+    .gate .row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+    .gate .row button { flex: 1 1 9rem; }
+
+    .say { border-top: 1px solid var(--line); padding: 0.8rem clamp(1rem, 5vw, 3rem) calc(0.8rem + env(safe-area-inset-bottom)); }
+    .say .inner { flex-direction: row; gap: 0.6rem; align-items: flex-end; }
+    .say textarea { flex: 1; min-height: 2.9rem; max-height: 10rem; resize: none; }
+
+    .dots { display: inline-flex; gap: 0.3rem; }
+    .dots i { width: 0.35rem; height: 0.35rem; border-radius: 50%; background: var(--accent); opacity: 0.3; animation: pulse 1.25s ease-in-out infinite; }
+    .dots i:nth-child(2) { animation-delay: 0.18s; }
+    .dots i:nth-child(3) { animation-delay: 0.36s; }
+    @keyframes pulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { .dots i { animation: none; opacity: 0.6; } }
+
+    .note { font-size: 0.78rem; color: var(--textDim); line-height: 1.5; }
+    .shelf { display: flex; flex-direction: column; gap: 0.3rem; max-height: 40vh; overflow-y: auto; text-align: left; }
+    .shelf button { text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 0.9rem; text-align: left; }
+  </style>
+</head>
+<body class={unlocked ? 'playing' : ''}>
+
+{!unlocked && (
+  <div class="door">
+    <form method="POST" action="/api/login">
+      <span class="saga">{STORY.saga}</span>
+      <h1>{STORY.title}</h1>
+      <input type="password" name="password" placeholder="Password" autocomplete="current-password" autofocus required />
+      <button type="submit">Enter</button>
+    </form>
+  </div>
+)}
+
+{unlocked && (
+  <>
+    <div class="door" id="threshold">
+      <div class="well">
+        <span class="saga">{STORY.saga}</span>
+        <h1>{STORY.title}</h1>
+        <p>
+          You are the second son of {STORY.house}, sent as ward and squire to
+          Captain Hannah Icetear. Fifteen chapters. What happens is written;
+          how you meet it is not.
+        </p>
+        <div>
+          <input type="text" id="yourname" placeholder="Your name" maxlength="40" autocomplete="off" />
+        </div>
+        <button type="button" id="begin">Begin Chapter I</button>
+        <p class="note" id="resume" hidden></p>
+      </div>
+    </div>
+
+    <div class="play" id="play" hidden>
+      <div class="bar">
+        <div class="where">
+          <div class="ch" id="chLabel">Chapter I</div>
+          <div class="title" id="chTitle">The Verdant Gate</div>
+        </div>
+        <button type="button" id="shelfBtn">Chapters</button>
+      </div>
+
+      <div class="scroll" id="scroll">
+        <div class="inner" id="story"></div>
+      </div>
+
+      <form class="say" id="say">
+        <div class="inner">
+          <textarea id="what" rows="1" placeholder="…or do something else"></textarea>
+          <button type="submit" id="send">Do it</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="door" id="shelf" hidden>
+      <div class="well">
+        <h1>Chapters</h1>
+        <div class="shelf" id="shelfList"></div>
+        <button type="button" id="shelfBack">Back</button>
+      </div>
+    </div>
+  </>
+)}
+
+<script id="chapterData" type="application/json" is:inline set:html={JSON.stringify(CHAPTERS)}></script>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const play = $('play');
+
+  if (play) {
+    const CHAPTERS = JSON.parse($('chapterData').textContent);
+    const SAVE = 'rangers.progress.v1';
+
+    const story = $('story');
+    const scroll = $('scroll');
+    let name = '';
+    let at = 0;
+    let messages = [];
+    let busy = false;
+
+    // ─── remembering where you got to ───
+    const save = () => {
+      try {
+        localStorage.setItem(SAVE, JSON.stringify({ name, at, messages: messages.slice(-30) }));
+      } catch {}
+    };
+    const restore = () => {
+      try { return JSON.parse(localStorage.getItem(SAVE) || 'null'); } catch { return null; }
+    };
+
+    // ─── rendering ───
+    function narration(el, raw) {
+      const t = raw.replace(/\*/g, '');
+      if (!t.trim()) return;
+      const em = document.createElement('em');
+      em.className = 'narration';
+      em.textContent = t;
+      el.append(em);
+    }
+    function speech(el, inner, unclosed) {
+      const s = document.createElement('span');
+      s.className = 'speech';
+      const o = document.createElement('span'); o.className = 'qm'; o.textContent = '“';
+      s.append(o, document.createTextNode(inner));
+      if (!unclosed) { const c = document.createElement('span'); c.className = 'qm'; c.textContent = '”'; s.append(c); }
+      el.append(s);
+    }
+    function renderProse(el, text) {
+      el.textContent = '';
+      const quoted = /"([^"]*)"|“([^”]*)”/g;
+      let i = 0, m;
+      while ((m = quoted.exec(text))) {
+        if (m.index > i) narration(el, text.slice(i, m.index));
+        speech(el, m[1] ?? m[2] ?? '');
+        i = m.index + m[0].length;
+      }
+      const tail = text.slice(i);
+      const marks = tail.match(/["“]/g) ?? [];
+      const opened = tail.search(/["“]/);
+      if (marks.length % 2 === 1 && opened !== -1) {
+        narration(el, tail.slice(0, opened));
+        speech(el, tail.slice(opened + 1), true);
+      } else if (tail) narration(el, tail);
+    }
+
+    const toBottom = () => { scroll.scrollTop = scroll.scrollHeight; };
+
+    function addBeat() {
+      const d = document.createElement('div');
+      d.className = 'beat';
+      const dots = document.createElement('span');
+      dots.className = 'dots';
+      dots.append(document.createElement('i'), document.createElement('i'), document.createElement('i'));
+      d.append(dots);
+      story.append(d); toBottom();
+      return d;
+    }
+    function addMine(text) {
+      const d = document.createElement('div');
+      d.className = 'mine';
+      d.textContent = text;
+      story.append(d); toBottom();
+    }
+    function addBrief(text) {
+      const d = document.createElement('div');
+      d.className = 'brief';
+      const b = document.createElement('b');
+      b.textContent = 'Where things stand';
+      d.append(b, document.createTextNode(text));
+      story.append(d); toBottom();
+    }
+
+    // The model occasionally forgets its options line, most often on the first
+    // turn of a chapter where it has a brief to write as well. These three fit
+    // any scene, so a dropped line costs a little colour rather than the game.
+    const ANYWHERE = ['Look around you', 'Say something', 'Press on'];
+
+    const clearControls = () => {
+      story.querySelectorAll('.choices, .gate').forEach((n) => n.remove());
+    };
+
+    function addChoices(options) {
+      clearControls();
+      if (!options.length) return;
+      const row = document.createElement('div');
+      row.className = 'choices';
+      for (const text of options) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = text;
+        b.addEventListener('click', () => act(text));
+        row.append(b);
+      }
+      story.append(row); toBottom();
+    }
+
+    function addGate() {
+      clearControls();
+      const next = CHAPTERS[at + 1];
+      const g = document.createElement('div');
+      g.className = 'gate';
+      const p = document.createElement('p');
+      p.textContent = next
+        ? `That is the end of ${CHAPTERS[at].title}. ${next.numeral}. ${next.title} waits.`
+        : `That is the end of the story.`;
+      g.append(p);
+      const row = document.createElement('div');
+      row.className = 'row';
+      if (next) {
+        const on = document.createElement('button');
+        on.type = 'button';
+        on.textContent = `Proceed to ${next.title}`;
+        on.addEventListener('click', () => enter(at + 1));
+        row.append(on);
+      }
+      const stay = document.createElement('button');
+      stay.type = 'button';
+      stay.textContent = 'Stay here';
+      stay.addEventListener('click', () => { g.remove(); $('what').focus(); });
+      row.append(stay);
+      g.append(row);
+      story.append(g); toBottom();
+    }
+
+    // ─── the turn ───
+    async function turn(payload, mineText) {
+      if (busy) return;
+      busy = true;
+      $('send').disabled = true;
+      clearControls();
+      if (mineText) { addMine(mineText); messages.push({ role: 'user', content: mineText }); }
+
+      const beat = addBeat();
+      let raw = '';
+
+      try {
+        const res = await fetch('/api/adventure', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, chapter: at, messages, ...payload }),
+        });
+        if (!res.ok) {
+          const e = await res.json().catch(() => ({}));
+          beat.textContent = e.error || `Something went wrong (${res.status}).`;
+          if (mineText) messages.pop();
+          return;
+        }
+
+        const reader = res.body.getReader();
+        const dec = new TextDecoder();
+        let buf = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, { stream: true });
+          const lines = buf.split('\n');
+          buf = lines.pop() ?? '';
+          for (const line of lines) {
+            if (!line.startsWith('data:')) continue;
+            const p = line.slice(5).trim();
+            if (!p || p === '[DONE]') continue;
+            try {
+              const bit = JSON.parse(p).choices?.[0]?.delta?.content;
+              if (bit) { raw += bit; renderProse(beat, visible(raw)); toBottom(); }
+            } catch {}
+          }
+        }
+
+        const { prose, brief, options, complete } = read(raw);
+        if (brief) { beat.before(briefNode(brief)); }
+        renderProse(beat, prose);
+        if (raw) messages.push({ role: 'assistant', content: raw });
+        if (complete) addGate();
+        else addChoices(options.length ? options : ANYWHERE);
+        save();
+      } catch {
+        beat.textContent = 'The connection failed.';
+        if (mineText) messages.pop();
+      } finally {
+        busy = false;
+        $('send').disabled = false;
+        toBottom();
+      }
+    }
+
+    function briefNode(text) {
+      const d = document.createElement('div');
+      d.className = 'brief';
+      const b = document.createElement('b');
+      b.textContent = 'Where things stand';
+      d.append(b, document.createTextNode(text));
+      return d;
+    }
+
+    /** Strip the machinery out of a half-finished stream so it never flashes up. */
+    function visible(raw) {
+      return raw
+        .replace(/^\s*BRIEF:.*(\n|$)/i, '')
+        .replace(/\n?\s*CHAPTER COMPLETE\s*/i, '')
+        .replace(/\n?\s*OPTIONS:.*$/is, '')
+        .trim();
+    }
+
+    /** Pull the parts out of a finished turn. */
+    function read(raw) {
+      const brief = (raw.match(/^\s*BRIEF:\s*(.+?)(\n\s*\n|\n(?=[A-Z"“])|$)/is) || [])[1]?.trim() || '';
+      const complete = /CHAPTER COMPLETE/i.test(raw);
+      const opts = (raw.match(/OPTIONS:\s*(.+?)\s*$/is) || [])[1] || '';
+      const options = opts.split('|').map((s) => s.trim()).filter(Boolean).slice(0, 4);
+      return { prose: visible(raw), brief, options, complete };
+    }
+
+    const act = (text) => turn({}, text);
+
+    function addPlate(slug) {
+      const img = document.createElement('img');
+      img.className = 'plate';
+      img.alt = '';
+      img.loading = 'eager';
+      img.addEventListener('load', () => img.classList.add('lit'));
+      img.src = `/images/rangers/${slug}.jpg`;
+      story.append(img);
+    }
+
+    function enter(index) {
+      at = index;
+      messages = [];
+      story.innerHTML = '';
+      const c = CHAPTERS[at];
+      addPlate(c.slug);
+      $('chLabel').textContent = `Chapter ${c.numeral}`;
+      $('chTitle').textContent = c.title;
+      save();
+      turn({ begin: true }, '');
+    }
+
+    // ─── the door ───
+    $('begin').addEventListener('click', () => {
+      name = $('yourname').value.trim() || 'Alfar';
+      $('threshold').hidden = true;
+      play.hidden = false;
+      const saved = restore();
+      if (saved && saved.name === name && Array.isArray(saved.messages) && saved.messages.length) {
+        at = Number(saved.at) || 0;
+        messages = saved.messages;
+        const c = CHAPTERS[at];
+        $('chLabel').textContent = `Chapter ${c.numeral}`;
+        $('chTitle').textContent = c.title;
+        addPlate(c.slug);
+        for (const m of messages) {
+          if (m.role === 'user') addMine(m.content);
+          else { const b = document.createElement('div'); b.className = 'beat'; renderProse(b, visible(m.content)); story.append(b); }
+        }
+        const last = [...messages].reverse().find((m) => m.role === 'assistant');
+        const { options, complete } = last ? read(last.content) : { options: [], complete: false };
+        if (complete) addGate();
+        else addChoices(options.length ? options : ANYWHERE);
+        toBottom();
+      } else {
+        enter(at);
+      }
+    });
+
+    const saved = restore();
+    if (saved?.name) {
+      $('yourname').value = saved.name;
+      const c = CHAPTERS[Number(saved.at) || 0];
+      $('resume').hidden = false;
+      $('resume').textContent = `You left off in ${c.numeral}. ${c.title}. Keep the same name to carry on.`;
+      $('begin').textContent = 'Continue';
+    }
+
+    // ─── free response ───
+    $('say').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const text = $('what').value.trim();
+      if (!text || busy) return;
+      $('what').value = '';
+      act(text);
+    });
+    $('what').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('say').requestSubmit(); }
+    });
+
+    // ─── the shelf ───
+    const list = $('shelfList');
+    CHAPTERS.forEach((c, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = `${c.numeral}. ${c.title}`;
+      b.addEventListener('click', () => {
+        $('shelf').hidden = true; play.hidden = false;
+        enter(i);
+      });
+      list.append(b);
+    });
+    $('shelfBtn').addEventListener('click', () => { play.hidden = true; $('shelf').hidden = false; });
+    $('shelfBack').addEventListener('click', () => { $('shelf').hidden = true; play.hidden = false; });
+  }
+</script>
+</body>
+</html>
