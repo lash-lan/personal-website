@@ -34,8 +34,13 @@ const problem = {
     body {
       background: var(--bg); color: var(--text);
       font-family: 'EB Garamond', Georgia, serif; font-size: 17px;
-      min-height: 100vh;
+      min-height: 100dvh;
     }
+    /* The workshop manages its own height and only the transcript scrolls.
+       Without this the page itself scrolls on a phone — where 100vh means the
+       height with the address bar hidden — and carries the top bar, and with
+       it the way into the character panel, up out of sight. */
+    body.workshop { height: 100dvh; overflow: hidden; }
     h1 {
       font-family: 'Cinzel', Georgia, serif; font-weight: 600;
       color: var(--textBright); font-size: 1.5rem; letter-spacing: 0.04em;
@@ -108,6 +113,10 @@ const problem = {
     .ask textarea { flex: 1; min-height: 3rem; max-height: 12rem; }
 
     .note { font-size: 0.78rem; color: var(--textDim); line-height: 1.5; }
+    .empty-hint {
+      margin: auto; max-width: 22rem; text-align: center;
+      color: var(--textDim); font-style: italic; line-height: 1.6;
+    }
     .row { display: flex; gap: 0.6rem; }
     .row button { flex: 1; }
 
@@ -149,7 +158,7 @@ const problem = {
     }
   </style>
 </head>
-<body>
+<body class={unlocked ? 'workshop' : ''}>
 
 {!unlocked && (
   <div class="lock">
@@ -226,12 +235,14 @@ const problem = {
     let busy = false;
 
     // ─── the character, kept in this browser ───
+    /** Returns true if there is a character here already. */
     const load = () => {
       try {
         const saved = JSON.parse(localStorage.getItem(STORE) || '{}');
         for (const k of Object.keys(fields)) if (saved[k]) fields[k].value = saved[k];
         if (saved.portrait) setFace(saved.portrait);
       } catch {}
+      return Boolean(fields.name.value.trim() || fields.instructions.value.trim());
     };
     const save = () => {
       try {
@@ -277,6 +288,8 @@ const problem = {
 
     $('save').addEventListener('click', () => { save(); echoName(); side.classList.remove('open'); });
     $('clear').addEventListener('click', () => { messages = []; log.innerHTML = ''; say('Chat cleared.'); });
+    // Anything the character says or is asked replaces the standing hint.
+    const dropHint = () => log.querySelector('.empty-hint')?.remove();
 
     // ─── the conversation ───
     function bubble(role, text) {
@@ -300,6 +313,7 @@ const problem = {
       if (!text) return;
 
       $('say').value = '';
+      dropHint();
       messages.push({ role: 'user', content: text });
       bubble('user', text);
 
@@ -364,8 +378,18 @@ const problem = {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('ask').requestSubmit(); }
     });
 
-    load();
+    // With no character yet, open on the panel rather than on an empty chat.
+    // This is a place for building characters; talking to nobody is not the
+    // point of arriving here.
+    const hasCharacter = load();
     echoName();
+    if (!hasCharacter) {
+      side.classList.add('open');
+      const hint = document.createElement('p');
+      hint.className = 'empty-hint';
+      hint.textContent = 'Give them a name and some instructions, press Save, and this is where you will talk.';
+      log.append(hint);
+    }
   }
 </script>
 </body>
