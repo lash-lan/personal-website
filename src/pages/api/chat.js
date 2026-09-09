@@ -8,7 +8,7 @@ const MODEL = 'cognitivecomputations/dolphin-mistral-24b-venice-edition';
 
 // Ceilings, so that a runaway loop or a stuck key cannot quietly drain the
 // credit balance. Generous for real conversation, fatal to an accident.
-const MAX_REPLY_TOKENS = 900;
+const MAX_REPLY_TOKENS = 450;
 const MAX_HISTORY = 40;
 const MAX_CHARS = 60000;
 
@@ -37,13 +37,27 @@ export async function POST({ request, cookies }) {
 
   if (!turns.length) return json({ error: 'Nothing was said.' }, 400);
 
-  // The page tells speech from scene by the quotation marks, and shows them
-  // differently. Models drop the marks unless asked, and then a reply arrives
-  // as one undifferentiated block. This goes first so that anything the
-  // character is told afterwards can still overrule it.
-  const FORMAT =
-    'Put every spoken word inside double quotation marks. ' +
-    'Anything outside them is read as narration and action.';
+  // How a reply is shaped, as opposed to who is giving it. All of this sits
+  // ahead of the character's own instructions, so anything written there still
+  // overrules it. None of it constrains what may be said — only its length,
+  // its balance, and that it stays inside the fiction.
+  const FORMAT = [
+    // Left to itself the model will happily narrate the reader's own actions
+    // and answer on their behalf, which ends the scene for them.
+    'Write only as your own character. Never write words, actions or thoughts for the person you are speaking to.',
+    // The page tells speech from scene by the quotation marks. Models drop
+    // them unless asked, and the reply then arrives as one flat block.
+    'Put every spoken word inside double quotation marks. Everything outside them is action and description.',
+    'Write in the third person, naming the character rather than saying "I".',
+    // Asked for a proportion the model writes nearly all dialogue; asked for a
+    // word count it writes nearly all action. Asked for a shape it holds.
+    'Shape every reply as: a short passage of action, then a line of speech, then a short passage of action, then a line of speech. Make the action and the speech about equally long.',
+    'Keep each reply to about seventy words. Never longer.',
+    // "Describe only the outside" is not enough on its own: models reach for
+    // hints, suggestions and traces, which are inner life by another name.
+    'Describe only what could be seen or heard by someone in the room. Never write thoughts, feelings or motives, and never say what something hints at, suggests, betrays or reveals.',
+    'Stay in character throughout. Do not comment on the scene, hedge, apologise, moralise, or add notes of your own.',
+  ].join(' ');
 
   // The knowledge base rides along as part of the standing instructions, which
   // is what the model reads before every reply.
