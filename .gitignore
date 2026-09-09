@@ -23,3 +23,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# local secrets for the private atelier page (never committed)
+.dev.vars

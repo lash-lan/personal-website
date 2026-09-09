@@ -1,0 +1,372 @@
+---
+// The private character workshop. Not part of the public site: it carries its
+// own markup rather than the shared layout so that nothing here can leak into
+// the pages visitors see, and so that it can ask search engines to ignore it.
+import { env } from 'cloudflare:workers';
+import { ticketHolds, ticketFrom } from '../../lib/session.js';
+
+export const prerender = false;
+
+const unlocked = await ticketHolds(env.ATELIER_SESSION_SECRET, ticketFrom(Astro.cookies));
+
+const problem = {
+  wrong: 'That is not the password.',
+  unconfigured: 'The password has not been set on the server yet.',
+}[Astro.url.searchParams.get('e') ?? ''] ?? '';
+---
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Atelier</title>
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Cormorant+SC:wght@300;400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0908; --panel: #131110; --line: rgba(196,149,42,0.18);
+      --accent: #c4952a; --accentLight: #e8c875;
+      --text: #c9baa0; --textDim: #7a6a54; --textBright: #ede0c4;
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'EB Garamond', Georgia, serif; font-size: 17px;
+      min-height: 100vh;
+    }
+    h1 {
+      font-family: 'Cinzel', Georgia, serif; font-weight: 600;
+      color: var(--textBright); font-size: 1.5rem; letter-spacing: 0.04em;
+    }
+    label {
+      display: block; font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--textDim); margin-bottom: 0.4rem;
+    }
+    input[type=text], input[type=password], textarea {
+      width: 100%; background: #0a0908; color: var(--text);
+      border: 1px solid var(--line); border-radius: 3px;
+      padding: 0.6rem 0.7rem; font-family: inherit; font-size: 0.95rem;
+      resize: vertical;
+    }
+    input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+    button {
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase;
+      background: transparent; color: var(--text);
+      border: 1px solid var(--line); border-radius: 3px;
+      padding: 0.55rem 1.1rem; cursor: pointer;
+      transition: color 0.3s ease, border-color 0.3s ease;
+    }
+    button:hover:not(:disabled) { color: var(--accentLight); border-color: var(--accent); }
+    button:disabled { opacity: 0.4; cursor: default; }
+
+    /* ─── LOCK ─── */
+    .lock {
+      min-height: 100vh; display: grid; place-items: center; padding: 2rem;
+    }
+    .lock form {
+      width: min(22rem, 100%); display: flex; flex-direction: column; gap: 1rem;
+      text-align: center;
+    }
+    .lock h1 { font-size: 1.2rem; }
+    .problem { color: #c46a4a; font-size: 0.85rem; min-height: 1.2em; }
+
+    /* ─── WORKSHOP ─── */
+    .shell {
+      display: grid; grid-template-columns: minmax(18rem, 24rem) 1fr;
+      gap: 1px; background: var(--line); height: 100dvh;
+    }
+    .side, .main { background: var(--bg); min-height: 0; }
+    .side { padding: 1.5rem 1.3rem; display: flex; flex-direction: column; gap: 1.1rem; overflow-y: auto; }
+    .main { display: flex; flex-direction: column; min-height: 0; }
+    .topbar, .only-small { display: none; }
+    .head { display: flex; align-items: center; gap: 0.6rem; }
+
+    .who { display: flex; gap: 0.9rem; align-items: center; }
+    .face {
+      width: 4.2rem; height: 4.2rem; flex: none; border-radius: 50%;
+      border: 1px solid var(--line); object-fit: cover; background: var(--panel);
+      display: grid; place-items: center; color: var(--textDim); font-size: 0.7rem;
+    }
+    .who input { font-family: 'Cinzel', Georgia, serif; }
+
+    .log { flex: 1; overflow-y: auto; padding: 1.6rem clamp(1rem, 4vw, 3rem); display: flex; flex-direction: column; gap: 1.3rem; }
+    .turn { display: flex; gap: 0.9rem; max-width: 46rem; }
+    .turn.me { align-self: flex-end; flex-direction: row-reverse; }
+    .turn img, .turn .blank {
+      width: 2.2rem; height: 2.2rem; flex: none; border-radius: 50%;
+      border: 1px solid var(--line); object-fit: cover;
+    }
+    .said { white-space: pre-wrap; line-height: 1.65; }
+    .turn.me .said { color: var(--textBright); }
+    .turn .said em { color: var(--accentLight); font-style: italic; }
+
+    .ask { border-top: 1px solid var(--line); padding: 1rem clamp(1rem, 4vw, 3rem); display: flex; gap: 0.7rem; align-items: flex-end; }
+    .ask textarea { flex: 1; min-height: 3rem; max-height: 12rem; }
+
+    .note { font-size: 0.78rem; color: var(--textDim); line-height: 1.5; }
+    .row { display: flex; gap: 0.6rem; }
+    .row button { flex: 1; }
+
+    /* On a phone the conversation IS the page. The character panel slides in
+       over it, because scrolling past every setup field to reach the chat is
+       the wrong way round when chatting is what you opened it for. */
+    @media (max-width: 800px) {
+      .shell { grid-template-columns: 1fr; gap: 0; }
+      .only-small { display: block; }
+
+      .topbar {
+        display: flex; align-items: center; gap: 0.7rem; flex: none;
+        padding: 0.55rem 0.9rem; border-bottom: 1px solid var(--line);
+      }
+      .topbar .face-sm {
+        width: 2.1rem; height: 2.1rem; border-radius: 50%; flex: none;
+        border: 1px solid var(--line); background: var(--panel);
+        background-size: cover; background-position: center;
+      }
+      .topbar .whoami {
+        flex: 1; min-width: 0; font-family: 'Cinzel', Georgia, serif;
+        color: var(--textBright); font-size: 0.95rem;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      .topbar button { padding: 0.45rem 0.75rem; }
+
+      .side {
+        position: fixed; inset: 0; z-index: 50;
+        transform: translateX(-100%);
+        transition: transform 0.28s ease;
+        padding-bottom: calc(2.5rem + env(safe-area-inset-bottom));
+      }
+      .side.open { transform: none; }
+
+      .main { height: 100dvh; }
+      .log { padding: 1.1rem 0.9rem; }
+      .turn { max-width: 100%; }
+      .ask { padding: 0.7rem 0.9rem calc(0.7rem + env(safe-area-inset-bottom)); }
+    }
+  </style>
+</head>
+<body>
+
+{!unlocked && (
+  <div class="lock">
+    <form method="POST" action="/api/login">
+      <h1>Atelier</h1>
+      <div>
+        <label for="p">Password</label>
+        <input type="password" id="p" name="password" autocomplete="current-password" autofocus required />
+      </div>
+      <p class="problem">{problem}</p>
+      <button type="submit">Enter</button>
+    </form>
+  </div>
+)}
+
+{unlocked && (
+  <div class="shell">
+    <aside class="side" id="side">
+      <div class="head">
+        <h1 style="flex:1">Atelier</h1>
+        <button type="button" id="shut" class="only-small">Done</button>
+      </div>
+
+      <div class="who">
+        <label for="face" class="face" id="faceWrap" style="margin:0">Portrait</label>
+        <input type="file" id="face" accept="image/*" hidden />
+        <div style="flex:1">
+          <label for="name">Character</label>
+          <input type="text" id="name" placeholder="Unnamed" />
+        </div>
+      </div>
+
+      <div>
+        <label for="instructions">Instructions</label>
+        <textarea id="instructions" rows="10" placeholder="Who they are, how they speak, what they do with actions, who you are to them. Describe more than one character here if you want a scene."></textarea>
+      </div>
+
+      <div>
+        <label for="knowledge">Knowledge base</label>
+        <textarea id="knowledge" rows="8" placeholder="Lore, history, anything it should be able to draw on."></textarea>
+      </div>
+
+      <div class="row">
+        <button type="button" id="save">Save</button>
+        <button type="button" id="clear">Clear chat</button>
+      </div>
+
+      <p class="note" id="status">Saved in this browser only.</p>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="face-sm" id="faceSm"></div>
+        <div class="whoami" id="whoami">Unnamed</div>
+        <button type="button" id="panel">Character</button>
+      </div>
+      <div class="log" id="log"></div>
+      <form class="ask" id="ask">
+        <textarea id="say" rows="1" placeholder="Say something…" autofocus></textarea>
+        <button type="submit" id="send">Send</button>
+      </form>
+    </main>
+  </div>
+)}
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const log = $('log');
+  if (log) {
+    const STORE = 'atelier.character.v1';
+    const fields = { name: $('name'), instructions: $('instructions'), knowledge: $('knowledge') };
+    let portrait = '';
+    let messages = [];
+    let busy = false;
+
+    // ─── the character, kept in this browser ───
+    const load = () => {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORE) || '{}');
+        for (const k of Object.keys(fields)) if (saved[k]) fields[k].value = saved[k];
+        if (saved.portrait) setFace(saved.portrait);
+      } catch {}
+    };
+    const save = () => {
+      try {
+        localStorage.setItem(STORE, JSON.stringify({
+          name: fields.name.value, instructions: fields.instructions.value,
+          knowledge: fields.knowledge.value, portrait,
+        }));
+        say('Saved.');
+      } catch { say('Could not save — the browser refused.'); }
+    };
+    const say = (t) => { $('status').textContent = t; };
+
+    function setFace(dataUrl) {
+      portrait = dataUrl;
+      for (const el of [$('faceWrap'), $('faceSm')]) {
+        if (!el) continue;
+        el.style.backgroundImage = `url(${dataUrl})`;
+        el.style.backgroundSize = 'cover';
+        el.style.backgroundPosition = 'center';
+        el.textContent = '';
+      }
+    }
+
+    // The phone's top bar mirrors who you are talking to.
+    const echoName = () => {
+      const w = $('whoami');
+      if (w) w.textContent = fields.name.value.trim() || 'Unnamed';
+    };
+    fields.name.addEventListener('input', echoName);
+
+    const side = $('side');
+    $('panel')?.addEventListener('click', () => side.classList.toggle('open'));
+    $('shut')?.addEventListener('click', () => side.classList.remove('open'));
+
+    $('face').addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (file.size > 1_500_000) return say('That image is too large — keep it under 1.5 MB.');
+      const reader = new FileReader();
+      reader.onload = () => setFace(String(reader.result));
+      reader.readAsDataURL(file);
+    });
+
+    $('save').addEventListener('click', () => { save(); echoName(); side.classList.remove('open'); });
+    $('clear').addEventListener('click', () => { messages = []; log.innerHTML = ''; say('Chat cleared.'); });
+
+    // ─── the conversation ───
+    function bubble(role, text) {
+      const turn = document.createElement('div');
+      turn.className = 'turn' + (role === 'user' ? ' me' : '');
+      const face = document.createElement(role === 'assistant' && portrait ? 'img' : 'div');
+      if (face.tagName === 'IMG') face.src = portrait; else face.className = 'blank';
+      const said = document.createElement('div');
+      said.className = 'said';
+      said.textContent = text;
+      turn.append(face, said);
+      log.append(turn);
+      log.scrollTop = log.scrollHeight;
+      return said;
+    }
+
+    $('ask').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (busy) return;
+      const text = $('say').value.trim();
+      if (!text) return;
+
+      $('say').value = '';
+      messages.push({ role: 'user', content: text });
+      bubble('user', text);
+
+      busy = true;
+      $('send').disabled = true;
+      const out = bubble('assistant', '…');
+      let reply = '';
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages,
+            instructions: fields.instructions.value,
+            knowledge: fields.knowledge.value,
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          out.textContent = err.error || `Something went wrong (${res.status}).`;
+          messages.pop();
+          return;
+        }
+
+        const reader = res.body.getReader();
+        const dec = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += dec.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() ?? '';
+          for (const line of lines) {
+            if (!line.startsWith('data:')) continue;
+            const payload = line.slice(5).trim();
+            if (!payload || payload === '[DONE]') continue;
+            try {
+              const piece = JSON.parse(payload).choices?.[0]?.delta?.content;
+              if (piece) { reply += piece; out.textContent = reply; log.scrollTop = log.scrollHeight; }
+            } catch {}
+          }
+        }
+
+        if (reply) messages.push({ role: 'assistant', content: reply });
+        else { out.textContent = 'It returned nothing.'; messages.pop(); }
+      } catch (err) {
+        out.textContent = 'The connection failed.';
+        messages.pop();
+      } finally {
+        busy = false;
+        $('send').disabled = false;
+        $('say').focus();
+      }
+    });
+
+    // Enter sends, Shift+Enter makes a new line.
+    $('say').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('ask').requestSubmit(); }
+    });
+
+    load();
+    echoName();
+  }
+</script>
+</body>
+</html>
