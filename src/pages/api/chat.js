@@ -37,9 +37,18 @@ export async function POST({ request, cookies }) {
 
   if (!turns.length) return json({ error: 'Nothing was said.' }, 400);
 
+  // The page tells speech from scene by the quotation marks, and shows them
+  // differently. Models drop the marks unless asked, and then a reply arrives
+  // as one undifferentiated block. This goes first so that anything the
+  // character is told afterwards can still overrule it.
+  const FORMAT =
+    'Put every spoken word inside double quotation marks. ' +
+    'Anything outside them is read as narration and action.';
+
   // The knowledge base rides along as part of the standing instructions, which
   // is what the model reads before every reply.
   const system = [
+    FORMAT,
     instructions.trim(),
     knowledge.trim() && `Reference material you may draw on:\n\n${knowledge.trim()}`,
   ].filter(Boolean).join('\n\n');

@@ -33,7 +33,11 @@ const problem = {
   <meta name="apple-mobile-web-app-title" content="Atelier" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Cormorant+SC:wght@300;400&display=swap" rel="stylesheet" />
+  <!-- Inter for everything that is read or tapped: it was drawn for screens,
+       and its tall lowercase holds up at arm's length far better than the
+       site's serif does. Cinzel is kept for names alone, where a line or two
+       of character costs nothing in legibility. -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <!-- Global, not scoped: the conversation, the document rows and the waiting
        dots are all built by script as you go, so they never carry the marker
        Astro's scoped styles match on. This page owns its whole document, so
@@ -47,7 +51,8 @@ const problem = {
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       background: var(--bg); color: var(--text);
-      font-family: 'EB Garamond', Georgia, serif; font-size: 17px;
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      font-size: 16px; -webkit-font-smoothing: antialiased;
       min-height: 100dvh;
     }
     /* The workshop manages its own height and only the transcript scrolls.
@@ -60,8 +65,8 @@ const problem = {
       color: var(--textBright); font-size: 1.5rem; letter-spacing: 0.04em;
     }
     label {
-      display: block; font-family: 'Cormorant SC', Georgia, serif;
-      font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase;
+      display: block; font-family: inherit; font-weight: 600;
+      font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase;
       color: var(--textDim); margin-bottom: 0.4rem;
     }
     input[type=text], input[type=password], textarea {
@@ -72,8 +77,8 @@ const problem = {
     }
     input:focus, textarea:focus { outline: none; border-color: var(--accent); }
     button {
-      font-family: 'Cormorant SC', Georgia, serif;
-      font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase;
+      font-family: inherit; font-weight: 600;
+      font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
       background: transparent; color: var(--text);
       border: 1px solid var(--line); border-radius: 3px;
       padding: 0.55rem 1.1rem; cursor: pointer;
@@ -147,7 +152,7 @@ const problem = {
 
     .said {
       white-space: pre-wrap;
-      font-size: 1.03rem; line-height: 1.78;
+      font-size: 1.06rem; line-height: 1.72;
       padding: 0.85rem 1.05rem;
       border-radius: 14px;
       background: color-mix(in srgb, var(--panel) 88%, transparent);
@@ -167,23 +172,27 @@ const problem = {
 
     /* Action and speech, told apart. Narration leans; what is actually said
        aloud sits upright and bright, the way it does on a printed page. */
-    /* Two voices in one bubble, and they must not be mistaken for each other.
-       The scene leans, set slightly back and smaller. What is said aloud sits
-       upright, brighter and a size larger, inside gold quotation marks. */
+    /* Two voices in one bubble, told apart by weight and size rather than by a
+       lean. Italics are the faintest signal typography has, and at arm's
+       length on a phone they were not carrying it. Speech is heavier, larger
+       and brighter; the scene is lighter, smaller and set back. */
     .said em.narration {
-      font-style: italic;
-      font-size: 0.94em;
-      color: color-mix(in srgb, var(--text) 82%, var(--bg));
+      font-style: normal;
+      font-weight: 400;
+      font-size: 0.92em;
+      line-height: 1.62;
+      color: color-mix(in srgb, var(--text) 76%, var(--bg));
     }
     .said .speech {
       font-style: normal;
-      font-size: 1.06em;
+      font-weight: 600;
+      font-size: 1.1em;
       color: var(--textBright);
     }
     .said .qm {
       color: var(--accent);
-      font-family: 'Cinzel', Georgia, serif;
-      padding: 0 0.04em;
+      font-weight: 400;
+      padding: 0 0.05em;
     }
 
     .dots { display: inline-flex; gap: 0.28rem; padding: 0.15rem 0; }
@@ -223,8 +232,8 @@ const problem = {
       display: block; text-align: center; cursor: pointer;
       border: 1px dashed var(--line); border-radius: 3px;
       padding: 0.65rem; margin-bottom: 0.5rem;
-      font-family: 'Cormorant SC', Georgia, serif;
-      font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase;
+      font-family: inherit; font-weight: 600;
+      font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
       color: var(--textDim);
       transition: color 0.3s ease, border-color 0.3s ease;
     }
