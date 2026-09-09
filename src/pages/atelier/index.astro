@@ -113,6 +113,33 @@ const problem = {
     .ask textarea { flex: 1; min-height: 3rem; max-height: 12rem; }
 
     .note { font-size: 0.78rem; color: var(--textDim); line-height: 1.5; }
+
+    /* ─── DOCUMENTS ─── */
+    .docs { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.5rem; }
+    .doc {
+      display: flex; align-items: center; gap: 0.5rem;
+      border: 1px solid var(--line); border-radius: 3px;
+      padding: 0.4rem 0.55rem; font-size: 0.82rem;
+    }
+    .doc-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--textBright); }
+    .doc-size { color: var(--textDim); font-size: 0.72rem; flex: none; }
+    .doc-drop {
+      flex: none; border: none; background: none; color: var(--textDim);
+      cursor: pointer; padding: 0 0.2rem; font-size: 0.9rem; letter-spacing: 0;
+    }
+    .doc-drop:hover { color: #c46a4a; }
+    .drop {
+      display: block; text-align: center; cursor: pointer;
+      border: 1px dashed var(--line); border-radius: 3px;
+      padding: 0.65rem; margin-bottom: 0.5rem;
+      font-family: 'Cormorant SC', Georgia, serif;
+      font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--textDim);
+      transition: color 0.3s ease, border-color 0.3s ease;
+    }
+    .drop:hover, .drop.over { color: var(--accentLight); border-color: var(--accent); }
+    .meter { font-size: 0.74rem; color: var(--textDim); margin-top: 0.45rem; line-height: 1.5; }
+    .meter.full { color: #c46a4a; }
     .empty-hint {
       margin: auto; max-width: 22rem; text-align: center;
       color: var(--textDim); font-style: italic; line-height: 1.6;
@@ -197,8 +224,12 @@ const problem = {
       </div>
 
       <div>
-        <label for="knowledge">Knowledge base</label>
-        <textarea id="knowledge" rows="8" placeholder="Lore, history, anything it should be able to draw on."></textarea>
+        <label>Knowledge base</label>
+        <div class="docs" id="docs"></div>
+        <label for="docfile" class="drop" id="drop">Add documents</label>
+        <input type="file" id="docfile" multiple hidden />
+        <textarea id="knowledge" rows="5" placeholder="…or type notes straight in here."></textarea>
+        <p class="meter" id="meter"></p>
       </div>
 
       <div class="row">
@@ -225,14 +256,30 @@ const problem = {
 )}
 
 <script>
+  import { shrinkPortrait, readDocument, KINDS } from '../../lib/atelier-files.js';
+
   const $ = (id) => document.getElementById(id);
   const log = $('log');
   if (log) {
+    // Everything the character can draw on rides along with every message, so
+    // the budget below is really a budget on what each reply costs and on what
+    // the model can hold at once. Roughly four characters to a token.
+    const BUDGET = 60000;
+    const size = (n) => (n > 1e6 ? (n / 1e6).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1000)) + ' KB');
     const STORE = 'atelier.character.v1';
     const fields = { name: $('name'), instructions: $('instructions'), knowledge: $('knowledge') };
     let portrait = '';
+    let docs = [];          // [{ name, text }]
     let messages = [];
     let busy = false;
+
+    $('docfile').accept = KINDS;
+
+    /** Everything the character may draw on: the documents, then your notes. */
+    const knowledgeText = () => [
+      ...docs.map((d) => `— ${d.name} —\n${d.text}`),
+      fields.knowledge.value.trim(),
+    ].filter(Boolean).join('\n\n');
 
     // ─── the character, kept in this browser ───
     /** Returns true if there is a character here already. */
@@ -241,17 +288,23 @@ const problem = {
         const saved = JSON.parse(localStorage.getItem(STORE) || '{}');
         for (const k of Object.keys(fields)) if (saved[k]) fields[k].value = saved[k];
         if (saved.portrait) setFace(saved.portrait);
+        if (Array.isArray(saved.docs)) docs = saved.docs;
       } catch {}
+      drawDocs();
       return Boolean(fields.name.value.trim() || fields.instructions.value.trim());
     };
     const save = () => {
       try {
         localStorage.setItem(STORE, JSON.stringify({
           name: fields.name.value, instructions: fields.instructions.value,
-          knowledge: fields.knowledge.value, portrait,
+          knowledge: fields.knowledge.value, portrait, docs,
         }));
         say('Saved.');
-      } catch { say('Could not save — the browser refused.'); }
+      } catch (err) {
+        say(err?.name === 'QuotaExceededError'
+          ? 'Too much to store in this browser. Remove a document and save again.'
+          : 'Could not save — the browser refused.');
+      }
     };
     const say = (t) => { $('status').textContent = t; };
 
@@ -277,14 +330,91 @@ const problem = {
     $('panel')?.addEventListener('click', () => side.classList.toggle('open'));
     $('shut')?.addEventListener('click', () => side.classList.remove('open'));
 
-    $('face').addEventListener('change', (e) => {
+    // Any size of image is fine. It is scaled down here before being kept,
+    // because a portrait is shown a few centimetres across and storing the
+    // original would fill the browser's cupboard for no visible gain.
+    $('face').addEventListener('change', async (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
-      if (file.size > 1_500_000) return say('That image is too large — keep it under 1.5 MB.');
-      const reader = new FileReader();
-      reader.onload = () => setFace(String(reader.result));
-      reader.readAsDataURL(file);
+      say('Preparing the portrait…');
+      try {
+        setFace(await shrinkPortrait(file));
+        say(`Portrait set, from ${size(file.size)}.`);
+      } catch (err) {
+        say(err.message || 'That image could not be read.');
+      }
+      e.target.value = '';
     });
+
+    // ─── documents ───
+    function drawDocs() {
+      const list = $('docs');
+      list.innerHTML = '';
+      for (const [i, d] of docs.entries()) {
+        const row = document.createElement('div');
+        row.className = 'doc';
+        const name = document.createElement('span');
+        name.className = 'doc-name';
+        name.textContent = d.name;
+        const len = document.createElement('span');
+        len.className = 'doc-size';
+        len.textContent = size(d.text.length);
+        const drop = document.createElement('button');
+        drop.type = 'button';
+        drop.className = 'doc-drop';
+        drop.textContent = '✕';
+        drop.title = `Remove ${d.name}`;
+        drop.addEventListener('click', () => { docs.splice(i, 1); drawDocs(); });
+        row.append(name, len, drop);
+        list.append(row);
+      }
+      drawMeter();
+    }
+
+    // What every single message carries, and therefore what it costs.
+    function drawMeter() {
+      const used = knowledgeText().length;
+      const m = $('meter');
+      const pct = Math.round((used / BUDGET) * 100);
+      m.classList.toggle('full', used > BUDGET);
+      m.textContent = used === 0
+        ? 'Nothing here yet. Documents are read on this device; the text goes with every message.'
+        : `${size(used)} of reference — about ${pct}% of a comfortable load, sent with every message.` +
+          (used > BUDGET ? ' This is more than the character can hold well. Remove something.' : '');
+    }
+
+    fields.knowledge.addEventListener('input', drawMeter);
+
+    async function takeFiles(files) {
+      for (const file of files) {
+        say(`Reading ${file.name}…`);
+        try {
+          const text = await readDocument(file, (m) => say(`${file.name}: ${m}`));
+          if (!text.trim()) { say(`${file.name} had no readable text in it.`); continue; }
+          docs = docs.filter((d) => d.name !== file.name);
+          docs.push({ name: file.name, text });
+          drawDocs();
+          say(`Added ${file.name} — ${size(text.length)} of text.`);
+        } catch (err) {
+          say(err.message || `Could not read ${file.name}.`);
+        }
+      }
+    }
+
+    $('docfile').addEventListener('change', async (e) => {
+      await takeFiles([...e.target.files]);
+      e.target.value = '';
+    });
+
+    // Dragging files onto the panel works too, for when you are at a desk.
+    const dz = $('drop');
+    for (const ev of ['dragenter', 'dragover']) {
+      dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add('over'); });
+    }
+    for (const ev of ['dragleave', 'drop']) {
+      dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove('over'); });
+    }
+    dz.addEventListener('drop', (e) => takeFiles([...(e.dataTransfer?.files ?? [])]));
 
     $('save').addEventListener('click', () => { save(); echoName(); side.classList.remove('open'); });
     $('clear').addEventListener('click', () => { messages = []; log.innerHTML = ''; say('Chat cleared.'); });
@@ -329,7 +459,7 @@ const problem = {
           body: JSON.stringify({
             messages,
             instructions: fields.instructions.value,
-            knowledge: fields.knowledge.value,
+            knowledge: knowledgeText(),
           }),
         });
 
