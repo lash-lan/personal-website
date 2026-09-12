@@ -1,0 +1,388 @@
+---
+// The forge: a still picture turned into a short film on a GPU rented by the minute.
+// Same password as the rest of the atelier, never shown to search engines, and it
+// keeps nothing: the clips live in this browser tab until you save them.
+import { env } from 'cloudflare:workers';
+import { ticketHolds, ticketFrom } from '../../lib/session.js';
+import { MODELS, SHAPES } from '../../lib/forge-workflows.js';
+
+export const prerender = false;
+
+const unlocked = await ticketHolds(env.ATELIER_SESSION_SECRET, ticketFrom(Astro.cookies));
+const configured = Boolean(env.RUNPOD_API_KEY);
+
+const problem = {
+  wrong: 'That is not the password.',
+  unconfigured: 'The password has not been set on the server yet.',
+}[Astro.url.searchParams.get('e') ?? ''] ?? '';
+---
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Forge</title>
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="theme-color" content="#0a0908" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style is:global>
+    :root {
+      --bg: #0a0908; --panel: #131110; --line: rgba(196,149,42,0.18);
+      --accent: #c4952a; --accentLight: #e8c875;
+      --text: #c9baa0; --textDim: #7a6a54; --textBright: #ede0c4;
+      --blood: #8d2b20;
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      font-size: 16px; -webkit-font-smoothing: antialiased; min-height: 100dvh;
+    }
+    h1 { font-family: 'Cinzel', Georgia, serif; font-weight: 600; color: var(--textBright);
+         font-size: 1.4rem; letter-spacing: 0.05em; }
+    label { display: block; font-weight: 600; font-size: 0.66rem; letter-spacing: 0.14em;
+            text-transform: uppercase; color: var(--textDim); margin-bottom: 0.4rem; }
+    input[type=password], textarea, select {
+      width: 100%; background: #0a0908; color: var(--text);
+      border: 1px solid var(--line); border-radius: 3px;
+      padding: 0.6rem 0.7rem; font-family: inherit; font-size: 0.95rem; resize: vertical;
+    }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+    button {
+      font-family: inherit; font-weight: 600; font-size: 0.7rem; letter-spacing: 0.12em;
+      text-transform: uppercase; background: transparent; color: var(--text);
+      border: 1px solid var(--line); border-radius: 3px; padding: 0.55rem 0.9rem; cursor: pointer;
+      transition: color .2s, border-color .2s, background .2s;
+    }
+    button:hover:not(:disabled) { color: var(--accentLight); border-color: var(--accent); }
+    button:disabled { opacity: 0.35; cursor: default; }
+    button.primary { background: linear-gradient(90deg, #5e1a13, var(--blood)); color: #f5e7dc;
+                     border-color: #a33a2c; }
+
+    .door { min-height: 100dvh; display: grid; place-items: center; padding: 2rem; }
+    .door form { width: min(22rem, 100%); display: flex; flex-direction: column; gap: 1rem; text-align: center; }
+    .door .kicker { font-size: 0.66rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); }
+    .door .problem { color: #e0785f; font-size: 0.85rem; }
+
+    .wrap { max-width: 76rem; margin: 0 auto; padding: 1.4rem 1.2rem 3rem; }
+    .top { display: flex; align-items: baseline; gap: 0.9rem; margin-bottom: 1rem; }
+    .top a { color: var(--textDim); font-size: 0.75rem; text-decoration: none; letter-spacing: 0.1em;
+             text-transform: uppercase; }
+    .top a:hover { color: var(--accentLight); }
+
+    .gpu { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap;
+           border: 1px solid var(--line); border-radius: 4px; padding: 0.6rem 0.8rem;
+           background: var(--panel); margin-bottom: 1.2rem; font-size: 0.85rem; }
+    .gpu .dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: #4a4a4a; flex: none; }
+    .gpu.on .dot { background: #5fbf7f; box-shadow: 0 0 8px #5fbf7f88; }
+    .gpu .spacer { flex: 1; }
+
+    .cols { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 1.4rem; }
+    @media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
+    .field { margin-bottom: 1rem; }
+    .row { display: flex; gap: 0.7rem; flex-wrap: wrap; }
+    .row > * { flex: 1; min-width: 8rem; }
+
+    .models { display: flex; gap: 0.6rem; }
+    .models button { flex: 1; text-transform: none; letter-spacing: 0; font-size: 0.9rem; text-align: left;
+                     padding: 0.7rem 0.8rem; }
+    .models button[aria-pressed=true] { border-color: var(--accent); color: var(--accentLight);
+                                        background: rgba(196,149,42,0.07); }
+    .models .blurb { display: block; font-weight: 400; font-size: 0.75rem; color: var(--textDim);
+                     margin-top: 0.25rem; }
+
+    .drop { border: 1px dashed var(--line); border-radius: 4px; padding: 0.9rem; text-align: center;
+            color: var(--textDim); font-size: 0.85rem; cursor: pointer; }
+    .drop img { max-height: 12rem; border-radius: 3px; display: block; margin: 0 auto; }
+
+    .status { border-radius: 4px; padding: 0.7rem 0.85rem; font-size: 0.88rem; line-height: 1.5;
+              border: 1px solid var(--line); background: var(--panel); }
+    .status.busy { border-color: #3a6ea8; color: #cfe4ff; background: #111b28; }
+    .status.bad { border-color: #a8323f; color: #ffc9cf; background: #1e1012; }
+    .status.good { border-color: #2f8a55; color: #c4f0d5; background: #0f2118; }
+
+    video { width: 100%; border-radius: 4px; background: #000; }
+    .clips { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.9rem; }
+    .clips button { padding: 0; border-radius: 3px; overflow: hidden; width: 6.2rem; height: 4rem; }
+    .clips video { height: 100%; object-fit: cover; pointer-events: none; }
+    .hint { color: var(--textDim); font-size: 0.8rem; line-height: 1.6; margin-top: 0.8rem; }
+  </style>
+</head>
+<body>
+
+{!unlocked && (
+  <div class="door">
+    <form method="POST" action="/api/login">
+      <span class="kicker">Atelier</span>
+      <h1>Forge</h1>
+      {problem && <p class="problem">{problem}</p>}
+      <input type="password" name="password" placeholder="Password" autocomplete="current-password" autofocus required />
+      <button type="submit">Enter</button>
+    </form>
+  </div>
+)}
+
+{unlocked && (
+  <div class="wrap">
+    <div class="top">
+      <h1>Forge</h1>
+      <a href="/atelier">← Atelier</a>
+    </div>
+
+    {!configured && (
+      <div class="status bad" style="margin-bottom:1.2rem">
+        The Runpod key is not set on the server yet, so no GPU can be rented. Add
+        <code> RUNPOD_API_KEY</code> in Cloudflare (Workers &amp; Pages → this site → Settings →
+        Variables and Secrets).
+      </div>
+    )}
+
+    <div class="gpu" id="gpuBar">
+      <span class="dot"></span>
+      <span id="gpuText">Checking the GPU…</span>
+      <span class="spacer"></span>
+      <button id="gpuOn" type="button">▶ Turn GPU on</button>
+      <button id="gpuOff" type="button">⏹ Turn off</button>
+    </div>
+
+    <div class="cols">
+      <div>
+        <div class="field">
+          <label>Model</label>
+          <div class="models" id="models">
+            {Object.entries(MODELS).map(([key, m]) => (
+              <button type="button" data-model={key} aria-pressed={key === 'wan'}>
+                {m.name}<span class="blurb">{m.blurb}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Starting image (the first frame)</label>
+          <div class="drop" id="drop">
+            <span id="dropText">Click to choose an image, or paste one here</span>
+            <img id="preview" hidden alt="" />
+          </div>
+          <input type="file" id="file" accept="image/*" hidden />
+        </div>
+
+        <div class="field">
+          <label for="prompt">What happens?</label>
+          <textarea id="prompt" rows="3" placeholder="He swings his axe down on the orc's neck, blood sprays across the snow, the body collapses, camera shakes"></textarea>
+        </div>
+
+        <div class="field row">
+          <div>
+            <label for="shape">Shape</label>
+            <select id="shape">{Object.keys(SHAPES).map((s) => <option>{s}</option>)}</select>
+          </div>
+          <div>
+            <label for="size">Quality</label>
+            <select id="size"></select>
+          </div>
+        </div>
+
+        <div class="row">
+          <button class="primary" id="go" type="button" style="flex:3">Animate (5 s clip)</button>
+          <button id="stop" type="button" style="flex:1">Cancel</button>
+        </div>
+
+        <p class="hint">
+          Describe <strong>motion</strong>, not the picture: who moves, how, and what the camera does.
+          Fast fights often need a few tries. The GPU takes a few minutes to start, then each clip
+          takes about a minute; it turns itself off after 20 idle minutes.
+        </p>
+      </div>
+
+      <div>
+        <div class="status" id="status">Ready when you are.</div>
+        <div style="margin-top:0.9rem">
+          <video id="player" controls playsinline></video>
+          <div class="row" style="margin-top:0.6rem">
+            <a id="save" href="#" download="" hidden style="flex:1"><button type="button" style="width:100%">⬇ Save MP4</button></a>
+          </div>
+          <div class="clips" id="clips"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+<script is:inline define:vars={{ MODELS, SHAPES }}>
+  if (document.getElementById('go')) {
+    const $ = (id) => document.getElementById(id);
+    const state = { model: 'wan', image: null, busy: false, clips: [] };
+
+    const setStatus = (text, kind = '') => {
+      $('status').className = 'status ' + kind;
+      $('status').textContent = text;
+    };
+
+    // ----- model choice -----
+    const fillSizes = () => {
+      $('size').innerHTML = '';
+      for (const label of Object.keys(MODELS[state.model].sizes)) {
+        $('size').append(new Option(label, label));
+      }
+    };
+    $('models').addEventListener('click', (e) => {
+      const button = e.target.closest('button[data-model]');
+      if (!button) return;
+      state.model = button.dataset.model;
+      for (const b of $('models').children) b.setAttribute('aria-pressed', String(b === button));
+      fillSizes();
+    });
+    fillSizes();
+
+    // ----- the starting image -----
+    const loadImage = (file) => {
+      if (!file || !file.type.startsWith('image/')) return;
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        state.image = img;
+        $('preview').src = url;
+        $('preview').hidden = false;
+        $('dropText').hidden = true;
+      };
+      img.src = url;
+    };
+    $('drop').addEventListener('click', () => $('file').click());
+    $('file').addEventListener('change', (e) => loadImage(e.target.files[0]));
+    window.addEventListener('paste', (e) => {
+      for (const item of e.clipboardData?.files ?? []) loadImage(item);
+    });
+
+    /** Cut the picture to the chosen shape and hand back a PNG. */
+    const framedImage = () => {
+      const spec = MODELS[state.model];
+      const ratio = SHAPES[$('shape').value] ?? [state.image.width, state.image.height];
+      const short = spec.sizes[$('size').value];
+      const [rw, rh] = ratio;
+      let w, h;
+      if (rw >= rh) { h = short; w = (short * rw) / rh; } else { w = short; h = (short * rh) / rw; }
+      w = Math.round(w / spec.multiple) * spec.multiple;
+      h = Math.round(h / spec.multiple) * spec.multiple;
+      const canvas = Object.assign(document.createElement('canvas'), { width: w, height: h });
+      const scale = Math.max(w / state.image.width, h / state.image.height);
+      const dw = state.image.width * scale, dh = state.image.height * scale;
+      canvas.getContext('2d').drawImage(state.image, (w - dw) / 2, (h - dh) / 2, dw, dh);
+      return { dataUrl: canvas.toDataURL('image/png'), width: w, height: h };
+    };
+
+    // ----- the GPU switch -----
+    const gpu = async (action) => {
+      const res = await fetch('/api/forge/gpu', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      return res.json();
+    };
+    const showGpu = (info) => {
+      const on = Boolean(info?.on);
+      $('gpuBar').classList.toggle('on', on);
+      $('gpuText').textContent = info?.error ? info.error
+        : !on ? 'GPU off — nothing is being billed'
+        : info.ready ? `GPU on · $${(info.costPerHr ?? 0).toFixed(2)}/hr · ready`
+        : `GPU starting: ${info.stage ?? '…'} · $${(info.costPerHr ?? 0).toFixed(2)}/hr`;
+    };
+    $('gpuOn').addEventListener('click', async () => showGpu(await gpu('start')));
+    $('gpuOff').addEventListener('click', async () => showGpu(await gpu('stop')));
+    const watchGpu = async () => showGpu(await gpu('status').catch(() => null));
+    watchGpu();
+    setInterval(watchGpu, 12000);
+
+    // ----- making a clip -----
+    const addClip = (url, name) => {
+      state.clips.unshift({ url, name });
+      $('clips').innerHTML = '';
+      for (const clip of state.clips) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.title = clip.name;
+        const thumb = document.createElement('video');
+        thumb.src = clip.url;
+        thumb.muted = true;
+        button.append(thumb);
+        button.addEventListener('click', () => show(clip));
+        $('clips').append(button);
+      }
+    };
+    const show = (clip) => {
+      $('player').src = clip.url;
+      $('save').href = clip.url;
+      $('save').download = clip.name;
+      $('save').hidden = false;
+    };
+
+    let cancelled = false;
+    $('stop').addEventListener('click', () => {
+      cancelled = true;
+      setStatus('Stopped. The GPU stays on for your next try.', '');
+    });
+
+    $('go').addEventListener('click', async () => {
+      if (state.busy) return;
+      if (!state.image) return setStatus('Choose a starting image first.', 'bad');
+      if (!$('prompt').value.trim()) return setStatus('Describe the motion first.', 'bad');
+      state.busy = true;
+      cancelled = false;
+      $('go').disabled = true;
+      const started = Date.now();
+      const since = () => `${Math.floor((Date.now() - started) / 1000)}s`;
+      try {
+        const framed = framedImage();
+        let job = null;
+        while (!job && !cancelled) {
+          const res = await fetch('/api/forge/render', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              model: state.model, prompt: $('prompt').value, shape: $('shape').value,
+              size: $('size').value, image: framed.dataUrl, width: framed.width, height: framed.height,
+            }),
+          });
+          const body = await res.json();
+          if (body.error) throw new Error(body.error);
+          if (body.waiting) {
+            setStatus(`Starting your GPU: ${body.stage} … ${since()}`, 'busy');
+            watchGpu();
+            await new Promise((r) => setTimeout(r, 6000));
+            continue;
+          }
+          job = body;
+        }
+        if (cancelled) return;
+
+        setStatus(`Rendering ${job.width}×${job.height} … ${since()}`, 'busy');
+        while (!cancelled) {
+          await new Promise((r) => setTimeout(r, 4000));
+          const res = await fetch(`/api/forge/result?id=${encodeURIComponent(job.id)}`);
+          const type = res.headers.get('Content-Type') ?? '';
+          if (type.startsWith('video/')) {
+            const blob = await res.blob();
+            const name = `icetear-${state.model}-${job.seed}.mp4`;
+            const url = URL.createObjectURL(blob);
+            addClip(url, name);
+            show({ url, name });
+            setStatus(`Clip ready in ${since()}. Save it with the button below — this page keeps nothing.`, 'good');
+            return;
+          }
+          const body = await res.json();
+          if (body.error) throw new Error(body.error);
+          setStatus(`Rendering ${job.width}×${job.height} … ${since()}`, 'busy');
+        }
+      } catch (e) {
+        setStatus(String(e.message ?? e), 'bad');
+      } finally {
+        state.busy = false;
+        $('go').disabled = false;
+      }
+    });
+  }
+</script>
+</body>
+</html>
