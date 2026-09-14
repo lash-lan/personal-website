@@ -1,0 +1,10 @@
+---
+// Every other page of the plan: /plan/daily, /plan/gantt, /plan/money…
+import PlanLayout from '../../layouts/PlanLayout.astro';
+import { VIEWS } from '../../lib/plan/nav.js';
+export const prerender = false;
+
+const { view } = Astro.params;
+if (!VIEWS.includes(view) || view === 'home') return Astro.redirect('/plan', 302);
+---
+<PlanLayout view={view} />

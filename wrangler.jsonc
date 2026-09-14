@@ -7,6 +7,14 @@
 		"directory": "./dist",
 		"binding": "ASSETS"
 	},
+	// The private 2026 plan (/plan). No id on purpose: Cloudflare creates the
+	// database on the first deploy and remembers it from then on.
+	"d1_databases": [
+		{
+			"binding": "PLAN_DB",
+			"database_name": "lash-plan"
+		}
+	],
 	"observability": {
 		"enabled": true
 	}

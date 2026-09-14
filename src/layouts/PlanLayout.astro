@@ -1,0 +1,256 @@
+---
+// The private 2026 plan. Like the atelier it carries its own markup, so nothing
+// here leaks into the public site, and it asks search engines to stay away.
+import { env } from 'cloudflare:workers';
+import { ticketHolds, ticketFrom } from '../lib/session.js';
+import { NAV } from '../lib/plan/nav.js';
+
+const { view = 'home' } = Astro.props;
+const here = NAV.flatMap((g) => g.items).find((i) => i.view === view) ?? NAV[0].items[0];
+
+const unlocked = import.meta.env.DEV || (await ticketHolds(env.ATELIER_SESSION_SECRET, ticketFrom(Astro.cookies)));
+const problem = {
+  wrong: 'That is not the password.',
+  unconfigured: 'The password has not been set on the server yet.',
+}[Astro.url.searchParams.get('e') ?? ''] ?? '';
+const MOBILE = ['home', 'daily', 'gantt', 'money'];
+---
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>{here.label} · Lash 2026</title>
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="manifest" href="/plan.webmanifest" />
+  <meta name="theme-color" content="#0c0d10" />
+  <link rel="apple-touch-icon" href="/atelier-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Lash 2026" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style is:global>
+    :root {
+      --bg: #0c0d10; --panel: #14161b; --panel2: #1a1d23; --raise: #20242b;
+      --line: rgba(255,255,255,0.08); --line2: rgba(255,255,255,0.14);
+      --text: #d6d9df; --dim: #8c929d; --bright: #f5f6f8;
+      --gold: #e3b341; --red: #f06b6b; --amber: #f2b04b; --green: #56cf8a; --blue: #6aa8ff; --purple: #b48ef0; --grey: #737a86;
+      --radius: 14px;
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      background: radial-gradient(1200px 600px at 80% -10%, rgba(227,179,65,0.07), transparent 60%), var(--bg);
+      background-attachment: fixed;
+      color: var(--text); font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; min-height: 100dvh;
+    }
+    a { color: inherit; text-decoration: none; }
+    button, select, input, textarea { font: inherit; color: inherit; }
+    h1, h2, h3 { color: var(--bright); line-height: 1.2; }
+
+    /* ─── lock ─── */
+    .lock { min-height: 100dvh; display: grid; place-items: center; padding: 2rem; }
+    .lock form { width: min(22rem, 100%); display: grid; gap: 1rem; text-align: center; }
+    .lock .brand { font-size: 1.6rem; }
+    .problem { color: var(--red); font-size: 0.9rem; min-height: 1.3em; }
+
+    /* ─── shell ─── */
+    .shell { display: grid; grid-template-columns: 15.5rem 1fr; min-height: 100dvh; }
+    .side {
+      position: sticky; top: 0; height: 100dvh; overflow-y: auto;
+      border-right: 1px solid var(--line); padding: 1.4rem 0.9rem 2rem;
+      background: rgba(12,13,16,0.6); backdrop-filter: blur(10px);
+    }
+    .brand { font-family: 'Cinzel', Georgia, serif; font-weight: 600; letter-spacing: 0.06em; color: var(--bright); font-size: 1.15rem; }
+    .brand small { display: block; font-family: 'Inter', sans-serif; letter-spacing: 0.02em; font-size: 0.72rem; color: var(--dim); font-weight: 500; margin-top: 0.15rem; }
+    .side .brand { padding: 0 0.6rem 1.2rem; }
+    .navgroup { margin-top: 1rem; }
+    .navgroup > span { display: block; padding: 0 0.7rem 0.35rem; font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); font-weight: 600; }
+    .navlink { display: flex; gap: 0.65rem; align-items: center; padding: 0.5rem 0.7rem; border-radius: 9px; color: var(--text); font-weight: 500; font-size: 0.92rem; }
+    .navlink i { font-style: normal; width: 1.3rem; text-align: center; opacity: 0.9; }
+    .navlink:hover { background: var(--panel2); color: var(--bright); }
+    .navlink.on { background: linear-gradient(90deg, rgba(227,179,65,0.16), rgba(227,179,65,0.04)); color: var(--bright); box-shadow: inset 2px 0 0 var(--gold); }
+    .navlink .dot { margin-left: auto; min-width: 1.3rem; height: 1.3rem; padding: 0 0.35rem; border-radius: 99px; background: var(--red); color: #fff; font-size: 0.7rem; font-weight: 700; display: grid; place-items: center; }
+
+    .main { min-width: 0; padding: 1.6rem clamp(1rem, 3vw, 2.4rem) 6rem; max-width: 84rem; }
+    .pagehead { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 1.3rem; flex-wrap: wrap; }
+    .pagehead h1 { font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 800; letter-spacing: -0.01em; }
+    .pagehead p { color: var(--dim); margin-top: 0.3rem; max-width: 46rem; }
+
+    .mobilebar, .menu-sheet { display: none; }
+
+    @media (max-width: 900px) {
+      .shell { grid-template-columns: 1fr; }
+      .side { display: none; }
+      .main { padding: 1rem 0.9rem calc(6.5rem + env(safe-area-inset-bottom)); }
+      .mobilebar {
+        display: grid; grid-template-columns: repeat(5, 1fr);
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+        background: rgba(16,17,21,0.94); backdrop-filter: blur(12px); border-top: 1px solid var(--line);
+        padding: 0.35rem 0.3rem calc(0.35rem + env(safe-area-inset-bottom));
+      }
+      .mobilebar a, .mobilebar button { display: grid; justify-items: center; gap: 0.1rem; padding: 0.35rem 0; font-size: 0.68rem; color: var(--dim); background: none; border: 0; font-weight: 600; }
+      .mobilebar i { font-style: normal; font-size: 1.2rem; line-height: 1.2; }
+      .mobilebar .on { color: var(--gold); }
+      .menu-sheet.open { display: block; position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.55); }
+      .menu-sheet .sheet { position: absolute; left: 0; right: 0; bottom: 0; max-height: 80dvh; overflow-y: auto; background: var(--panel); border-radius: 18px 18px 0 0; padding: 1rem 0.8rem calc(1.4rem + env(safe-area-inset-bottom)); }
+    }
+
+    /* ─── building blocks ─── */
+    .card { background: linear-gradient(180deg, var(--panel2), var(--panel)); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem 1.2rem; }
+    .card h2 { font-size: 1.02rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+    .card h2 .more { margin-left: auto; font-size: 0.8rem; font-weight: 600; color: var(--gold); }
+    .card .sub { color: var(--dim); font-size: 0.85rem; margin-top: 0.2rem; }
+    .stack { display: grid; gap: 1rem; }
+    .grid { display: grid; gap: 1rem; }
+    .g2 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); }
+    .g3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); }
+    .g4 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); }
+    .row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+    .spread { display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; }
+    .dim { color: var(--dim); } .small { font-size: 0.82rem; } .big { font-size: 1.6rem; font-weight: 800; color: var(--bright); }
+    .mt { margin-top: 0.9rem; } .mt2 { margin-top: 1.6rem; }
+    .empty { text-align: center; color: var(--dim); padding: 2rem 1rem; }
+    .empty strong { display: block; color: var(--bright); margin-bottom: 0.3rem; }
+    hr { border: 0; border-top: 1px solid var(--line); margin: 0.9rem 0; }
+
+    .chip { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.12rem 0.55rem; border-radius: 99px; font-size: 0.74rem; font-weight: 600; white-space: nowrap; border: 1px solid transparent; }
+    .chip.red { background: rgba(240,107,107,0.14); color: #ff9a9a; border-color: rgba(240,107,107,0.3); }
+    .chip.amber { background: rgba(242,176,75,0.14); color: #ffc873; border-color: rgba(242,176,75,0.3); }
+    .chip.green { background: rgba(86,207,138,0.14); color: #7fe3a8; border-color: rgba(86,207,138,0.3); }
+    .chip.blue { background: rgba(106,168,255,0.14); color: #9cc5ff; border-color: rgba(106,168,255,0.3); }
+    .chip.grey { background: rgba(255,255,255,0.06); color: var(--dim); border-color: var(--line); }
+    .chip.gold { background: rgba(227,179,65,0.14); color: var(--gold); border-color: rgba(227,179,65,0.3); }
+
+    select, input[type=text], input[type=number], input[type=date], textarea {
+      background: var(--bg); border: 1px solid var(--line2); border-radius: 9px; padding: 0.5rem 0.65rem; min-height: 2.4rem; width: 100%;
+    }
+    select { appearance: none; padding-right: 2rem; cursor: pointer;
+      background-image: linear-gradient(45deg, transparent 50%, var(--dim) 50%), linear-gradient(135deg, var(--dim) 50%, transparent 50%);
+      background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%; background-size: 5px 5px; background-repeat: no-repeat; }
+    select option { background: var(--panel); }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(227,179,65,0.15); }
+    textarea { resize: vertical; min-height: 4.5rem; }
+    input[type=date]::-webkit-calendar-picker-indicator { filter: invert(0.8); }
+    label.field { display: grid; gap: 0.3rem; font-size: 0.78rem; font-weight: 600; color: var(--dim); }
+    .form { display: grid; gap: 0.8rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); align-items: end; }
+    .form .wide { grid-column: 1 / -1; }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; min-height: 2.4rem; padding: 0.45rem 1rem; border-radius: 9px; border: 1px solid var(--line2); background: var(--raise); color: var(--bright); font-weight: 600; cursor: pointer; }
+    .btn:hover { border-color: var(--gold); }
+    .btn.primary { background: var(--gold); color: #1b1405; border-color: var(--gold); }
+    .btn.primary:hover { filter: brightness(1.08); }
+    .btn.ghost { background: transparent; }
+    .btn.danger { color: #ff9a9a; }
+    .btn.small { min-height: 2rem; padding: 0.25rem 0.7rem; font-size: 0.82rem; }
+
+    .seg { display: inline-flex; background: var(--bg); border: 1px solid var(--line2); border-radius: 10px; padding: 3px; gap: 3px; }
+    .seg-btn { border: 0; background: transparent; border-radius: 7px; padding: 0.4rem 0.75rem; cursor: pointer; font-weight: 600; font-size: 0.85rem; color: var(--dim); min-width: 2.6rem; }
+    .seg-btn:hover { color: var(--bright); background: var(--panel2); }
+    .seg-btn.on { background: var(--raise); color: var(--bright); box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset; }
+    .seg-btn.on.green { background: rgba(86,207,138,0.22); color: #8ff0b6; }
+    .seg-btn.on.red { background: rgba(240,107,107,0.22); color: #ffaaaa; }
+    .seg-btn.on.grey { background: rgba(255,255,255,0.1); color: var(--bright); }
+    .seg-btn.on.gold { background: rgba(227,179,65,0.22); color: var(--gold); }
+
+    .bar { height: 0.55rem; border-radius: 99px; background: rgba(255,255,255,0.07); overflow: hidden; position: relative; }
+    .bar > span { position: absolute; inset: 0 auto 0 0; border-radius: 99px; background: var(--gold); transition: width 0.6s ease; }
+    .bar.green > span { background: var(--green); } .bar.red > span { background: var(--red); } .bar.blue > span { background: var(--blue); } .bar.amber > span { background: var(--amber); }
+    .bar.tall { height: 0.8rem; }
+
+    table.data { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    table.data th { text-align: left; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); font-weight: 600; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--line2); white-space: nowrap; }
+    table.data td { padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    table.data td.num, table.data th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    table.data tr.group td { color: var(--gold); font-weight: 700; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; padding-top: 1rem; }
+    table.data tr.total td { font-weight: 700; color: var(--bright); background: rgba(255,255,255,0.03); }
+    .scrollx { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    #toast { position: fixed; left: 50%; bottom: 1.5rem; transform: translate(-50%, 150%); z-index: 99; background: var(--raise); border: 1px solid var(--line2); color: var(--bright); padding: 0.6rem 1rem; border-radius: 99px; font-weight: 600; font-size: 0.88rem; transition: transform 0.25s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.4); max-width: calc(100% - 2rem); }
+    #toast.show { transform: translate(-50%, 0); }
+    #toast.bad { border-color: var(--red); color: #ffb0b0; }
+    @media (max-width: 900px) { #toast { bottom: calc(5.5rem + env(safe-area-inset-bottom)); } }
+
+    .skeleton { height: 7rem; border-radius: var(--radius); background: linear-gradient(90deg, var(--panel) 0%, var(--panel2) 50%, var(--panel) 100%); background-size: 200% 100%; animation: shimmer 1.2s infinite; }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+    @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } .bar > span { transition: none; } }
+  </style>
+</head>
+<body data-view={view}>
+
+{!unlocked && (
+  <div class="lock">
+    <form method="POST" action="/api/login">
+      <div class="brand">LASH 2026<small>Independence &amp; Mastery</small></div>
+      <label class="field" for="p" style="text-align:left">Password
+        <input type="password" id="p" name="password" autocomplete="current-password" autofocus required />
+      </label>
+      <input type="hidden" name="next" value={Astro.url.pathname.replace(/\/$/, '') || '/plan'} />
+      <p class="problem">{problem}</p>
+      <button class="btn primary" type="submit">Open my plan</button>
+    </form>
+  </div>
+)}
+
+{unlocked && (
+  <div class="shell">
+    <aside class="side">
+      <a href="/plan" class="brand">LASH 2026<small>Independence &amp; Mastery</small></a>
+      {NAV.map((g) => (
+        <nav class="navgroup">
+          <span>{g.group}</span>
+          {g.items.map((i) => (
+            <a href={i.href} class:list={['navlink', { on: i.view === view }]} data-alert={i.view}>
+              <i>{i.icon}</i>{i.label}
+            </a>
+          ))}
+        </nav>
+      ))}
+    </aside>
+
+    <main class="main">
+      <header class="pagehead">
+        <div>
+          <h1>{here.label}</h1>
+          <p>{here.blurb}</p>
+        </div>
+      </header>
+      <div id="app"><div class="stack"><div class="skeleton"></div><div class="skeleton"></div></div></div>
+    </main>
+
+    <nav class="mobilebar">
+      {MOBILE.map((v) => {
+        const i = NAV.flatMap((g) => g.items).find((x) => x.view === v);
+        return <a href={i.href} class:list={{ on: v === view }} data-alert={v}><i>{i.icon}</i>{i.short ?? i.label}</a>;
+      })}
+      <button type="button" id="menuBtn"><i>☰</i>More</button>
+    </nav>
+    <div class="menu-sheet" id="menuSheet">
+      <div class="sheet">
+        {NAV.map((g) => (
+          <nav class="navgroup">
+            <span>{g.group}</span>
+            {g.items.map((i) => (
+              <a href={i.href} class:list={['navlink', { on: i.view === view }]} data-alert={i.view}><i>{i.icon}</i>{i.label}</a>
+            ))}
+          </nav>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
+
+{unlocked && (
+  <script>
+    import { start } from '../lib/plan/app.js';
+    start(document.body.dataset.view);
+    const sheet = document.getElementById('menuSheet');
+    document.getElementById('menuBtn')?.addEventListener('click', () => sheet.classList.add('open'));
+    sheet?.addEventListener('click', (e) => { if (e.target === sheet) sheet.classList.remove('open'); });
+  </script>
+)}
+</body>
+</html>
