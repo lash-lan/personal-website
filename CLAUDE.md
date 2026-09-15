@@ -28,6 +28,35 @@ This project is checked out on more than one machine. Always `git pull` before
 starting work, and push when a change is finished. Do not leave work committed
 locally but unpushed.
 
+## This laptop
+
+These facts describe the Windows laptop, which I share with my Dharmalogist
+project. The other laptop may differ, so if something doesn't fit, check rather
+than assume.
+
+- Windows 11, with PowerShell and Git Bash, Node 22, Git 2.47.
+- Git is signed in to GitHub as `lash-lan` through Git Credential Manager, so
+  pushing works.
+- The GitHub CLI (`gh`) is at `C:\Users\lashl\tools\gh\bin\gh.exe`. It is not on
+  PATH and not logged in. You should not need it. If you do, tell me and I will
+  log in myself.
+
+## Lessons learned (from the Dharmalogist build)
+
+- Checking a page with `curl` can mislead. Redirects made by the page's scripts
+  still return 200, and text drawn by JavaScript is not in the HTML. Check the
+  live site in a real browser.
+- A hidden browser pane pauses animations, so pages can look washed out. Bring
+  the pane to the front before judging how something looks.
+- Git Bash mangles backslashes in heredocs. Write files with the Write or Edit
+  tools instead.
+- Python cannot open files in the very long scratchpad path. Do Python work in a
+  short folder such as `C:\Users\lashl\AppData\Local\Temp\tl\`.
+- Old preview servers keep their ports. Stop them so you are not testing a stale
+  preview.
+- Secrets never go in the repo or the chat. They go in Cloudflare (the Worker,
+  then Settings, then Variables and Secrets), and I type them in myself.
+
 ## The project
 
 Astro 6 static site, live at **https://bloodoficetear.com**, deployed to
