@@ -109,6 +109,14 @@ const problem = {
     .clips button { padding: 0; border-radius: 3px; overflow: hidden; width: 6.2rem; height: 4rem; }
     .clips video { height: 100%; object-fit: cover; pointer-events: none; }
     .hint { color: var(--textDim); font-size: 0.8rem; line-height: 1.6; margin-top: 0.8rem; }
+
+    .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .tabs button { font-size: 0.8rem; }
+    .tabs button[aria-selected=true] { border-color: var(--accent); color: var(--accentLight);
+                                       background: rgba(196,149,42,0.07); }
+    .takes { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.9rem; }
+    .takes button { text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 0.85rem;
+                    text-align: left; padding: 0.5rem 0.7rem; }
   </style>
 </head>
 <body>
@@ -140,6 +148,12 @@ const problem = {
       </div>
     )}
 
+    <div class="tabs" role="tablist">
+      <button type="button" data-tab="videoPanel" aria-selected="true">🎬 Video</button>
+      <button type="button" data-tab="voicePanel" aria-selected="false">🎙 Voice</button>
+    </div>
+
+    <section id="videoPanel">
     <div class="gpu" id="gpuBar">
       <span class="dot"></span>
       <span id="gpuText">Checking the GPU…</span>
@@ -209,6 +223,53 @@ const problem = {
         </div>
       </div>
     </div>
+    </section>
+
+    <section id="voicePanel" hidden>
+      <div class="gpu" id="voiceBar">
+        <span class="dot"></span>
+        <span id="voiceText">Checking your PC's voice server…</span>
+        <span class="spacer"></span>
+        <button id="voiceRetry" type="button">↻ Check again</button>
+      </div>
+
+      <div class="cols">
+        <div>
+          <div class="field">
+            <label for="voice">Voice</label>
+            <select id="voice"><option>Loading voices…</option></select>
+          </div>
+          <div class="field">
+            <label for="speech">What should they say?</label>
+            <textarea id="speech" rows="6" maxlength="1500" placeholder="The walls of Icetear have stood for a thousand winters. Tonight, they fall."></textarea>
+          </div>
+          <div class="field row">
+            <div>
+              <label for="language">Language</label>
+              <select id="language"><option>English</option></select>
+            </div>
+            <div>
+              <label>File type</label>
+              <div class="models" id="formats">
+                <button type="button" data-format="mp3" aria-pressed="true">MP3<span class="blurb">Smaller, plays anywhere</span></button>
+                <button type="button" data-format="wav" aria-pressed="false">WAV<span class="blurb">Full quality, for editing</span></button>
+              </div>
+            </div>
+          </div>
+          <button class="primary" id="speak" type="button" style="width:100%">Generate speech</button>
+          <p class="hint">
+            Runs on your own PC with Qwen3-TTS, cloning voices from your library, so it's free, but it only
+            works while that PC is on, awake and running the voice server. Up to 1,500 characters per take.
+          </p>
+        </div>
+        <div>
+          <div class="status" id="voiceStatus">Pick a voice and write a line.</div>
+          <audio id="voicePlayer" controls style="width:100%;margin-top:0.9rem"></audio>
+          <a id="voiceSave" href="#" download="" hidden><button type="button" style="width:100%;margin-top:0.6rem">⬇ Save audio</button></a>
+          <div class="takes" id="takes"></div>
+        </div>
+      </div>
+    </section>
   </div>
 )}
 
@@ -380,6 +441,100 @@ const problem = {
       } finally {
         state.busy = false;
         $('go').disabled = false;
+      }
+    });
+  }
+</script>
+<script is:inline>
+  if (document.getElementById('speak')) {
+    const $ = (id) => document.getElementById(id);
+
+    // ----- tabs -----
+    for (const tab of document.querySelectorAll('.tabs button')) {
+      tab.addEventListener('click', () => {
+        for (const other of document.querySelectorAll('.tabs button')) {
+          const on = other === tab;
+          other.setAttribute('aria-selected', String(on));
+          $(other.dataset.tab).hidden = !on;
+        }
+        if (tab.dataset.tab === 'voicePanel' && !loaded) loadVoices();
+      });
+    }
+
+    // ----- voices -----
+    let loaded = false;
+    let format = 'mp3';
+    const setStatus = (text, kind = '') => {
+      $('voiceStatus').className = 'status ' + kind;
+      $('voiceStatus').textContent = text;
+    };
+    const loadVoices = async () => {
+      $('voiceText').textContent = "Checking your PC's voice server…";
+      $('voiceBar').classList.remove('on');
+      try {
+        const res = await fetch('/api/forge/voices');
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error || 'Voice server unavailable.');
+        $('voice').innerHTML = '';
+        for (const name of body.voices) $('voice').append(new Option(name, name));
+        $('language').innerHTML = '';
+        for (const lang of body.languages) $('language').append(new Option(lang, lang));
+        $('voiceBar').classList.add('on');
+        $('voiceText').textContent = `Your PC is online · ${body.voices.length} voices`;
+        loaded = true;
+      } catch (e) {
+        $('voiceText').textContent = e.message;
+      }
+    };
+    $('voiceRetry').addEventListener('click', loadVoices);
+
+    $('formats').addEventListener('click', (e) => {
+      const button = e.target.closest('button[data-format]');
+      if (!button) return;
+      format = button.dataset.format;
+      for (const b of $('formats').children) b.setAttribute('aria-pressed', String(b === button));
+    });
+
+    // ----- speaking -----
+    const takes = [];
+    const show = (take) => {
+      $('voicePlayer').src = take.url;
+      $('voiceSave').href = take.url;
+      $('voiceSave').download = take.name;
+      $('voiceSave').hidden = false;
+    };
+    $('speak').addEventListener('click', async () => {
+      const text = $('speech').value.trim();
+      if (!loaded) return setStatus('The voice server is not reachable yet.', 'bad');
+      if (!text) return setStatus('Write something to say.', 'bad');
+      $('speak').disabled = true;
+      const started = Date.now();
+      const timer = setInterval(() => {
+        setStatus(`Speaking as ${$('voice').value} on your PC … ${Math.floor((Date.now() - started) / 1000)}s`, 'busy');
+      }, 1000);
+      try {
+        const res = await fetch('/api/forge/speak', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ voice: $('voice').value, text, language: $('language').value, format }),
+        });
+        if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'That did not work.');
+        const blob = await res.blob();
+        const slug = $('voice').value.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const take = { url: URL.createObjectURL(blob), name: `${slug}-${Date.now()}.${format}`, label: `${$('voice').value} — ${text.slice(0, 60)}${text.length > 60 ? '…' : ''}` };
+        takes.unshift(take);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = `▶ ${take.label} (${format.toUpperCase()})`;
+        button.addEventListener('click', () => show(take));
+        $('takes').prepend(button);
+        show(take);
+        $('voicePlayer').play().catch(() => {});
+        setStatus(`Done in ${Math.floor((Date.now() - started) / 1000)}s. Save it with the button below — this page keeps nothing.`, 'good');
+      } catch (e) {
+        setStatus(e.message, 'bad');
+      } finally {
+        clearInterval(timer);
+        $('speak').disabled = false;
       }
     });
   }
