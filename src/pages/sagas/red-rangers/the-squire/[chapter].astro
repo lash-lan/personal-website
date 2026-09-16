@@ -2,6 +2,7 @@
 import SiteHeader from '../../../../components/SiteHeader.astro';
 import MoodAtmosphere from '../../../../components/MoodAtmosphere.astro';
 import ReadAloud from '../../../../components/ReadAloud.astro';
+import { squireTracks } from '../../../../data/narration.js';
 import AgeGate from '../../../../components/AgeGate.astro';
 import story from '../../../../data/the-squire.json';
 
@@ -40,6 +41,9 @@ const body = zones.map((z) => {
 
 const openingMood = zones[0].mood;
 const minutes = Math.max(1, Math.round(chapter.words / 230));
+
+// Real narration if it has been generated; otherwise the browser reads it.
+const tracks = squireTracks(chapter.slug);
 ---
 <!doctype html>
 <html lang="en">
@@ -148,7 +152,7 @@ const minutes = Math.max(1, Math.round(chapter.words / 230));
 
 <!-- Scoped to the zones, not to .chapter p. The header carries a metadata
      line that is also a paragraph, and the reader would speak it aloud. -->
-<ReadAloud selector=".chapter .zone p" title={chapter.title} />
+<ReadAloud selector=".chapter .zone p" title={chapter.title} tracks={tracks} />
 
 <main>
   <article class="chapter">

@@ -41,3 +41,9 @@ export function sagaTracks(partSlug, chapters) {
   }
   return tracks.length ? tracks : null;
 }
+
+/** One chapter of The Squire (Red Rangers): a single track for the whole chapter page. */
+export function squireTracks(slug) {
+  const t = read('squire/' + slug);
+  return t ? [{ ...t, offset: 0 }] : null;
+}
