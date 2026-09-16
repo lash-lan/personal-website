@@ -111,7 +111,14 @@ export function home(a) {
       h('div', { class: 'fundrow' },
         h('div', { class: 'spread small' }, h('span', {}, `${f.icon} ${f.id}`),
           h('span', {}, h('b', {}, rm(f.balance)), h('span', { class: 'dim' }, ` / ${rm(f.target)}`))),
-        bar(f.target ? f.balance / f.target : 0, f.balance >= f.target ? 'green' : f.balance > 0 ? 'blue' : '')))));
+        bar(f.target ? f.balance / f.target : 0, f.balance >= f.target ? 'green' : f.balance > 0 ? 'blue' : '')))),
+    h('hr', {}),
+    h('div', { class: 'spread small' }, h('span', { class: 'dim' }, '🛡 Emergency cash (Maybank)'), h('b', {}, rm(a.assets.emergencyCash))),
+    h('div', { class: 'spread small' }, h('span', { class: 'dim' }, '📈 MooMoo total assets'), h('b', {}, rm(a.assets.moomooTotal))),
+    h('div', { class: 'spread small' }, h('span', { class: 'dim' }, '🏛 EPF (retirement, separate)'), h('b', {}, rm(a.assets.epfTotal))),
+    h('div', { class: 'spread small mt' }, h('span', {}, 'Known financial assets'), h('b', {}, rm(a.assets.total))),
+    h('div', { class: 'small dim' }, 'A net snapshot. Investments are not cash savings, and EPF is not an emergency reserve.'),
+    a.assets.verifiedOn ? h('div', { class: 'mt' }, h('span', { class: 'verified' }, `Last verified: ${fmtDay(a.assets.verifiedOn)} ${a.assets.verifiedOn.slice(0, 4)}`)) : null);
 
   // ─── habits, last 14 days ───
   const recent = a.days.filter((d) => d.date <= a.now).slice(-14);

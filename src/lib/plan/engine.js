@@ -132,8 +132,25 @@ export function analyse(state, now = today()) {
     return { ...r, added, spent, balance, progress, projected: (Number(r.opening) || 0) + planned, status };
   });
   const fund = Object.fromEntries(funds.map((f) => [f.id, f]));
-  const investAge = s.investmentDate ? daysBetween(s.investmentDate, now) : null;
+  const investAge = s.verifiedOn ? daysBetween(s.verifiedOn, now) : null;
   const investStale = investAge === null || investAge > s.valueDays;
+
+  /**
+   * The three pots, kept apart on purpose. Only Maybank cash is an emergency
+   * reserve; MooMoo is investments held as a secondary reserve; EPF is locked
+   * retirement money. The total is a net worth snapshot, never a fund balance.
+   */
+  const n = (x) => Number(x) || 0;
+  const assets = {
+    emergencyCash: fund['Emergency Fund'].balance,
+    moomooTotal: n(s.moomooTotal), moomooInvested: n(s.moomooInvested), moomooCash: n(s.moomooCash),
+    moomooPL: n(s.moomooPL), moomooHoldings: s.moomooHoldings ?? '',
+    epfTotal: n(s.epfTotal), epfAccount1: n(s.epfAccount1), epfAccount2: n(s.epfAccount2), epfAccount3: n(s.epfAccount3),
+    epfContributions2026: n(s.epfContributions2026),
+    verifiedOn: s.verifiedOn ?? '',
+  };
+  assets.total = Number((assets.emergencyCash + assets.moomooTotal + assets.epfTotal).toFixed(2));
+  const snapshots = [...state.snapshots].sort((a2, b2) => (b2.id || '').localeCompare(a2.id || ''));
 
   // daily
   const daily = byId('daily');
@@ -220,14 +237,15 @@ export function analyse(state, now = today()) {
 
   // accounts
   const accountRec = byId('accounts');
-  const accounts = ACCOUNTS.map((a) => {
-    const t = a.task ? task[a.task] : null;
-    const state_ = !t ? { label: 'Active', tone: 'green' }
-      : t.status === 'Done' ? { label: 'Done', tone: 'green' }
-      : t.end < now ? { label: 'Overdue', tone: 'red' }
-      : t.status === 'In progress' ? { label: 'In progress', tone: 'blue' }
-      : { label: 'To do', tone: 'amber' };
-    return { ...a, t, state: state_, notes: accountRec[a.id]?.notes ?? '' };
+  const accounts = ACCOUNTS.map((acc) => {
+    const t = acc.task ? task[acc.task] : null;
+    const ready = !t || t.status === 'Done';
+    const state_ = ready
+      ? { label: acc.verified || t?.status === 'Done' ? 'ACTIVE / VERIFIED' : acc.standing, tone: 'green' }
+      : t.end < now ? { label: `${acc.standing} · OVERDUE`, tone: 'red' }
+      : t.status === 'In progress' ? { label: `${acc.standing} · IN PROGRESS`, tone: 'blue' }
+      : { label: acc.priority ? `${acc.standing} · PRIORITY` : acc.standing, tone: acc.priority ? 'red' : 'amber' };
+    return { ...acc, t, ready, state: state_, notes: accountRec[acc.id]?.notes ?? '' };
   });
   const account = Object.fromEntries(accounts.map((a) => [a.id, a]));
 
@@ -243,7 +261,7 @@ export function analyse(state, now = today()) {
     { key: 'tx', label: txGap === null ? 'No money logged yet' : `No money logged for ${txGap} days`, n: now >= PLAN_START && (txGap === null || txGap > s.txDays) ? 1 : 0, href: '/plan/money', tone: 'amber' },
     { key: 'kpi', label: 'Weeks of product numbers missing', n: [...kpis.boi, ...kpis.dha].filter((k) => k.status === 'missing').length, href: '/plan/kpis', tone: 'red' },
     { key: 'evidence', label: 'Career evidence behind', n: evMonths.filter((m) => m.status === 'behind' || m.status === 'missed').length, href: '/plan/career', tone: 'amber' },
-    { key: 'invest', label: 'Investment value needs checking', n: investStale ? 1 : 0, href: '/plan/funds', tone: 'amber' },
+    { key: 'invest', label: investAge === null ? 'Balances never verified' : `Balances last verified ${investAge} days ago`, n: investStale ? 1 : 0, href: '/plan/funds', tone: 'amber' },
     { key: 'gates', label: 'Gates missed', n: gates.filter((g) => g.status.label === 'Missed').length, href: '/plan/gates', tone: 'red' },
   ];
   const needs = alerts.filter((a) => a.n > 0);
@@ -255,14 +273,19 @@ export function analyse(state, now = today()) {
       : t.status === 'In progress' ? { label: 'In progress', tone: 'blue' } : { label: 'Not started', tone: 'grey' };
   };
   const acctState = (id) => {
-    const a = account[id];
-    return a.state.label === 'Done' ? { label: 'Achieved', tone: 'green' } : a.state.label === 'Overdue' ? { label: 'At risk', tone: 'red' } : a.state.tone === 'blue' ? { label: 'In progress', tone: 'blue' } : { label: 'Not started', tone: 'grey' };
+    const t = account[id]?.t;
+    if (!t) return { label: 'Achieved', tone: 'green' };
+    return t.status === 'Done' ? { label: 'Achieved', tone: 'green' }
+      : t.end < now ? { label: 'At risk', tone: 'red' }
+      : t.status === 'In progress' ? { label: 'In progress', tone: 'blue' }
+      : { label: 'Not started', tone: 'grey' };
   };
   const customers = state.kpis.reduce((a, k) => a + (Number(k.purchases) || 0), 0)
     + Math.max(0, ...state.kpis.map((k) => Number(k.paidSubs) || 0));
   const scorecard = [
     ['Finance', 'Emergency Fund', '≥ RM5,000', rm(fund['Emergency Fund'].balance), fund['Emergency Fund'].balance >= fund['Emergency Fund'].yearEnd ? { label: 'Achieved', tone: 'green' } : { label: 'In progress', tone: 'blue' }],
-    ['Finance', 'Investment Portfolio', '~RM10k+, market permitting', rm(s.investmentValue), s.investmentValue >= 10000 ? { label: 'Achieved', tone: 'green' } : { label: 'At risk', tone: 'red' }],
+    ['Finance', 'Investment Portfolio', '~RM10k+, market permitting', `${rm(assets.moomooTotal)} total account assets`, assets.moomooTotal >= 10000 ? { label: 'Achieved', tone: 'green' } : { label: 'At risk', tone: 'red' }],
+    ['Finance', 'EPF (retirement, separate)', 'Kept separate from cash and investments', rm(assets.epfTotal), { label: 'Achieved', tone: 'green' }],
     ['Finance', 'HSBC', 'Opened', account.HSBC.state.label, acctState('HSBC')],
     ['Finance', 'Wise', 'Opened', account.Wise.state.label, acctState('Wise')],
     ['Finance', 'Stripe', 'Reactivated', account.Stripe.state.label, acctState('Stripe')],
@@ -288,6 +311,7 @@ export function analyse(state, now = today()) {
 
   return {
     now, s, tasks, task, tx, lastTx, txGap, months, curMonth, money: months[curMonth], funds, fund, investStale, investAge,
+    assets, snapshots,
     days, streak, habits, avg7, avgAll, weeks, kpis, evidence, evMonths, gates, phase, nextGate, pillars, overall,
     criticalOpen, accounts, alerts, needs, scorecard,
     daysToLaunch: daysBetween(now, LAUNCH), daysToEnd: daysBetween(now, PLAN_END),

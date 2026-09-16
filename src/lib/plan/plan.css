@@ -1,5 +1,9 @@
 /* Styles for the pieces the plan's pages build as they go. */
 
+/* Nothing here scrolls the page sideways: wide tables and the Gantt
+   scroll inside their own boxes, so the bottom menu always fits. */
+html, body { max-width: 100%; overflow-x: hidden; }
+
 .center { text-align: center; }
 .redtext { color: #ff8f8f; }
 .greentext { color: #7fe3a8; }
@@ -119,7 +123,6 @@ select.status.s-Blocked { border-color: rgba(240,107,107,0.5); color: #ffaaaa; }
 .band.now { background: color-mix(in srgb, var(--c) 32%, transparent); border-color: var(--c); box-shadow: 0 0 18px color-mix(in srgb, var(--c) 30%, transparent); }
 .band.past { opacity: 0.55; }
 .road-fill { position: absolute; left: 0; top: 4.3rem; height: 0.3rem; border-radius: 99px; background: linear-gradient(90deg, rgba(227,179,65,0.3), var(--gold)); }
-.road-fill::before { content: ''; position: absolute; left: 0; right: -9999px; top: 0; bottom: 0; }
 .road-gates { position: absolute; left: 0; right: 0; top: 4.05rem; }
 .pin { position: absolute; transform: translateX(-50%); display: grid; justify-items: center; gap: 0.2rem; }
 .pin i { width: 0.8rem; height: 0.8rem; transform: rotate(45deg); background: var(--panel); border: 2px solid var(--grey); }
@@ -241,3 +244,33 @@ table.budget td.num { white-space: nowrap; }
 /* ─── menu badges ─── */
 .mobilebar a, .mobilebar button { position: relative; }
 .mobilebar .dot { position: absolute; top: 0; left: calc(50% + 0.35rem); min-width: 1.1rem; height: 1.1rem; padding: 0 0.25rem; border-radius: 99px; background: var(--red); color: #fff; font-size: 0.62rem; font-weight: 700; display: grid; place-items: center; }
+
+/* ─── verified balances ─── */
+.verified { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; color: var(--green);
+  background: rgba(86,207,138,0.12); border: 1px solid rgba(86,207,138,0.3); border-radius: 99px; padding: 0.1rem 0.6rem; white-space: nowrap; }
+.assetrow { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.6rem 0; border-bottom: 1px solid var(--line); }
+.assetrow.total { border-bottom: 0; border-top: 1px solid var(--line2); margin-top: 0.2rem; padding-top: 0.8rem; }
+.assetrow strong { color: var(--bright); }
+.assetamt { font-size: 1.15rem; font-weight: 800; color: var(--bright); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.assetrow.total .assetamt { font-size: 1.5rem; color: var(--gold); }
+.breakdown { display: grid; gap: 0.35rem; padding: 0.7rem 0.8rem; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--line); }
+.breakdown b { color: var(--bright); font-variant-numeric: tabular-nums; }
+.fund.epf { box-shadow: inset 3px 0 0 var(--blue); }
+
+/* On a phone the money rows stack instead of running off the edge. */
+@media (max-width: 560px) {
+  .assetrow { flex-wrap: wrap; gap: 0.15rem 0.8rem; }
+  .assetrow > div:first-child { flex: 1 1 100%; min-width: 0; }
+  .assetamt { font-size: 1.05rem; }
+  .assetrow.total .assetamt { font-size: 1.3rem; }
+  .breakdown .spread { flex-wrap: wrap; gap: 0.1rem 0.6rem; }
+  .card h2 { flex-wrap: wrap; }
+  .card h2 .more { margin-left: 0; }
+  .spread { flex-wrap: wrap; }
+  .fund .big, .daysum .big { font-size: 1.5rem; }
+}
+
+/* A wide child (a table, the Gantt) must never stretch its card: grid and flex
+   children default to refusing to shrink, so they are told they may. */
+.stack > *, .grid > *, .card > * { min-width: 0; }
+.scrollx { max-width: 100%; min-width: 0; }

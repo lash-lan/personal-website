@@ -181,11 +181,14 @@ export const MARKS = [
 ];
 export const BACK = ['Good', 'Stiff', 'Sore', 'Flare-up'];
 
+// The day the balances below were checked against the real accounts.
+export const VERIFIED_ON = '2026-09-16';
+
 export const FUNDS = [
-  { id: 'Emergency Fund', icon: '🛡', heldAt: 'HSBC (Maybank until opened)', target: 25000, opening: 1500, yearEnd: 5000,
-    note: '≈ 6 months of independent living (RM4,000 × 6, rounded up). Investments are not part of it.' },
-  { id: 'Investment Fund', icon: '📈', heldAt: 'MooMoo', target: 10000, opening: 10000, yearEnd: 10000,
-    note: 'Secondary reserve only if something genuinely serious happens. Market value fluctuates.' },
+  { id: 'Emergency Fund', icon: '🛡', heldAt: 'Maybank Savings', target: 25000, opening: 1000, yearEnd: 5000,
+    note: '≈ 6 months of independent living (RM4,000 × 6, rounded up). Dedicated cash only: MooMoo investments, MooMoo cash and EPF are NOT counted towards this target.' },
+  { id: 'Investment Fund', icon: '📈', heldAt: 'MooMoo', target: 10000, opening: 10814.34, yearEnd: 10000,
+    note: 'Secondary reserve, and only if something genuinely serious happens. The balance is the verified MooMoo account total: shares at market value plus uninvested cash. Market value moves on its own.' },
   { id: 'AIGP Fund', icon: '🎓', heldAt: 'Maybank', target: 5000, opening: 0, yearEnd: 0,
     note: 'Set the 31 Dec target once F-09 confirms the exam cost.' },
   { id: 'Resilience Fund', icon: '🔧', heldAt: 'HSBC (Maybank until opened)', target: 5000, opening: 0, yearEnd: 0,
@@ -213,15 +216,15 @@ export const LINE_ITEMS = [
 ].map(([name, category, group, fund = '']) => ({ name, category, group, fund }));
 
 export const ACCOUNTS = [
-  { id: 'Maybank', purpose: 'Salary + monthly operating expenses', start: 'Existing', action: 'Keep as operating account', task: '' },
-  { id: 'HSBC', purpose: 'Emergency Fund / Resilience Fund', start: 'Not opened', action: 'Open account', task: 'F-01' },
-  { id: 'Wise', purpose: 'International transfers / currency', start: 'Not opened', action: 'Open account', task: 'F-02' },
-  { id: 'Stripe', purpose: 'Blood of Icetear + Dharmalogist revenue', start: 'Dormant', action: 'Reactivate', task: 'F-03' },
-  { id: 'MooMoo', purpose: 'Investment portfolio', start: 'Active', action: 'Confirm access + holdings', task: 'F-07' },
-  { id: "Touch 'n Go", purpose: 'Transport / small transactions', start: 'Active', action: 'None', task: '' },
-  { id: 'EPF', purpose: 'Long-term retirement', start: 'Existing', action: 'Confirm access', task: 'F-06' },
-  { id: 'Sampath Bank', purpose: 'Sri Lankan banking / fallback', start: 'Dormant', action: 'Reactivate', task: 'F-04' },
-  { id: 'Luno', purpose: 'Crypto / speculative allocation ONLY', start: 'Dormant', action: 'Reactivate (do not fund)', task: 'F-05' },
+  { id: 'Maybank', purpose: 'Salary, operating account and current emergency savings', standing: 'ACTIVE', action: 'Keep as operating account', task: '' },
+  { id: 'MooMoo', purpose: 'Investments and secondary reserve', standing: 'ACTIVE', verified: VERIFIED_ON, action: 'Confirm access + holdings', task: 'F-07' },
+  { id: 'EPF', purpose: 'Retirement', standing: 'ACTIVE', verified: VERIFIED_ON, action: 'Confirm access', task: 'F-06' },
+  { id: 'HSBC', purpose: 'Future Emergency Fund + Resilience Fund separation', standing: 'TO OPEN', action: 'Open account', task: 'F-01' },
+  { id: 'Wise', purpose: 'International transfers and foreign currency', standing: 'TO OPEN', action: 'Open account', task: 'F-02' },
+  { id: 'Stripe', purpose: 'Blood of Icetear and Dharmalogist payment processing', standing: 'TO REACTIVATE', priority: true, action: 'Reactivate', task: 'F-03' },
+  { id: 'Sampath Bank', purpose: 'Sri Lankan banking / fallback', standing: 'TO REACTIVATE', action: 'Reactivate', task: 'F-04' },
+  { id: 'Luno', purpose: 'Speculative crypto account', standing: 'TO REACTIVATE', accessOnly: true, action: 'Reactivate — access only, do not fund', task: 'F-05' },
+  { id: "Touch 'n Go", purpose: 'Transport and small daily transactions', standing: 'ACTIVE', action: 'None', task: '' },
 ];
 export const PAY_FROM = [...ACCOUNTS.map((a) => a.id), 'Cash'];
 
@@ -234,10 +237,31 @@ export const BOI_DROPOFF = ['Landing page', 'Trial start', 'Mid-trial', 'Free re
 
 export const MONTHS = ['2026-09', '2026-10', '2026-11', '2026-12'];
 
+/**
+ * What the real accounts said when they were last checked. Three separate
+ * pots that are never added together into one "savings" figure:
+ *   · Maybank cash is the emergency reserve, and the only liquid one.
+ *   · MooMoo is investments plus uninvested cash, held as a secondary reserve.
+ *   · EPF is locked retirement money.
+ */
+export const VERIFIED = {
+  moomooTotal: 10814.34,      // total account assets = shares + cash
+  moomooInvested: 9596.72,    // market value of the shares alone
+  moomooCash: 1217.61,        // uninvested cash sitting in the account
+  moomooPL: -1008.02,         // total position profit/loss
+  moomooHoldings: 'VOO, SPCX',
+  epfTotal: 2431.23,
+  epfAccount1: 1823.42,       // Akaun Persaraan
+  epfAccount2: 364.69,        // Akaun Sejahtera
+  epfAccount3: 243.12,        // Akaun Fleksibel
+  epfContributions2026: 1990.00,
+  verifiedOn: VERIFIED_ON,
+};
+
 export const SETTINGS = {
   goodDay: 70, staleDays: 7, txDays: 3, valueDays: 35, evidencePerMonth: 2,
   savMin: 750, savTarget: 1000, savExcellent: 1250, livingCap: 4000, recurringCap: 1050, price: 9,
-  investmentValue: 10000, investmentDate: '',
+  ...VERIFIED,
 };
 
 export function budgetMonth() {
@@ -252,6 +276,20 @@ export function budgetMonth() {
   return { lines, estimates: RECURRING.filter((r) => r[2]).map((r) => r[0]) };
 }
 
+/**
+ * One dated record of what every account held, so later checks show movement
+ * instead of quietly replacing the last figure.
+ */
+export function snapshot(date, emergencyCash, v = VERIFIED) {
+  return {
+    id: date,
+    emergencyCash,
+    moomooTotal: v.moomooTotal, moomooInvested: v.moomooInvested, moomooCash: v.moomooCash, moomooPL: v.moomooPL,
+    epfTotal: v.epfTotal,
+    total: Number((Number(emergencyCash) + Number(v.moomooTotal) + Number(v.epfTotal)).toFixed(2)),
+  };
+}
+
 /** Every record the database starts with, by collection. */
 export function seedRecords() {
   return {
@@ -259,7 +297,8 @@ export function seedRecords() {
     funds: FUNDS.map(({ id, heldAt, target, opening, yearEnd, note }) => ({ id, heldAt, target, opening, yearEnd, note })),
     budget: MONTHS.map((id) => ({ id, ...budgetMonth() })),
     settings: [{ id: 'main', ...SETTINGS }],
+    snapshots: [snapshot(VERIFIED_ON, 1000)],
   };
 }
 
-export const COLLECTIONS = ['tasks', 'daily', 'weekly', 'transactions', 'kpis', 'evidence', 'budget', 'funds', 'settings', 'accounts'];
+export const COLLECTIONS = ['tasks', 'daily', 'weekly', 'transactions', 'kpis', 'evidence', 'budget', 'funds', 'settings', 'accounts', 'snapshots'];
