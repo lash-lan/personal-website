@@ -238,6 +238,7 @@ const themeVars = [
   />
 
   <main>
+    <slot name="opening" />
     <section class="hero">
       {eyebrow && <span class="hero-eyebrow">{eyebrow}</span>}
       <h1 class="hero-title">{heading || title}</h1>

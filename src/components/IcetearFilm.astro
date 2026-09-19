@@ -1,0 +1,128 @@
+---
+// The opening of the home page: "A drop of blood on the ice".
+// Every visitor gets the still picture and the title below. When motion is
+// allowed, src/scripts/film.js turns the section into a scroll-driven film.
+---
+<section class="film" aria-label="Hansall and the young Hannah Icetear face each other on a frozen field under the moon">
+  <div class="film-stage">
+    <img
+      class="film-still"
+      src="/cine/still-960.webp"
+      srcset="/cine/still-960.webp 960w, /cine/still-1536.webp 1536w"
+      sizes="100vw"
+      alt="Hansall, masked and crowned in gold, and the young Hannah Icetear in blue and silver armour, face each other on a frozen field under the moon."
+      fetchpriority="high"
+    />
+    <div class="film-title">
+      <span class="film-eyebrow">A world of frost and ember</span>
+      <p class="film-name"><span class="film-blood">Blood</span> of Icetear</p>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { startFilm } from '../scripts/film.js';
+  const section = document.querySelector('.film');
+  if (section) startFilm(section);
+</script>
+
+<style is:global>
+  /* ─── the still (everyone), and the stage the film plays on ─── */
+  .film { position: relative; background: #05080f; }
+  .film-stage {
+    position: relative;
+    height: min(92vh, 66.6vw + 4rem);
+    min-height: 26rem;
+    overflow: hidden;
+  }
+  .film-still {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover; object-position: 50% 60%;
+  }
+  .film-stage::after {
+    /* the still melts into the page below */
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 28%;
+    background: linear-gradient(to bottom, transparent, var(--bg));
+    pointer-events: none;
+  }
+  .film-title {
+    position: absolute; left: 0; right: 0; top: 17%;
+    text-align: center; padding: 0 1.5rem;
+    z-index: 3; pointer-events: none;
+  }
+  .film-eyebrow {
+    display: block;
+    font-family: 'Cormorant SC', Georgia, serif;
+    font-size: 0.72rem; letter-spacing: 0.42em; text-transform: uppercase;
+    color: #cfe3f2; opacity: 0.85; margin-bottom: 0.9rem;
+  }
+  .film-name {
+    font-family: 'Cinzel Decorative', Georgia, serif;
+    font-weight: 700; letter-spacing: 0.04em; line-height: 1.05;
+    font-size: clamp(2rem, 6.4vw, 4.4rem);
+    color: #eaf3fb;
+    text-shadow: 0 2px 30px rgba(5, 8, 15, 0.9), 0 0 60px rgba(120, 170, 220, 0.25);
+  }
+  .film-blood { color: #b3232c; text-shadow: 0 2px 30px rgba(5, 8, 15, 0.9), 0 0 40px rgba(179, 35, 44, 0.45); }
+
+  /* ─── the film (only when film.js adds .is-on) ─── */
+  .film.is-on { height: 560vh; }
+  .film.is-on .film-stage {
+    position: sticky; top: 0;
+    height: 100vh; height: 100svh; min-height: 0;
+  }
+  .film.is-on .film-still,
+  .film.is-on .film-stage::after { display: none; }
+  .film.is-on .film-title { opacity: 0; top: 14%; }
+
+  .film-layers { position: absolute; inset: 0; overflow: hidden; }
+  .film-plate { position: absolute; inset: 0; visibility: hidden; will-change: transform, opacity; }
+  .film-plate img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .film-field img { object-position: 50% 62%; }
+
+  .film-figure {
+    position: absolute; left: 0; top: 0;
+    width: 400px; height: 600px;           /* fixed base size, scaled by transform */
+    transform-origin: 50% 100%;            /* scale and lean about the feet */
+    visibility: hidden; will-change: transform, opacity;
+  }
+  .film-figure img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; }
+  .film-figure::after {
+    /* a soft contact shadow so they stand on the ice */
+    content: ''; position: absolute; left: 18%; right: 18%; bottom: -2%; height: 5%;
+    background: radial-gradient(ellipse at center, rgba(3, 6, 12, 0.7), transparent 70%);
+  }
+
+  .film-spirit {
+    position: absolute; left: 0; top: 0; width: 1000px; height: 1000px;
+    visibility: hidden; will-change: transform, opacity; mix-blend-mode: screen;
+  }
+  .film-spirit img { width: 100%; height: 100%; object-fit: contain; }
+
+  .film-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .film-cracks path {
+    fill: none; stroke-linecap: round; stroke-linejoin: round;
+    filter: drop-shadow(0 0 2px rgba(207, 227, 242, 0.3));
+  }
+  .film-pool, .film-drop, .film-splat { opacity: 0; }
+
+  .film-snow { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .film-flash { position: absolute; inset: 0; background: #f4f8fc; opacity: 0; visibility: hidden; }
+  .film-shade {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 45%; opacity: 0;
+    background: linear-gradient(to bottom, transparent, var(--bg));
+  }
+  .film-hint {
+    position: absolute; left: 50%; bottom: 5%; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 0.6rem;
+    font-family: 'Cormorant SC', Georgia, serif; font-size: 0.66rem;
+    letter-spacing: 0.4em; text-transform: uppercase; color: #cfe3f2;
+  }
+  .film-hint i {
+    width: 1px; height: 2.6rem;
+    background: linear-gradient(to bottom, #cfe3f2, transparent);
+    animation: filmHint 2.2s ease-in-out infinite;
+  }
+  @keyframes filmHint { 0%, 100% { transform: scaleY(0.4); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } }
+</style>

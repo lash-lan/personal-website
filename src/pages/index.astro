@@ -1,5 +1,6 @@
 ---
 import SectionLayout from '../layouts/SectionLayout.astro';
+import IcetearFilm from '../components/IcetearFilm.astro';
 import { SECTIONS, STORIES, storyHref, ageBySlug } from '../data/content.js';
 
 const latest = [...STORIES].reverse();
@@ -20,6 +21,7 @@ const DESCRIPTIONS = {
   heading="LASH"
   tagline="I write worlds that were never meant to exist. Stories born from grief, light, and the weight of things unnamed."
 >
+  <IcetearFilm slot="opening" />
   <div class="wrap">
     <!-- ─── THE WRITER ─── -->
     <section class="about reveal">
