@@ -11,7 +11,7 @@
 // data saver on, none of this runs and the section stays one still picture.
 
 const BASE = '/cine/';
-const CUT = 0.5;          // progress where the fight gives way to the reveal
+const CUT = 0.62;         // progress where the fight gives way to the reveal
 const INTRO_USE = 4.6;    // seconds of the fight used: the approach, the lock, a beat
 const CLASH_AT = 3.46;    // seconds into the fight where the blades meet
 const CRACKS_AT = 3.4;    // seconds into the reveal where the fractures are full
@@ -111,21 +111,26 @@ export function startFilm(section) {
   // the clip's own impact, cut from the footage's native soundtrack
   sfx.src = `${BASE}clash-native.mp3`;
   sfx.preload = 'auto';
-  let played = false, blocked = false, passed = false;
+  let played = false, passed = false;
 
   function ring() {
     if (played) return;
     played = true;
     sfx.currentTime = 0;
     const p = sfx.play();
-    if (p) p.catch(() => { played = false; blocked = true; });
+    if (p) p.catch(() => { played = false; });   // no permission yet; try again on the next gesture
   }
-  function unlock() {
-    if (!blocked) return;
-    blocked = false;
+  // Keep listening until it has actually played. A one-shot listener is wrong:
+  // a reader who clicks before reaching the strike would use it up, and the
+  // strike would then be silent for ever.
+  function onGesture() {
+    if (played) {
+      ['pointerdown', 'keydown', 'touchstart'].forEach((e) => removeEventListener(e, onGesture));
+      return;
+    }
     if (passed) ring();
   }
-  ['pointerdown', 'keydown'].forEach((e) => addEventListener(e, unlock, { once: true, passive: true }));
+  ['pointerdown', 'keydown', 'touchstart'].forEach((e) => addEventListener(e, onGesture, { passive: true }));
 
   const dip = el('div', 'film-dip', layers);     // covers the change of scale
   const shade = el('div', 'film-shade', layers); // melts the last frame into the page
@@ -178,7 +183,7 @@ export function startFilm(section) {
 
     // the title lands with the fractures, and never later than the scroll
     const byFilm = smooth(seg(reveal.currentTime, CRACKS_AT - 0.9, CRACKS_AT));
-    const byScroll = smooth(seg(p, 0.78, 0.9));
+    const byScroll = smooth(seg(p, 0.82, 0.93));
     const tt = after ? Math.max(byFilm, byScroll) : 0;
     title.style.opacity = tt.toFixed(3);
     title.style.transform = `translate3d(0, ${lerp(20, 0, tt).toFixed(1)}px, 0)`;
