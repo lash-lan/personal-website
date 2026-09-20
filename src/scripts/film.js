@@ -132,6 +132,24 @@ export function startFilm(section) {
   }
   ['pointerdown', 'keydown', 'touchstart'].forEach((e) => addEventListener(e, onGesture, { passive: true }));
 
+  // The prompt over the first frame: one click, and the sound is allowed for
+  // the rest of the visit. Scrolling past it without clicking is fine too; the
+  // strike then plays at the reader's first click anywhere, as above.
+  const enter = section.querySelector('.film-enter');
+  let primed = false;
+  if (enter) {
+    enter.hidden = false;
+    enter.addEventListener('click', () => {
+      primed = true;
+      enter.hidden = true;
+      // Asking to play inside the click is what earns the permission; it is
+      // stopped again straight away so nothing is heard before the strike.
+      const p = sfx.play();
+      if (p) p.then(() => { if (!passed) { sfx.pause(); sfx.currentTime = 0; } }).catch(() => {});
+      if (passed) { played = false; ring(); }
+    });
+  }
+
   const dip = el('div', 'film-dip', layers);     // covers the change of scale
   const shade = el('div', 'film-shade', layers); // melts the last frame into the page
   const hint = el('div', 'film-hint', layers);
@@ -193,6 +211,11 @@ export function startFilm(section) {
     backdrop.root.style.visibility = bgO ? 'visible' : 'hidden';
     shade.style.opacity = smooth(seg(p, 0.9, 1)).toFixed(3);
     hint.style.opacity = (1 - smooth(seg(p, 0, 0.035))).toFixed(3);
+    if (enter && !primed) {
+      const eo = 1 - smooth(seg(p, 0.02, 0.1));
+      enter.style.opacity = eo.toFixed(3);
+      enter.style.pointerEvents = eo > 0.15 ? 'auto' : 'none';
+    }
   }
 
   // ─── the frame loop, only while the section is near the screen ───

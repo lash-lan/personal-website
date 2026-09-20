@@ -21,6 +21,10 @@
         <span class="film-ice">Icetear</span>
       </p>
     </div>
+    <button class="film-enter" type="button" hidden>
+      <span>Enter</span>
+      <small>with sound</small>
+    </button>
   </div>
 </section>
 
@@ -126,6 +130,27 @@
     width: 100%; height: 100%; object-fit: cover; display: block;
     filter: blur(14px) brightness(0.45) saturate(0.8); transform: scale(1.08);
   }
+  /* One quiet prompt over the first frame. Browsers keep every page silent
+     until the reader has clicked, tapped or typed, and scrolling does not
+     count; this gives them one thing to click, so the strike is heard. */
+  .film-enter {
+    position: absolute; left: 50%; top: 58%; transform: translate(-50%, -50%);
+    z-index: 5; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+    padding: 0.9rem 2.4rem 0.8rem;
+    background: rgba(5, 8, 15, 0.42); color: #eaf3fb;
+    border: 1px solid rgba(207, 227, 242, 0.35); border-radius: 2px;
+    font-family: 'Cormorant SC', Georgia, serif; cursor: pointer;
+    transition: opacity 0.5s ease, border-color 0.35s ease, background-color 0.35s ease;
+    backdrop-filter: blur(3px);
+  }
+  .film-enter[hidden] { display: none; }
+  .film-enter span { font-size: 0.86rem; letter-spacing: 0.5em; text-transform: uppercase; padding-left: 0.5em; }
+  .film-enter small { font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: #cfe3f2; opacity: 0.7; padding-left: 0.3em; }
+  .film-enter:hover, .film-enter:focus-visible {
+    border-color: rgba(207, 227, 242, 0.75);
+    background: rgba(5, 8, 15, 0.6); outline: none;
+  }
+
   .film-reveal { background: transparent; }
   /* a short dip toward black hides the change of scale at the join */
   .film-dip { position: absolute; inset: 0; background: #05080f; opacity: 0; pointer-events: none; }
