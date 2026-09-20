@@ -379,7 +379,12 @@ export function startFilm(section) {
       if (at < 0) at = want;
       at += (want - at) * 0.22;
       if (Math.abs(want - at) < 0.004) at = want;
-      if (video.readyState >= 1) video.currentTime = at;
+      // Only ask for a new frame once the last seek has finished. Asking every
+      // frame queues seeks the decoder cannot keep up with, and the picture
+      // sticks on an old frame while the playhead runs on without it.
+      if (video.readyState >= 1 && !video.seeking && Math.abs(at - video.currentTime) > 0.01) {
+        video.currentTime = at;
+      }
     }
     drawSnow(now);
     if (running) raf = requestAnimationFrame(frame);
