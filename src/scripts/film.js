@@ -147,7 +147,43 @@ export function startFilm(section) {
       const p = sfx.play();
       if (p) p.then(() => { if (!passed) { sfx.pause(); sfx.currentTime = 0; } }).catch(() => {});
       if (passed) { played = false; ring(); }
+      playThrough();
     });
+  }
+
+  // ─── playing it for the reader ───
+  // Entering runs the whole sequence: the page is scrolled in time with the
+  // film, so the fight advances at its own pace and the reveal follows, right
+  // through to the title. Touching the wheel, a key or the screen hands
+  // control straight back.
+  let auto = 0;
+  const REVEAL_MS = 5400;
+  function stopAuto() {
+    if (!auto) return;
+    cancelAnimationFrame(auto);
+    auto = 0;
+    ['wheel', 'touchmove', 'keydown'].forEach((e) => removeEventListener(e, stopAuto));
+  }
+  function playThrough() {
+    stopAuto();
+    const top = section.getBoundingClientRect().top + window.scrollY;
+    const room = Math.max(1, section.offsetHeight - stage.clientHeight);
+    const from = clamp(progress());
+    if (from > 0.985) return;
+    // the fight runs at its filmed pace; the reveal at its own length
+    const introMs = ((CUT - Math.min(from, CUT)) / CUT) * INTRO_USE * 1000;
+    const started = performance.now();
+    ['wheel', 'touchmove', 'keydown'].forEach((e) => addEventListener(e, stopAuto, { passive: true, once: true }));
+    const step = (now) => {
+      const ms = now - started;
+      let p;
+      if (ms < introMs) p = from + (ms / introMs) * (CUT - from);
+      else p = CUT + Math.min(1, (ms - introMs) / REVEAL_MS) * (1 - CUT);
+      window.scrollTo({ top: top + clamp(p) * room, behavior: 'instant' });
+      if (p >= 1) { stopAuto(); return; }
+      auto = requestAnimationFrame(step);
+    };
+    auto = requestAnimationFrame(step);
   }
 
   const dip = el('div', 'film-dip', layers);     // covers the change of scale
