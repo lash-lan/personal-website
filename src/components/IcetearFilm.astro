@@ -7,10 +7,10 @@
   <div class="film-stage">
     <img
       class="film-still"
-      src="/cine/still-960.webp"
-      srcset="/cine/still-960.webp 960w, /cine/still-1536.webp 1536w"
+      src="/cine/open-960.webp"
+      srcset="/cine/open-960.webp 960w, /cine/open-1536.webp 1536w"
       sizes="100vw"
-      alt="Hansall, masked and crowned in gold, and the young Hannah Icetear in blue and silver armour, face each other on a frozen field under the moon."
+      alt="Hansall, masked and crowned in gold, and the young Hannah Icetear in blue and silver armour, face each other across a frozen lake under the moon."
       fetchpriority="high"
     />
     <div class="film-title">
@@ -96,7 +96,7 @@
   .film-of i:last-child { background: linear-gradient(90deg, rgba(207, 227, 242, 0.7), transparent); }
 
   /* ─── the film (only when film.js adds .is-on) ─── */
-  .film.is-on { height: 500vh; }
+  .film.is-on { height: 420vh; }
   .film.is-on .film-stage {
     position: sticky; top: 0;
     height: 100vh; height: 100svh; min-height: 0;
@@ -105,7 +105,7 @@
   .film.is-on .film-stage::after { display: none; }
   .film.is-on .film-title { opacity: 0; top: 13%; }
   .film.is-on .film-blood, .film.is-on .film-ice { font-size: clamp(2.4rem, 7.4vw, 5.2rem); }
-  @media (max-width: 819px) { .film.is-on { height: 380vh; } }
+  @media (max-width: 819px) { .film.is-on { height: 340vh; } }
 
   .film-layers { position: absolute; inset: 0; overflow: hidden; }
   .film-video {
@@ -126,18 +126,9 @@
     width: 100%; height: 100%; object-fit: cover; display: block;
     filter: blur(14px) brightness(0.45) saturate(0.8); transform: scale(1.08);
   }
-  .film-plate { position: absolute; inset: 0; visibility: hidden; will-change: transform, opacity; }
-  .film-plate img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-  .film-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-  .film-cracks path {
-    fill: none; stroke-linecap: round; stroke-linejoin: round;
-    filter: drop-shadow(0 0 2px rgba(207, 227, 242, 0.3));
-  }
-  .film-pool, .film-drop, .film-splat { opacity: 0; }
-
-  .film-snow { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-  .film-flash { position: absolute; inset: 0; background: #f4f8fc; opacity: 0; visibility: hidden; }
+  .film-reveal { background: transparent; }
+  /* a short dip toward black hides the change of scale at the join */
+  .film-dip { position: absolute; inset: 0; background: #05080f; opacity: 0; pointer-events: none; }
   .film-shade {
     position: absolute; left: 0; right: 0; bottom: 0; height: 45%; opacity: 0;
     background: linear-gradient(to bottom, transparent, var(--bg));
