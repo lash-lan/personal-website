@@ -18,6 +18,8 @@ const INTRO_USE = 4.6;    // seconds of the fight used: the approach, the lock, 
 // early puts the bang under the blades as they come together.
 const CLASH_AT = 2.96;
 const CRACKS_AT = 3.4;    // seconds into the reveal where the fractures are full
+const DROP_AT = 0.7;      // seconds into the reveal where the blood strikes
+const WORDMARK_CROSS = 2.7; // seconds into the title's intro where the loop takes over
 
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -114,7 +116,11 @@ export function startFilm(section) {
   // the clip's own impact, cut from the footage's native soundtrack
   sfx.src = `${BASE}clash-native.mp3`;
   sfx.preload = 'auto';
-  let played = false, passed = false;
+  // the blood striking the ice, trimmed to start on the hit itself
+  const drop = el('audio', '', layers);
+  drop.src = `${BASE}drop-hit.mp3`;
+  drop.preload = 'auto';
+  let played = false, passed = false, splat = false;
 
   function ring() {
     if (played) return;
@@ -122,6 +128,13 @@ export function startFilm(section) {
     sfx.currentTime = 0;
     const p = sfx.play();
     if (p) p.catch(() => { played = false; });   // no permission yet; try again on the next gesture
+  }
+  function hit() {
+    if (splat) return;
+    splat = true;
+    drop.currentTime = 0;
+    const p = drop.play();
+    if (p) p.catch(() => { splat = false; });
   }
   // Keep listening until it has actually played. A one-shot listener is wrong:
   // a reader who clicks before reaching the strike would use it up, and the
@@ -189,6 +202,38 @@ export function startFilm(section) {
     auto = requestAnimationFrame(step);
   }
 
+  // ─── the title, bleeding and freezing ───
+  // The intro plays once when the title arrives; near its end the seamless
+  // ambient loop is faded in underneath and carries on indefinitely, so the
+  // buildup is never replayed.
+  const wordmark = section.querySelector('.film-wordmark');
+  // Blending only reaches what is painted in the same stacking context, so the
+  // artwork is moved in beside the footage. Left in the title block (which is
+  // its own layer) its black background could never fall away.
+  let titleLayer = null;
+  if (wordmark) {
+    titleLayer = el('div', 'film-title-layer', layers);
+    titleLayer.append(wordmark);
+    title.hidden = true;
+  }
+  const wmIntro = wordmark?.querySelector('.wordmark-intro');
+  const wmLoop = wordmark?.querySelector('.wordmark-loop');
+  let wmStarted = false, wmSwitching = false;
+  function toLoop() {
+    if (wmSwitching || !wmLoop) return;
+    wmSwitching = true;
+    wmLoop.play().then(() => wordmark.classList.add('is-looping')).catch(() => { wmSwitching = false; });
+  }
+  function startWordmark() {
+    if (wmStarted || !wmIntro) return;
+    wmStarted = true;
+    wmIntro.play().catch(() => {});
+  }
+  if (wmIntro) {
+    wmIntro.addEventListener('timeupdate', () => { if (wmIntro.currentTime >= WORDMARK_CROSS) toLoop(); });
+    wmIntro.addEventListener('ended', toLoop);
+  }
+
   const dip = el('div', 'film-dip', layers);     // covers the change of scale
   const shade = el('div', 'film-shade', layers); // melts the last frame into the page
   const hint = el('div', 'film-hint', layers);
@@ -232,7 +277,10 @@ export function startFilm(section) {
       rolling = false;
       reveal.pause();
       reveal.currentTime = 0;
+      splat = false;          // scrolling back lets the drop land again
     }
+    // the blood striking, heard off the picture like the strike before it
+    if (after && reveal.currentTime >= DROP_AT) hit();
 
     // a short dip toward black across the join, rather than a cross-dissolve:
     // the two shots are too different in scale and light to blend
@@ -242,8 +290,19 @@ export function startFilm(section) {
     const byFilm = smooth(seg(reveal.currentTime, CRACKS_AT - 0.9, CRACKS_AT));
     const byScroll = smooth(seg(p, 0.82, 0.93));
     const tt = after ? Math.max(byFilm, byScroll) : 0;
-    title.style.opacity = tt.toFixed(3);
-    title.style.transform = `translate3d(0, ${lerp(20, 0, tt).toFixed(1)}px, 0)`;
+    // The fade and lift are applied to the artwork itself, never to a parent:
+    // an ancestor with opacity forms an isolation group, and the title's black
+    // background would then stop blending away against the ice behind it.
+    const lift = `translate3d(0, ${lerp(20, 0, tt).toFixed(1)}px, 0)`;
+    if (wordmark) {
+      wordmark.style.opacity = tt.toFixed(3);
+      wordmark.style.transform = lift;
+    } else {
+      title.style.opacity = tt.toFixed(3);
+      title.style.transform = lift;
+    }
+    // the title bleeds and freezes once, as it arrives, then breathes on a loop
+    if (tt > 0.05) startWordmark();
 
     const bgO = portrait ? 1 : 0;
     backdrop.root.style.opacity = bgO.toFixed(3);

@@ -14,12 +14,19 @@
       fetchpriority="high"
     />
     <div class="film-title">
-      <span class="film-eyebrow">A world of frost and ember</span>
-      <p class="film-name">
-        <span class="film-blood">Blood</span>
-        <span class="film-of"><i></i>of<i></i></span>
-        <span class="film-ice">Icetear</span>
-      </p>
+      <div class="film-wordmark" role="img" aria-label="Blood of Icetear: a world of frost and ember">
+        <!-- The still base is the transparent artwork, so visitors who never
+             see the videos (reduced motion, no JavaScript) get the title on
+             the scene rather than on a black plate. -->
+        <img
+          src="/cine/logo-1400.webp"
+          srcset="/cine/logo-900.webp 900w, /cine/logo-1400.webp 1400w, /cine/logo-2000.webp 2000w"
+          sizes="(max-width: 819px) 92vw, min(74vw, 1100px)"
+          alt="" width="2133" height="717" decoding="async"
+        />
+        <video class="wordmark-intro" muted playsinline preload="auto" aria-hidden="true" src="/cine/title-intro.mp4"></video>
+        <video class="wordmark-loop" muted playsinline loop preload="auto" aria-hidden="true" src="/cine/title-loop.mp4"></video>
+      </div>
     </div>
     <button class="film-enter" type="button" hidden>
       <span>Enter</span>
@@ -60,44 +67,37 @@
     text-align: center; padding: 0 1.5rem;
     z-index: 3; pointer-events: none;
   }
-  .film-eyebrow {
-    display: block;
-    font-family: 'Cormorant SC', Georgia, serif;
-    font-size: 0.7rem; letter-spacing: 0.46em; text-transform: uppercase;
-    color: #cfe3f2; opacity: 0.75; margin-bottom: 1.1rem;
-    text-shadow: 0 2px 18px rgba(5, 8, 15, 0.95);
+  /* The title is the artwork itself: forged iron and faesilver, bleeding and
+     freezing. The files carry a black background rather than transparency, so
+     the layer is blended with screen: black falls away and only the metal,
+     blood and frost remain over the ice. */
+  .film-wordmark {
+    position: relative; margin: 0 auto;
+    width: min(74vw, 1100px); aspect-ratio: 3 / 1;
+    filter: drop-shadow(0 14px 34px rgba(0, 0, 0, 0.7));
   }
-  .film-name {
-    display: flex; flex-direction: column; align-items: center; gap: 0.35rem;
-    font-family: 'Cinzel Decorative', Georgia, serif; font-weight: 700;
-    line-height: 1;
+  .film-wordmark img,
+  .film-wordmark video {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%; object-fit: contain;
   }
-  .film-blood, .film-ice {
-    font-size: clamp(2rem, 6.4vw, 4.4rem);
-    -webkit-background-clip: text; background-clip: text; color: transparent;
+  /* The videos carry a black background rather than transparency. Blending it
+     away would also eat the dark iron inside the letters and leave them
+     hollow, so the shape is cut out instead: the mask is the silhouette of
+     everything that ever lights up across the animation. */
+  .film-wordmark video {
+    pointer-events: none;
+    -webkit-mask-image: url('/cine/title-mask.png');
+    mask-image: url('/cine/title-mask.png');
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
   }
-  .film-blood {
-    letter-spacing: 0.06em;
-    background-image: linear-gradient(180deg, #d8434d 0%, #a3151e 46%, #6b0a10 100%);
-    filter: drop-shadow(0 2px 26px rgba(5, 8, 15, 0.95)) drop-shadow(0 0 34px rgba(150, 20, 28, 0.45));
-  }
-  .film-ice {
-    letter-spacing: 0.12em;
-    background-image: linear-gradient(180deg, #f2f8ff 0%, #d5e6f6 48%, #8fb4d4 100%);
-    filter: drop-shadow(0 2px 26px rgba(5, 8, 15, 0.95)) drop-shadow(0 0 40px rgba(130, 180, 225, 0.25));
-  }
-  /* the hairline rules and the small word between the two big ones */
-  .film-of {
-    display: flex; align-items: center; gap: 0.9rem;
-    font-family: 'Cormorant SC', Georgia, serif; font-weight: 400;
-    font-size: clamp(0.62rem, 1.5vw, 0.86rem);
-    letter-spacing: 0.52em; text-transform: uppercase;
-    color: #cfe3f2; opacity: 0.8;
-    margin: 0.15rem 0 0.1rem; padding-left: 0.5em;
-  }
-  .film-of i { display: block; width: clamp(2rem, 7vw, 5.5rem); height: 1px; }
-  .film-of i:first-child { background: linear-gradient(90deg, transparent, rgba(207, 227, 242, 0.7)); }
-  .film-of i:last-child { background: linear-gradient(90deg, rgba(207, 227, 242, 0.7), transparent); }
+  .wordmark-loop { opacity: 0; transition: opacity 0.3s linear; }
+  .film-wordmark.is-looping .wordmark-loop { opacity: 1; }
+  @media (max-width: 819px) { .film-wordmark { width: 92vw; } }
+  @media (prefers-reduced-motion: reduce) { .film-wordmark video { display: none; } }
 
   /* ─── the film (only when film.js adds .is-on) ─── */
   .film.is-on { height: 340vh; }
@@ -107,7 +107,14 @@
   }
   .film.is-on .film-still,
   .film.is-on .film-stage::after { display: none; }
-  .film.is-on .film-title { opacity: 0; top: 13%; }
+  .film.is-on .film-title[hidden] { display: none; }
+  /* the title's home while the film runs: in among the footage, not above it */
+  .film-title-layer {
+    position: absolute; left: 0; right: 0; top: 12%;
+    display: flex; justify-content: center;
+    padding: 0 1.5rem; pointer-events: none;
+  }
+  .film.is-on .film-wordmark { opacity: 0; }
   .film.is-on .film-blood, .film.is-on .film-ice { font-size: clamp(2.4rem, 7.4vw, 5.2rem); }
   @media (max-width: 819px) { .film.is-on { height: 280vh; } }
 

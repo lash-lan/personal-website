@@ -1,7 +1,7 @@
 ---
 import SectionLayout from '../layouts/SectionLayout.astro';
 import IcetearFilm from '../components/IcetearFilm.astro';
-import { SECTIONS, STORIES, storyHref, ageBySlug } from '../data/content.js';
+import { SECTIONS, STORIES, storyHref, ageBySlug, storyArt } from '../data/content.js';
 
 const latest = [...STORIES].reverse();
 
@@ -11,6 +11,17 @@ const DESCRIPTIONS = {
   codex:   'The chronicle. Titans, mortals, realms, and relics, recorded age by age.',
   gallery: 'Faces and places of the world, kept somewhere they can still be looked at.',
   trial:   'A set of questions, and the figure of the age your nature answers to.',
+};
+
+// One image stands for each hall, chosen from the world's own artwork rather
+// than decoration: a record, a gate, a grimoire, a sky, a king, a forged spear.
+const HALL_IMAGE = {
+  library:  '/images/stories/the-first-funeral.jpg',
+  sagas:    '/images/rangers/the-verdant-gate.jpg',
+  codex:    '/images/codex/thanatos.jpg',
+  gallery:  '/images/codex/deep-reaches.jpg',
+  trial:    '/images/codex/morrigan.jpg',
+  workshop: '/images/codex/shattered-lowlands.jpg',
 };
 ---
 <SectionLayout
@@ -42,11 +53,16 @@ const DESCRIPTIONS = {
       <h2 class="band-title">Five ways into the world</h2>
     </div>
 
-    <div class="grid grid-3">
+    <div class="grid grid-3 halls">
       {SECTIONS.map((s) => (
-        <a href={s.href} class:list={['tile', 'reveal', { 'is-soon': s.comingSoon }]}>
-          <span class="tile-eyebrow">{s.kind}</span>
-          <span class="tile-title">{s.name}</span>
+        <a href={s.href} class:list={['tile', 'hall', 'reveal', { 'is-soon': s.comingSoon }]}>
+          <span class="hall-plate">
+            <img src={HALL_IMAGE[s.slug]} alt="" loading="lazy" decoding="async" width="640" height="480" />
+          </span>
+          <span class="hall-caption">
+            <span class="tile-eyebrow">{s.kind}</span>
+            <span class="tile-title">{s.name}</span>
+          </span>
           <p class="tile-blurb">{DESCRIPTIONS[s.slug]}</p>
           {s.comingSoon && <span class="tile-meta">Coming Soon</span>}
         </a>
@@ -63,9 +79,16 @@ const DESCRIPTIONS = {
 
     <div class="grid grid-3">
       {latest.map((s) => (
-        <a href={storyHref(s)} class="tile reveal">
-          <span class="tile-eyebrow">№ {s.number} · {ageBySlug(s.age)?.name}</span>
-          <span class="tile-title">{s.title}</span>
+        <a href={storyHref(s)} class:list={['tile', 'hall', 'reveal', { 'no-art': !storyArt(s.slug) }]}>
+          {storyArt(s.slug) && (
+            <span class="hall-plate">
+              <img src={storyArt(s.slug)} alt="" loading="lazy" decoding="async" width="640" height="480" />
+            </span>
+          )}
+          <span class="hall-caption">
+            <span class="tile-eyebrow">№ {String(s.number).padStart(3, '0')} · {ageBySlug(s.age)?.name}</span>
+            <span class="tile-title">{s.title}</span>
+          </span>
           <p class="tile-blurb">{s.blurb}</p>
           <span class="tile-meta">{s.part}</span>
         </a>

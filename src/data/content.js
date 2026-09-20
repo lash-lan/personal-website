@@ -244,38 +244,82 @@ export const GALLERY_CATEGORIES = [
 ];
 
 // ─── THEMES ──────────────────────────────────────────────────
+// One material world: near-black stone, cold silver, and blood kept back for
+// the moments that deserve it. Sections differ only as metals differ, never as
+// fantasy colours: library and codex carry a trace of antique gold for age,
+// sagas a trace of oxidised blood, gallery and workshop cold steel and
+// faesilver, the trial the deepest blood. Text is silver on black everywhere,
+// so long-form reading stays legible whatever section it sits in.
+const STONE = {
+  bg: '#05080b', card: '#11171d', text: '#c5ced5', textDim: '#74818b', textBright: '#e1e7ea',
+};
+const theme = (accent, accentLight, accentDim, particle, over = {}) => ({
+  ...STONE, accent, accentLight, accentDim, particle,
+  line: 'rgba(197,206,213,0.14)', ...over,
+});
+
 export const THEMES = {
-  library: {
-    bg: '#0a0704', card: '#120d08', accent: '#c4952a', accentLight: '#e8c875',
-    accentDim: '#8a5a2b', text: '#c9baa0', textDim: '#7a6a54', textBright: '#ede0c4',
-    particle: '196,149,42', line: 'rgba(196,149,42,0.18)',
-  },
-  sagas: {
-    bg: '#0b0505', card: '#160a09', accent: '#b4453f', accentLight: '#e59386',
-    accentDim: '#7a2d2a', text: '#c4a49c', textDim: '#7d5a54', textBright: '#f2ded6',
-    particle: '190,85,72', line: 'rgba(180,69,63,0.20)',
-  },
-  codex: {
-    bg: '#0a0704', card: '#120d08', accent: '#b8863b', accentLight: '#e8c875',
-    accentDim: '#8a5a2b', text: '#c9baa0', textDim: '#7a6a54', textBright: '#ede0c4',
-    particle: '196,149,42', line: 'rgba(196,149,42,0.18)',
-  },
-  gallery: {
-    bg: '#050709', card: '#0c1016', accent: '#8fa8c8', accentLight: '#cfe0f2',
-    accentDim: '#4a5f7a', text: '#a8b6c6', textDim: '#5f6f80', textBright: '#e2ecf6',
-    particle: '143,168,200', line: 'rgba(143,168,200,0.18)',
-  },
-  trial: {
-    bg: '#08060c', card: '#110c19', accent: '#8a6fc4', accentLight: '#c8b4f0',
-    accentDim: '#54407f', text: '#b0a4c6', textDim: '#6b5f80', textBright: '#e8def8',
-    particle: '138,111,196', line: 'rgba(138,111,196,0.18)',
-  },
-  // The builders' workshop: cold steel, blue Fae lanterns, a lit forge.
-  workshop: {
-    bg: '#05080d', card: '#0d141c', accent: '#5f9fd4', accentLight: '#a8d4f5',
-    accentDim: '#38607f', text: '#a4b6c6', textDim: '#647684', textBright: '#e4f0fa',
-    particle: '95,159,212', line: 'rgba(95,159,212,0.20)',
-  },
+  // aged records: silver with the faintest antique gold of old seals
+  library: theme('#9aa6ae', '#e1e7ea', '#5d6a73', '197,206,213', { bg: '#080d12' }),
+  // the long tellings, where blood is spilled
+  sagas: theme('#8b191c', '#c5ced5', '#5a0b0e', '160,120,120', { bg: '#080a0c' }),
+  // the chronicle: stone and engraved metal
+  codex: theme('#a08a63', '#e1e7ea', '#5f5340', '190,190,190', { bg: '#080d12' }),
+  // faces and places, lit coldly
+  gallery: theme('#8fa2b2', '#e1e7ea', '#55626d', '160,180,200', { bg: '#05080b' }),
+  // the trial: the blood side of the world
+  trial: theme('#761014', '#c5ced5', '#4a0a0d', '150,110,110', { bg: '#07090b' }),
+  // the builders' workshop: faesilver and cold steel
+  workshop: theme('#8fa8bb', '#e1e7ea', '#4f5d68', '150,170,190', { bg: '#060a0e' }),
+};
+
+// ─── STORY ARTWORK ───────────────────────────────────────────
+// The stories that have a picture in /images/stories/<slug>.jpg, plus the few
+// kept elsewhere. Listed rather than looked up, because pages are rendered on
+// Cloudflare where there is no filesystem to ask. Add a slug here when its
+// artwork is added.
+const STORY_ART_SLUGS = new Set([
+  'abel-walks-too-far', 'ash-is-still-a-seed', 'blood-that-answers', 'first-child-of-man-and-elf',
+  'first-elu-due', 'king-solomon', 'the-alliance-that-stopped-meeting', 'the-architecture-is-set',
+  'the-birth-of-humanity', 'the-blessing-that-wasnt-asked-for', 'the-brother-who-waited',
+  'the-council-that-should-have-failed', 'the-exile-of-the-soul-defilers', 'the-first-command',
+  'the-first-funeral', 'the-first-human-fear', 'the-first-monster-you-recognize', 'the-first-wrongness',
+  'the-generals-who-could-not-leave', 'the-green-correction', 'the-invitations-that-arrived-separately',
+  'the-knives-before-the-war', 'the-law-that-no-one-cheered', 'the-map-that-lost-roads',
+  'the-mercy-argument', 'the-name-that-should-not-be-spoken', 'the-nine-thrones-do-not-comfort',
+  'the-oath-they-did-not-share', 'the-profane-birth', 'the-sea-prison', 'the-second-correction',
+  'the-spear-that-was-not-meant-to-exist', 'the-world-watches-the-duel', 'the-worlds-immune-system',
+  'when-balance-cost-lives', 'when-the-equation-broke', 'when-the-sky-bled',
+  'when-the-titans-broke-their-own-law',
+]);
+const STORY_ART_ELSEWHERE = {
+  'the-serpent-wars': '/images/serpent-wars-swamp.jpg',
+};
+export const storyArt = (slug) =>
+  STORY_ART_ELSEWHERE[slug] ?? (STORY_ART_SLUGS.has(slug) ? `/images/stories/${slug}.jpg` : null);
+
+// ─── PLATE ARTWORK ───────────────────────────────────────────
+// One picture stands for each age and each people, taken from the world's own
+// artwork: a realm, a throne, a battlefield, a face. Used on the index plates.
+export const AGE_ART = {
+  'foundation-age':          '/images/codex/eternal-fae-realm.jpg',
+  'age-of-mortal-rebellion': '/images/codex/mortal-kingdom-of-adamas.jpg',
+  'age-of-kingdoms':         '/images/codex/throned-acropolis.jpg',
+  'age-of-darkness':         '/images/codex/abyssal-realm.jpg',
+  'age-of-light':            '/images/codex/heavens-throat.jpg',
+  'age-of-freedom':          '/images/codex/planes-of-accord.jpg',
+  'age-of-fractured-ideals': '/images/codex/shattered-lowlands.jpg',
+  'age-of-darkness-ii':      '/images/codex/ghost-realm.jpg',
+  'great-ice-age':           '/images/codex/sky-crown-peaks.jpg',
+};
+export const RACE_ART = {
+  'humans':             '/images/codex/first-human-enclave.jpg',
+  'elves':              '/images/codex/tiamel.jpg',
+  'half-elves':         '/images/codex/hsal-eraklah.jpg',
+  'beast-lords':        '/images/codex/godrian-greyhide.jpg',
+  'other-fae-races':    '/images/codex/fae-garden-sanctuary.jpg',
+  'other-mortal-races': '/images/codex/semi-oceanic-shore-kingdoms.jpg',
+  'red-rangers':        '/images/rangers/shaedra-nyxthorn.jpg',
 };
 
 // ─── HELPERS ─────────────────────────────────────────────────

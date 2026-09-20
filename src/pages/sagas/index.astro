@@ -1,6 +1,6 @@
 ---
 import SectionLayout from '../../layouts/SectionLayout.astro';
-import { SAGA_RACES, SAGAS } from '../../data/content.js';
+import { SAGA_RACES, SAGAS, RACE_ART } from '../../data/content.js';
 import AgeGate from '../../components/AgeGate.astro';
 ---
 <SectionLayout
@@ -18,9 +18,16 @@ import AgeGate from '../../components/AgeGate.astro';
       {SAGA_RACES.map((race) => {
         const count = SAGAS.filter((s) => s.race === race.slug).length;
         return (
-          <a href={`/sagas/${race.slug}`} class="tile reveal">
-            <span class="tile-eyebrow">Saga</span>
-            <span class="tile-title">{race.name}</span>
+          <a href={`/sagas/${race.slug}`} class:list={['tile', 'hall', 'reveal', { 'no-art': !RACE_ART[race.slug] }]}>
+            {RACE_ART[race.slug] && (
+              <span class="hall-plate">
+                <img src={RACE_ART[race.slug]} alt="" loading="lazy" decoding="async" width="640" height="480" />
+              </span>
+            )}
+            <span class="hall-caption">
+              <span class="tile-eyebrow">Saga</span>
+              <span class="tile-title">{race.name}</span>
+            </span>
             <p class="tile-blurb">{race.blurb}</p>
             <span class="tile-meta">
               {count === 0 ? 'In progress' : count === 1 ? '1 saga' : `${count} sagas`}

@@ -3,10 +3,10 @@ import { SECTIONS } from '../data/content.js';
 
 const {
   current = null,          // section slug to mark as active
-  accent = '#c4952a',      // themed highlight colour
-  dim = '#7a6a54',         // resting link colour
-  bright = '#ede0c4',      // hover / active colour
-  bg = 'rgba(8,6,4,0.92)', // panel + bar backdrop
+  accent = '#c5ced5',      // cold silver: the one interface metal
+  dim = '#74818b',         // muted steel, at rest
+  bright = '#e1e7ea',      // silver, lit
+  bg = 'rgba(5,8,11,0.92)',// panel + bar backdrop
   back = null,             // { href, label } — where "up" is from this page
 } = Astro.props;
 ---
@@ -167,6 +167,8 @@ const {
     display: none;
     align-items: center;
     gap: 0.55rem;
+    /* above the full-screen panel, so it still closes it */
+    position: relative; z-index: 2;
     background: rgba(0,0,0,0.35);
     border: 1px solid color-mix(in srgb, var(--nav-accent) 28%, transparent);
     cursor: pointer;
@@ -190,19 +192,22 @@ const {
   .nav-toggle[aria-expanded='true'] .nav-toggle-bars i:last-child  { transform: translateY(-2px) rotate(-45deg); }
 
   /* ─── MOBILE PANEL ─── */
+  /* Opened, the menu takes the whole screen: near-black, large serif names,
+     small silver classification above each. No frame, no ornament. */
   .nav-panel {
-    position: absolute;
-    top: calc(100% - 0.3rem);
-    right: clamp(1rem, 3vw, 2.2rem);
-    min-width: 15.5rem;
+    position: fixed;
+    inset: 0;
     display: none;
     flex-direction: column;
-    padding: 0.5rem;
-    background: var(--nav-bg);
-    border: 1px solid color-mix(in srgb, var(--nav-accent) 24%, transparent);
-    backdrop-filter: blur(14px);
+    justify-content: center;
+    gap: 0.2rem;
+    padding: max(5.5rem, 12vh) clamp(1.4rem, 7vw, 6rem) 4rem;
+    background:
+      radial-gradient(120% 80% at 50% -10%, rgba(143,162,178,0.10), transparent 60%),
+      #05080b;
+    border: none;
     opacity: 0;
-    transform: translateY(-8px);
+    transform: none;
     /* visibility (not just pointer-events) takes the closed panel out of
        hit-testing entirely, so it cannot intercept taps while invisible.
        It is switched with a 0s transition delayed until the fade finishes,
@@ -210,43 +215,44 @@ const {
        transition completing. */
     visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.25s ease, transform 0.25s ease, visibility 0s linear 0.25s;
+    transition: opacity 0.6s ease, visibility 0s linear 0.6s;
   }
   .nav-panel.open {
     opacity: 1;
-    transform: translateY(0);
     visibility: visible;
     pointer-events: auto;
-    transition: opacity 0.25s ease, transform 0.25s ease, visibility 0s linear 0s;
+    transition: opacity 0.6s ease, visibility 0s linear 0s;
   }
   .panel-link {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
-    padding: 0.7rem 0.85rem;
+    gap: 0.35rem;
+    padding: 0.85rem 0;
     text-decoration: none;
     color: inherit;
-    border-left: 2px solid transparent;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
+    border-top: 1px solid rgba(197,206,213,0.10);
+    transition: color 0.45s ease, border-color 0.45s ease;
   }
+  .panel-link:last-child { border-bottom: 1px solid rgba(197,206,213,0.10); }
   .panel-link:hover, .panel-link:focus-visible {
-    background: color-mix(in srgb, var(--nav-accent) 9%, transparent);
-    border-left-color: var(--nav-accent);
+    border-color: rgba(197,206,213,0.32);
     outline: none;
   }
-  .panel-link.is-current { border-left-color: var(--nav-accent); }
+  .panel-link.is-current .panel-name { color: var(--nav-bright); }
+  .panel-link.is-current .panel-kind { color: var(--nav-bright); }
   .panel-kind {
     font-family: 'Cormorant SC', Georgia, serif;
-    font-size: 0.58rem;
-    letter-spacing: 0.2em;
+    font-size: 0.56rem;
+    letter-spacing: 0.34em;
     text-transform: uppercase;
-    color: var(--nav-accent);
-    opacity: 0.8;
+    color: var(--nav-dim);
   }
   .panel-name {
-    font-family: 'EB Garamond', Georgia, serif;
-    font-size: 0.95rem;
-    color: var(--nav-bright);
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: clamp(1.5rem, 7vw, 2.4rem);
+    letter-spacing: 0.04em;
+    color: var(--nav-dim);
+    transition: color 0.45s ease;
   }
 
   @media (max-width: 900px) {

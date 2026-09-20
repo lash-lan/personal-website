@@ -62,16 +62,28 @@ const themeVars = [
       overflow-x: hidden;
       min-height: 100vh;
     }
+    /* Environmental depth rather than a flat black field: a cold haze from
+       somewhere off-screen, and a fine grain so the darkness has a surface.
+       Both sit behind everything and never touch legibility. */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(120% 80% at 50% -20%, rgba(143,162,178,0.10), transparent 60%),
+        radial-gradient(90% 60% at 10% 110%, rgba(90,110,128,0.06), transparent 60%);
+      pointer-events: none; z-index: 0;
+    }
     body::after {
       content: '';
       position: fixed; inset: 0;
-      background: radial-gradient(ellipse at center, transparent 42%, color-mix(in srgb, var(--bg) 88%, black) 100%);
-      pointer-events: none; z-index: 0;
+      opacity: 0.05; pointer-events: none; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23g)'/%3E%3C/svg%3E");
     }
+    /* Cold dust in the air of the room, not fairy sparkle. */
     #dust {
       position: fixed; inset: 0;
       width: 100%; height: 100%;
-      pointer-events: none; z-index: 0; opacity: 0.5;
+      pointer-events: none; z-index: 0; opacity: 0.22;
     }
     main { position: relative; z-index: 1; }
 
@@ -83,30 +95,25 @@ const themeVars = [
       padding: var(--heroPad) 1.5rem 3rem;
       position: relative;
     }
-    .hero::before {
-      content: '';
-      position: absolute; inset: 0;
-      background: radial-gradient(ellipse 85% 60% at 50% 45%, color-mix(in srgb, var(--accent) 9%, transparent) 0%, transparent 70%);
-      pointer-events: none;
-    }
     .hero-eyebrow {
       font-family: 'Cormorant SC', Georgia, serif;
-      font-size: 0.7rem; letter-spacing: 0.4em; text-transform: uppercase;
-      color: var(--accent); margin-bottom: 1.4rem;
-      opacity: 0; animation: fadeUp 0.9s ease forwards 0.25s;
+      font-size: 0.66rem; letter-spacing: 0.46em; text-transform: uppercase;
+      color: var(--textDim); margin-bottom: 1.6rem;
+      opacity: 0; animation: fadeUp 1.1s ease forwards 0.2s;
     }
+    /* Engraved, not gilded: one weight of cold silver, size and space doing
+       the work that ornament used to do. */
     .hero-title {
-      font-family: 'Cinzel Decorative', Georgia, serif;
-      font-weight: 700; letter-spacing: 0.04em; line-height: 1.08;
-      font-size: clamp(2.2rem, 7vw, 4.6rem);
-      background: linear-gradient(180deg, var(--textBright) 0%, var(--accent) 60%, color-mix(in srgb, var(--accentDim) 70%, transparent) 100%);
-      -webkit-background-clip: text; background-clip: text; color: transparent;
-      opacity: 0; animation: fadeUp 1.2s ease forwards 0.5s;
+      font-family: 'Cinzel', Georgia, serif;
+      font-weight: 600; letter-spacing: 0.08em; line-height: 1.06;
+      font-size: clamp(2.1rem, 6.4vw, 4.2rem);
+      color: var(--textBright);
+      opacity: 0; animation: fadeUp 1.4s ease forwards 0.4s;
     }
     .hero-rule {
-      width: 130px; height: 1px; margin: 1.8rem auto;
-      background: linear-gradient(90deg, transparent, var(--accent), transparent);
-      opacity: 0; animation: fadeIn 0.9s ease forwards 1s;
+      width: 64px; height: 1px; margin: 2rem auto 1.6rem;
+      background: var(--textDim); opacity: 0;
+      animation: fadeIn 1.1s ease forwards 0.9s;
     }
     .hero-tagline {
       font-style: italic; font-size: clamp(0.98rem, 2vw, 1.22rem);
@@ -128,22 +135,29 @@ const themeVars = [
     .grid-3 { grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); }
     .grid-4 { grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); }
 
+    /* Archival plates: a dark raised surface, one hairline, a cold edge of
+       light along the top. No glow, no gilding, almost no corner. */
     .tile {
       display: flex; flex-direction: column; gap: 0.6rem;
       background: var(--card);
       border: 1px solid var(--line);
-      border-radius: 3px;
-      padding: 1.5rem 1.4rem;
+      border-radius: 2px;
+      padding: 1.6rem 1.5rem;
       text-decoration: none;
       color: inherit;
       position: relative;
       overflow: hidden;
-      transition: border-color 0.4s ease, transform 0.4s ease, background-color 0.4s ease;
+      transition: border-color 0.5s ease, transform 0.5s ease, background-color 0.5s ease;
+    }
+    .tile::before {
+      content: '';
+      position: absolute; left: 0; right: 0; top: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(225,231,234,0.22), transparent);
     }
     a.tile:hover, a.tile:focus-visible {
-      border-color: color-mix(in srgb, var(--accent) 55%, transparent);
-      background: color-mix(in srgb, var(--accent) 5%, var(--card));
-      transform: translateY(-3px);
+      border-color: rgba(197,206,213,0.34);
+      background: #151c23;
+      transform: translateY(-1px);
       outline: none;
     }
     .tile-eyebrow {
@@ -167,30 +181,104 @@ const themeVars = [
     .tile.is-soon { opacity: 0.58; }
     .tile.is-soon .tile-title { color: var(--textDim); }
 
+    /* ─── IMAGE PLATES ───
+       A way into the world, carried by the artwork: no frame, no ornament.
+       The picture sinks into the plate's own darkness and the classification
+       and title sit in it. On hover the camera drifts closer, slowly. */
+    .hall { padding: 0; overflow: hidden; }
+    .hall-plate {
+      position: relative; display: block;
+      aspect-ratio: 4 / 3; overflow: hidden;
+      background: #05080b;
+    }
+    .hall-plate img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+      filter: grayscale(0.22) contrast(1.04) brightness(0.82);
+      transform: scale(1.01);
+      transition: transform 1.6s cubic-bezier(0.16, 0.8, 0.24, 1), filter 1.2s ease;
+    }
+    /* a cold grade, so pictures painted in warm gold still belong to the
+       same night as everything around them */
+    .hall-plate::before {
+      content: '';
+      position: absolute; inset: 0; z-index: 1;
+      background: linear-gradient(180deg, rgba(12,22,34,0.42), rgba(8,14,22,0.30));
+      mix-blend-mode: color;
+    }
+    .hall-plate::after {
+      content: '';
+      position: absolute; inset: 0; z-index: 2;
+      background: linear-gradient(180deg, rgba(5,8,11,0.3) 0%, rgba(5,8,11,0.08) 32%, rgba(17,23,29,0.78) 76%, var(--card) 100%);
+    }
+    .hall-caption {
+      position: relative; display: flex; flex-direction: column; gap: 0.45rem;
+      margin-top: -3.4rem; padding: 0 1.5rem 0.1rem; z-index: 3;
+    }
+    .hall .tile-blurb { padding: 0.9rem 1.5rem 0; }
+    .hall .tile-meta { padding: 0 1.5rem 1.4rem; }
+    .hall .tile-blurb:last-child { padding-bottom: 1.5rem; }
+    a.hall:hover .hall-plate img,
+    a.hall:focus-visible .hall-plate img {
+      transform: scale(1.06);
+      filter: grayscale(0.06) contrast(1.06) brightness(0.92);
+    }
+    /* what has not been written yet is colder and further away */
+    .hall.is-soon .hall-plate img { filter: grayscale(0.7) brightness(0.5); }
+    .hall.no-art { padding-top: 1.6rem; }
+    .hall.no-art .hall-caption { margin-top: 0; }
+    @media (prefers-reduced-motion: reduce) {
+      .hall-plate img, a.hall:hover .hall-plate img { transition: none; transform: none; }
+    }
+
     /* ─── SECTION HEADS ─── */
     .band { padding-top: 3.5rem; }
     .band-head { text-align: center; margin-bottom: 2.5rem; }
+    /* Archival classification: small, wide-tracked, uncoloured. */
     .band-label {
       display: block;
       font-family: 'Cormorant SC', Georgia, serif;
-      font-size: 0.68rem; letter-spacing: 0.36em; text-transform: uppercase;
-      color: var(--accent); opacity: 0.85; margin-bottom: 0.8rem;
+      font-size: 0.64rem; letter-spacing: 0.42em; text-transform: uppercase;
+      color: var(--textDim); margin-bottom: 1rem;
     }
     .band-title {
       font-family: 'Cinzel', Georgia, serif; font-weight: 600;
-      font-size: clamp(1.4rem, 3.4vw, 2.1rem); color: var(--textBright);
+      font-size: clamp(1.5rem, 3.6vw, 2.3rem); color: var(--textBright);
+      letter-spacing: 0.06em;
     }
     .band-note { margin-top: 0.8rem; font-style: italic; color: var(--textDim); }
 
+    /* An engraved groove rather than a jewel: one hairline, a shadow under it,
+       and the old ✦ glyph suppressed wherever it was authored into a page. */
     .ornament {
-      display: flex; align-items: center; justify-content: center;
-      gap: 1.1rem; color: var(--accent); font-size: 0.7rem; margin: 3rem 0;
+      position: relative;
+      display: block; margin: 4.5rem auto; width: min(100%, 46rem);
+      height: 1px; font-size: 0; color: transparent;
+      border-top: 1px solid rgba(197,206,213,0.12);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.6);
     }
-    .ornament::before, .ornament::after {
-      content: ''; width: 58px; height: 1px;
-      background: linear-gradient(90deg, transparent, var(--accent));
+    .ornament::before { content: none; }
+    /* Frost gathering along the groove as it comes into view, then holding.
+       It grows out from the middle, the way ice takes an edge, and is made of
+       two overlapping gradients rather than drawn crystals. */
+    .ornament::after {
+      content: '';
+      position: absolute; left: 50%; top: -1px;
+      width: 0; height: 2px;
+      transform: translateX(-50%);
+      background:
+        linear-gradient(90deg, transparent, rgba(225,231,234,0.5) 20%, rgba(200,224,242,0.7) 50%, rgba(225,231,234,0.5) 80%, transparent),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 1px, transparent 1px 9px);
+      filter: blur(0.7px);
+      opacity: 0;
+      transition: width 2.4s cubic-bezier(0.16, 0.8, 0.24, 1), opacity 1.6s ease;
     }
-    .ornament::after { background: linear-gradient(90deg, var(--accent), transparent); }
+    .ornament.visible::after { width: 62%; opacity: 0.5; }
+    /* the same accumulation along the top edge of a plate, once it is read */
+    .tile.visible::before { animation: frostEdge 2.2s cubic-bezier(0.16, 0.8, 0.24, 1) forwards; }
+    @keyframes frostEdge {
+      from { transform: scaleX(0.2); opacity: 0; }
+      to   { transform: scaleX(1); opacity: 1; }
+    }
 
     /* ─── EMPTY STATE ─── */
     .empty {
@@ -214,14 +302,26 @@ const themeVars = [
     }
     .backlink:hover, .backlink:focus-visible { color: var(--accent); outline: none; }
 
-    .reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.85s ease, transform 0.85s ease; }
+    /* Heavy and deliberate: things rise out of the dark rather than bounce. */
+    .reveal {
+      opacity: 0; transform: translateY(26px);
+      transition: opacity 1.2s cubic-bezier(0.16, 0.8, 0.24, 1), transform 1.2s cubic-bezier(0.16, 0.8, 0.24, 1);
+    }
     .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* One visible focus state everywhere, in the silver material. */
+    :where(a, button, [tabindex]):focus-visible {
+      outline: 1px solid var(--textBright);
+      outline-offset: 3px;
+    }
 
     @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
     @media (prefers-reduced-motion: reduce) {
       .reveal { opacity: 1; transform: none; transition: none; }
+      .ornament::after { transition: none; width: 62%; opacity: 0.5; }
+      .tile.visible::before { animation: none; }
       .hero-eyebrow, .hero-title, .hero-rule, .hero-tagline, .hero-note { animation: none; opacity: 1; }
     }
   </style>
@@ -263,33 +363,42 @@ const themeVars = [
         H = canvas.height = window.innerHeight;
       });
 
+      // Dust hanging in cold light: motes drift almost imperceptibly and are
+      // brighter on the side the light comes from, like air in an unheated
+      // hall. Not weather, and never sparkle.
       function mkMote() {
-        const maxLife = 260 + Math.random() * 300;
+        const maxLife = 900 + Math.random() * 900;
         return {
           x: Math.random() * W,
           y: Math.random() * H,
-          size: 0.4 + Math.random() * 1.7,
-          vx: (Math.random() - 0.5) * 0.16,
-          vy: -(0.03 + Math.random() * 0.13),
+          size: 0.45 + Math.random() * 1.5,
+          drift: (Math.random() - 0.5) * 0.05,
+          fall: 0.006 + Math.random() * 0.022,
+          sway: 0.15 + Math.random() * 0.5,
+          phase: Math.random() * 6.28,
           life: Math.random() * maxLife,
           maxLife,
         };
       }
 
-      const motes = Array.from({ length: 55 }, mkMote);
+      const motes = Array.from({ length: 24 }, mkMote);
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
       (function loop() {
         ctx.clearRect(0, 0, W, H);
         for (const m of motes) {
-          m.x += m.vx + Math.sin(m.life * 0.02) * 0.11;
-          m.y += m.vy;
           m.life++;
-          if (m.y < -10 || m.life > m.maxLife) Object.assign(m, mkMote(), { y: H + 10, life: 0 });
-          const alpha = Math.sin((m.life / m.maxLife) * Math.PI) * 0.5;
+          m.x += m.drift + Math.sin(m.life * 0.004 + m.phase) * 0.06 * m.sway;
+          m.y += m.fall;
+          if (m.y > H + 12 || m.life > m.maxLife) Object.assign(m, mkMote(), { y: -12, life: 0 });
+          if (m.x < -12) m.x = W + 12;
+          if (m.x > W + 12) m.x = -12;
+          // fade in and out over a long life, and catch more light near the top left
+          const lit = 0.45 + 0.55 * (1 - m.x / W) * (1 - m.y / H);
+          const alpha = Math.sin((m.life / m.maxLife) * Math.PI) * 0.26 * lit;
           ctx.beginPath();
           ctx.arc(m.x, m.y, m.size, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(' + particle + ',' + alpha + ')';
+          ctx.fillStyle = 'rgba(' + particle + ',' + alpha.toFixed(3) + ')';
           ctx.fill();
         }
         requestAnimationFrame(loop);
