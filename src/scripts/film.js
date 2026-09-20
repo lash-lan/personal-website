@@ -79,13 +79,47 @@ export function startFilm(section) {
   video.src = BASE + (scrub ? 'intro-scrub.mp4' : 'intro-play.mp4');
 
   let duration = 0;
-  const gotMetadata = () => { duration = video.duration || 0; };
+  let seekable = false;
+  const gotMetadata = () => {
+    duration = video.duration || 0;
+    // A browser will only seek in a video whose server offers it in pieces.
+    // Cloudflare hands over whole files, so seeking is refused there even once
+    // the whole video has arrived. Where that happens, the film is fetched into
+    // memory instead and played from there, which is always seekable.
+    seekable = video.seekable.length > 0 && video.seekable.end(0) > 0;
+    if (scrub && !seekable) intoMemory();
+  };
   video.addEventListener('loadedmetadata', gotMetadata);
   // The source is set above, so on a fast connection or a warm cache the
   // metadata can be ready before this line runs and the event never arrives.
   // Without this check the playhead would sit on frame 0 for ever.
   if (video.readyState >= 1) gotMetadata();
   if (!scrub) video.play().catch(() => {});
+
+  let fetching = false;
+  async function intoMemory() {
+    if (fetching) return;
+    fetching = true;
+    try {
+      const res = await fetch(`${BASE}intro-scrub.mp4`, { cache: 'force-cache' });
+      if (!res.ok) throw new Error(String(res.status));
+      const url = URL.createObjectURL(await res.blob());
+      await new Promise((resolve, reject) => {
+        const ok = () => { video.removeEventListener('loadedmetadata', ok); resolve(); };
+        video.addEventListener('loadedmetadata', ok);
+        video.addEventListener('error', reject, { once: true });
+        video.src = url;
+        video.load();
+      });
+      duration = video.duration || duration;
+      seekable = video.seekable.length > 0 && video.seekable.end(0) > 0;
+      at = -1;   // force the next frame to seek
+    } catch {
+      // Nothing to scrub with: play it through once rather than freeze.
+      seekable = false;
+      video.play().catch(() => {});
+    }
+  }
 
   // ─── the clash, heard ───
   // Browsers refuse to play sound until the visitor has interacted, and
@@ -341,7 +375,8 @@ export function startFilm(section) {
     if (shown !== last) { render(shown); last = shown; }
     // Ease the playhead toward where the scroll wants it. Seeking straight to
     // every scroll value looks jittery, and the decoder cannot keep up.
-    if (scrub && duration) {
+    if (scrub && duration && seekable) {
+      if (at < 0) at = want;
       at += (want - at) * 0.22;
       if (Math.abs(want - at) < 0.004) at = want;
       if (video.readyState >= 1) video.currentTime = at;
@@ -367,7 +402,7 @@ export function startFilm(section) {
     window.scrollTo({ top: top + v * (section.offsetHeight - H), behavior: 'instant' });
     shown = target = progress();
     render(shown);
-    if (scrub && duration) { at = want; if (video.readyState >= 1) video.currentTime = at; }
+    if (scrub && duration && seekable) { at = want; if (video.readyState >= 1) video.currentTime = at; }
     return shown;
   };
 }
