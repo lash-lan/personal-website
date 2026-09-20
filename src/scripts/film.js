@@ -13,7 +13,10 @@
 const BASE = '/cine/';
 const CUT = 0.62;         // progress where the fight gives way to the reveal
 const INTRO_USE = 4.6;    // seconds of the fight used: the approach, the lock, a beat
-const CLASH_AT = 3.46;    // seconds into the fight where the blades meet
+// The blades meet at 3.46s, but the impact is at the very start of the sound
+// file, so firing on the frame itself lands late to the ear. Half a second
+// early puts the bang under the blades as they come together.
+const CLASH_AT = 2.96;
 const CRACKS_AT = 3.4;    // seconds into the reveal where the fractures are full
 
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
