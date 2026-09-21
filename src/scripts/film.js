@@ -247,7 +247,9 @@ export function startFilm(section) {
   let portrait = false;
   function resize() {
     portrait = stage.clientHeight > stage.clientWidth * 1.05;
-    if (portrait && backdrop.img.dataset.src !== 'field') {
+    // Only the letterboxed landscape cut needs something behind it. The
+    // portrait cut fills the screen, so the field is never fetched there.
+    if (portrait && !tall && backdrop.img.dataset.src !== 'field') {
       backdrop.img.dataset.src = 'field';
       backdrop.img.src = `${BASE}field-p-800.webp`;
     }
@@ -309,7 +311,7 @@ export function startFilm(section) {
     // the title bleeds and freezes once, as it arrives, then breathes on a loop
     if (tt > 0.05) startWordmark();
 
-    const bgO = portrait ? 1 : 0;
+    const bgO = portrait && !tall ? 1 : 0;
     backdrop.root.style.opacity = bgO.toFixed(3);
     backdrop.root.style.visibility = bgO ? 'visible' : 'hidden';
     shade.style.opacity = smooth(seg(p, 0.9, 1)).toFixed(3);
