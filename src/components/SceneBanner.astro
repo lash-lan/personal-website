@@ -1,0 +1,124 @@
+---
+// A full-bleed scene at the head of a page: the artwork carries it and the
+// interface stays out of the way. A still is always shown; where a clip is
+// given it loads over the still and runs quietly on a loop, and never for
+// readers who have asked for less motion or turned data saving on.
+//
+// Phones get their own portrait framing rather than a crop, because anything
+// with figures at the edges of a wide frame loses them in a tall screen.
+const {
+  still,            // wide still, required
+  stillPortrait,    // tall still, optional
+  clip = null,      // wide clip, optional
+  clipPortrait = null,
+  alt = '',
+  eyebrow = '',
+  heading = '',
+  tagline = '',
+} = Astro.props;
+---
+<section class="scene-banner" data-clip={clip} data-clip-portrait={clipPortrait}>
+  <picture>
+    {stillPortrait && <source media="(max-width: 819px)" srcset={stillPortrait} />}
+    <img class="scene-still" src={still} alt={alt} fetchpriority="high" decoding="async" />
+  </picture>
+  {(eyebrow || heading || tagline) && (
+    <div class="scene-words">
+      {eyebrow && <span class="scene-eyebrow">{eyebrow}</span>}
+      {heading && <h1 class="scene-heading">{heading}</h1>}
+      {tagline && <p class="scene-tagline">{tagline}</p>}
+    </div>
+  )}
+</section>
+
+<script>
+  // The clip is only fetched once it is wanted: never with reduced motion or
+  // data saving, and only in the shape this screen actually needs.
+  const banner = document.querySelector('.scene-banner');
+  const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const saveData = navigator.connection?.saveData;
+  if (banner && !calm && !saveData) {
+    const tall = window.matchMedia('(max-width: 819px)').matches
+      || window.innerHeight > window.innerWidth * 1.05;
+    const src = (tall && banner.dataset.clipPortrait) || banner.dataset.clip;
+    if (src) {
+      const video = document.createElement('video');
+      video.className = 'scene-clip';
+      video.muted = true;
+      video.loop = true;
+      video.playsInline = true;
+      video.preload = 'auto';
+      video.setAttribute('aria-hidden', 'true');
+      video.src = src;
+      banner.prepend(video);
+      // shown only once it is genuinely running, so no stalled first frame
+      const start = () => video.play().then(() => banner.classList.add('is-playing')).catch(() => {});
+      if (video.readyState >= 3) start();
+      else video.addEventListener('canplay', start, { once: true });
+      // it stops while off screen rather than decoding behind the reader
+      if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver(([en]) => {
+          if (en.isIntersecting) video.play().catch(() => {});
+          else video.pause();
+        }, { threshold: 0.05 });
+        io.observe(banner);
+      }
+    }
+  }
+</script>
+
+<style is:global>
+  .scene-banner {
+    position: relative;
+    width: 100%;
+    height: min(78vh, 46rem);
+    min-height: 22rem;
+    overflow: hidden;
+    background: #05080b;
+  }
+  .scene-banner .scene-still,
+  .scene-banner .scene-clip {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover; object-position: 50% 32%;
+    display: block;
+  }
+  .scene-banner .scene-clip { opacity: 0; transition: opacity 0.9s ease; }
+  .scene-banner.is-playing .scene-clip { opacity: 1; }
+  /* the scene sinks into the page rather than ending at an edge */
+  .scene-banner::after {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(180deg, rgba(5,8,11,0.55) 0%, rgba(5,8,11,0.12) 26%, rgba(5,8,11,0.72) 78%, var(--bg) 100%);
+    pointer-events: none;
+  }
+  .scene-words {
+    position: absolute; left: 0; right: 0; bottom: 8%;
+    z-index: 2; text-align: center;
+    padding: 0 clamp(1.2rem, 5vw, 3rem);
+  }
+  .scene-eyebrow {
+    display: block;
+    font-family: 'Cormorant SC', Georgia, serif;
+    font-size: 0.64rem; letter-spacing: 0.46em; text-transform: uppercase;
+    color: var(--text); margin-bottom: 1rem;
+    text-shadow: 0 2px 16px rgba(5, 8, 11, 0.95);
+  }
+  .scene-heading {
+    font-family: 'Cinzel', Georgia, serif; font-weight: 600;
+    font-size: clamp(1.9rem, 6vw, 3.6rem); letter-spacing: 0.07em;
+    color: var(--textBright);
+    text-shadow: 0 2px 30px rgba(5, 8, 11, 0.95);
+  }
+  .scene-tagline {
+    margin: 1.1rem auto 0; max-width: 34rem;
+    font-style: italic; color: var(--text);
+    font-size: clamp(0.95rem, 2vw, 1.12rem);
+    text-shadow: 0 2px 20px rgba(5, 8, 11, 0.9);
+  }
+  @media (max-width: 819px) {
+    .scene-banner { height: min(72vh, 34rem); }
+    .scene-banner .scene-still, .scene-banner .scene-clip { object-position: 50% 28%; }
+  }
+</style>

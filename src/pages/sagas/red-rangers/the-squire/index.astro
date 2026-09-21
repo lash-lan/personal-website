@@ -1,6 +1,7 @@
 ---
 import SectionLayout from '../../../../layouts/SectionLayout.astro';
 import AgeGate from '../../../../components/AgeGate.astro';
+import SceneBanner from '../../../../components/SceneBanner.astro';
 import story from '../../../../data/the-squire.json';
 
 const total = story.chapters.reduce((n, c) => n + c.words, 0);
@@ -12,11 +13,20 @@ const minutes = Math.max(1, Math.round(total / 230));
   theme="sagas"
   current="sagas"
   compact={true}
+  hero={false}
   back={{ href: "/sagas/red-rangers", label: "The Red Rangers" }}
-  eyebrow="Red Rangers I"
-  heading="The Squire"
-  tagline="Fifteen chapters. A human boy handed to the captain the elves fear most."
 >
+  <SceneBanner
+    slot="opening"
+    still="/images/sagas/the-squire/gate-banner.webp"
+    stillPortrait="/images/sagas/the-squire/gate-banner-p.webp"
+    clip="/images/sagas/the-squire/gate-clip.mp4"
+    clipPortrait="/images/sagas/the-squire/gate-clip-p.mp4"
+    alt="Hannarial Icetear and five Red Rangers standing at the Verdant Gate under torchlight and falling snow."
+    eyebrow="Red Rangers I"
+    heading="The Squire"
+    tagline="Fifteen chapters. A human boy handed to the captain the elves fear most."
+  />
   <AgeGate returnTo="/sagas/red-rangers" />
   <div class="wrap">
     <p class="saga-meta">

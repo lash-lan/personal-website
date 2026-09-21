@@ -13,6 +13,9 @@ const {
   note = '',
   compact = false,
   back = null,
+  // A page that opens on a full-bleed scene carries its own title inside it,
+  // so the ordinary hero is switched off rather than repeated beneath.
+  hero = true,
 } = Astro.props;
 
 const t = THEMES[theme] ?? THEMES.library;
@@ -339,13 +342,15 @@ const themeVars = [
 
   <main>
     <slot name="opening" />
-    <section class="hero">
-      {eyebrow && <span class="hero-eyebrow">{eyebrow}</span>}
-      <h1 class="hero-title">{heading || title}</h1>
-      <div class="hero-rule"></div>
-      {tagline && <p class="hero-tagline">{tagline}</p>}
-      {note && <p class="hero-note">{note}</p>}
-    </section>
+    {hero && (
+      <section class="hero">
+        {eyebrow && <span class="hero-eyebrow">{eyebrow}</span>}
+        <h1 class="hero-title">{heading || title}</h1>
+        <div class="hero-rule"></div>
+        {tagline && <p class="hero-tagline">{tagline}</p>}
+        {note && <p class="hero-note">{note}</p>}
+      </section>
+    )}
 
     <slot />
   </main>
