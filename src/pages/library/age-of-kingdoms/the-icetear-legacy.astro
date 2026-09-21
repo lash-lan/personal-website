@@ -1083,7 +1083,7 @@ p.struck{
 (function(){
   "use strict";
 
-  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var reduced = false;   // the telling keeps its motion for everyone
 
   /* ---------------- MOOD DEFINITIONS ----------------
      Each mood is one object. Adding a seventh mood means

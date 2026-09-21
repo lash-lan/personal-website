@@ -410,9 +410,7 @@ import ReadAloud from '../../../components/ReadAloud.astro';
       0%, 100% { filter: saturate(0.7) brightness(0.56) contrast(1.05); }
       50%       { filter: saturate(0.75) brightness(0.66) contrast(1.05); }
     }
-    @media (prefers-reduced-motion: reduce) {
-      .story-image img { animation: none; }
-    }
+    /* the image keeps its slow drift for everyone */
 
     .story-back {
       display: block;

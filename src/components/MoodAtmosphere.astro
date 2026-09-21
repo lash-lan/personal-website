@@ -86,16 +86,13 @@ const { initial = 'frost' } = Astro.props;
   .atmos-btn[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
   @media (max-width: 640px) { #controls { right: .7rem; bottom: .7rem; } }
 
-  @media (prefers-reduced-motion: reduce) {
-    #grain { animation: none; }
-    body, #wash, #vignette { transition-duration: 1ms; }
-  }
+  /* the grain and the mood washes keep moving for everyone */
 </style>
 
 <script is:inline define:vars={{ initialMood: initial }}>
 (function(){
   var root = document.documentElement;
-  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var reduced = false;   // the atmosphere runs for everyone (see CLAUDE.md)
 
   /* ---------------- MOOD DEFINITIONS ---------------- */
   var MOODS = {

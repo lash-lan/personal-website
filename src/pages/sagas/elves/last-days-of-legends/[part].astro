@@ -265,10 +265,7 @@ const tracks = sagaTracks(part.slug, part.chapters);
       .chapter { padding-left: 1.3rem; padding-right: 1.3rem; }
       .part-head { padding-top: 7.5rem; }
     }
-    @media (prefers-reduced-motion: reduce) {
-      html { scroll-behavior: auto; }
-      #chapters { transition: none; }
-    }
+    /* chapters open with their transition for everyone */
   </style>
 </head>
 <body>

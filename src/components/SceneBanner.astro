@@ -34,10 +34,12 @@ const {
 <script>
   // The clip is only fetched once it is wanted: never with reduced motion or
   // data saving, and only in the shape this screen actually needs.
+  // The scene runs for everyone: it is the page's opening, not an ornament on
+  // it. Data saving is still obeyed, so nobody pays for a video they did not
+  // ask for.
   const banner = document.querySelector('.scene-banner');
-  const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const saveData = navigator.connection?.saveData;
-  if (banner && !calm && !saveData) {
+  if (banner && !saveData) {
     const tall = window.matchMedia('(max-width: 819px)').matches
       || window.innerHeight > window.innerWidth * 1.05;
     const src = (tall && banner.dataset.clipPortrait) || banner.dataset.clip;

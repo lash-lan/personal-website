@@ -229,9 +229,6 @@ const themeVars = [
     .hall.is-soon .hall-plate img { filter: grayscale(0.7) brightness(0.5); }
     .hall.no-art { padding-top: 1.6rem; }
     .hall.no-art .hall-caption { margin-top: 0; }
-    @media (prefers-reduced-motion: reduce) {
-      .hall-plate img, a.hall:hover .hall-plate img { transition: none; transform: none; }
-    }
 
     /* ─── SECTION HEADS ─── */
     .band { padding-top: 3.5rem; }
@@ -321,12 +318,9 @@ const themeVars = [
     @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-    @media (prefers-reduced-motion: reduce) {
-      .reveal { opacity: 1; transform: none; transition: none; }
-      .ornament::after { transition: none; width: 62%; opacity: 0.5; }
-      .tile.visible::before { animation: none; }
-      .hero-eyebrow, .hero-title, .hero-rule, .hero-tagline, .hero-note { animation: none; opacity: 1; }
-    }
+    /* The site keeps its motion whatever the operating system prefers, by
+       Lash's decision: this world is meant to move. Only the heaviest things
+       below are still held back. */
   </style>
 </head>
 <body>
@@ -387,7 +381,6 @@ const themeVars = [
       }
 
       const motes = Array.from({ length: 24 }, mkMote);
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
       (function loop() {
         ctx.clearRect(0, 0, W, H);

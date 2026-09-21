@@ -36,9 +36,12 @@ const el = (tag, cls, parent) => {
 };
 
 export function startFilm(section) {
+  // Lash's decision: the opening plays for everyone, whatever the operating
+  // system's motion preference says, because the film is the page rather than
+  // decoration on it. Data saving is still obeyed, since that is about
+  // somebody's bill rather than their comfort.
   const saveData = navigator.connection?.saveData;
-  const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (calm || saveData) return;
+  if (saveData) return;
 
   const stage = section.querySelector('.film-stage');
   const title = section.querySelector('.film-title');
