@@ -24,8 +24,7 @@
           sizes="(max-width: 819px) 92vw, min(74vw, 1100px)"
           alt="" width="2133" height="717" decoding="async"
         />
-        <video class="wordmark-intro" muted playsinline preload="auto" aria-hidden="true" src="/cine/title-intro.mp4"></video>
-        <video class="wordmark-loop" muted playsinline loop preload="auto" aria-hidden="true" src="/cine/title-loop.mp4"></video>
+        <video class="wordmark-cycle" muted playsinline loop preload="auto" aria-hidden="true" src="/cine/title-cycle.mp4"></video>
       </div>
     </div>
     <button class="film-enter" type="button" hidden>
@@ -87,15 +86,20 @@
      everything that ever lights up across the animation. */
   .film-wordmark video {
     pointer-events: none;
-    -webkit-mask-image: url('/cine/title-mask.png');
-    mask-image: url('/cine/title-mask.png');
+    -webkit-mask-image: url('/cine/title-mask.png?v=2');
+    mask-image: url('/cine/title-mask.png?v=2');
     -webkit-mask-size: 100% 100%;
     mask-size: 100% 100%;
     -webkit-mask-repeat: no-repeat;
     mask-repeat: no-repeat;
   }
-  .wordmark-loop { opacity: 0; transition: opacity 0.3s linear; }
-  .film-wordmark.is-looping .wordmark-loop { opacity: 1; }
+  /* The freezing and thawing cycle, faded in over the still artwork. The two
+     are framed differently, so the still is faded out as the cycle arrives:
+     left underneath it would double every letter. */
+  .wordmark-cycle { opacity: 0; transition: opacity 0.5s linear; }
+  .film-wordmark img { transition: opacity 0.5s linear; }
+  .film-wordmark.is-looping .wordmark-cycle { opacity: 1; }
+  .film-wordmark.is-looping img { opacity: 0; }
   @media (max-width: 819px) { .film-wordmark { width: 92vw; } }
   @media (prefers-reduced-motion: reduce) { .film-wordmark video { display: none; } }
 

@@ -33,9 +33,39 @@ const zones = chapter.zones?.length
   ? chapter.zones
   : [{ mood: chapter.mood || 'dread', start: 0, end: chapter.paras.length - 1 }];
 
+// ─── THE PLATE ───
+// The artwork was named for the chapter after the one it actually shows, so
+// each chapter takes the next one's picture: chapter one gets the gate scene
+// it was always of. The final chapter has none left and closes on the closing
+// plate instead.
+const plate = story.chapters[index + 1]?.plate ?? null;
+
+// The picture belongs where the scene happens, not stacked above the title.
+// Chapters name their moment; the rest fall at their first turn of mood,
+// which is where the telling changes anyway.
+const PLATE_AFTER = {
+  'the-verdant-gate': 35,   // he steps into the mud and every ranger looks up
+};
+function plateAfter() {
+  if (PLATE_AFTER[chapter.slug] != null) return PLATE_AFTER[chapter.slug];
+  const n = chapter.paras.length;
+  const turn = zones.length > 1 ? zones[1].start : Math.round(n * 0.34);
+  return Math.min(Math.max(turn, Math.round(n * 0.18)), Math.round(n * 0.55));
+}
+const at = plate ? plateAfter() : -1;
+
+const figure = plate
+  ? `<figure class="scene" aria-label="${esc(`Plate for ${chapter.title}`)}">` +
+    `<img src="/images/sagas/the-squire/${plate}" alt="" loading="lazy" decoding="async" />` +
+    `</figure>`
+  : '';
+
 const body = zones.map((z) => {
   const inner = chapter.paras.slice(z.start, z.end + 1)
-    .map((p) => `<p>${esc(p.x)}</p>`).join('');
+    .map((p, k) => {
+      const i = z.start + k;
+      return `<p>${esc(p.x)}</p>` + (i === at ? figure : '');
+    }).join('');
   return `<section class="zone" data-mood="${z.mood}">${inner}</section>`;
 }).join('');
 
@@ -72,15 +102,29 @@ const tracks = squireTracks(chapter.slug);
 
     .chapter { max-width: 40rem; margin: 0 auto; padding: 5.5rem 1.6rem 0; }
     .chapter-head { text-align: center; margin-bottom: 2.6rem; }
-    .chapter-plate {
-      width: 100%;
-      aspect-ratio: 3 / 2;
-      border-radius: 16px;
-      border: 1px solid rgba(180, 69, 63, .28);
-      background-size: cover;
-      background-position: center 32%;
-      margin-bottom: 2rem;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, .55);
+    /* ─── THE SCENE ───
+       The plate stands in the story where the scene happens, shown whole
+       rather than cropped into a frame, wider than the column so the telling
+       opens out around it. Its edges are dissolved into the dark instead of
+       being bordered, and it rises into place as the reader reaches it. */
+    .scene {
+      margin: 3.2rem auto;
+      width: min(92vw, 34rem);
+      opacity: 0;
+      transform: translateY(26px) scale(1.02);
+      transition: opacity 1.5s cubic-bezier(.16,.8,.24,1), transform 1.8s cubic-bezier(.16,.8,.24,1);
+    }
+    .scene.is-seen { opacity: 1; transform: none; }
+    .scene img {
+      display: block;
+      width: 100%; height: auto;
+      max-height: 82vh; object-fit: contain;
+      filter: saturate(.82) contrast(1.03) brightness(.94);
+      -webkit-mask-image: radial-gradient(118% 108% at 50% 46%, #000 62%, transparent 100%);
+      mask-image: radial-gradient(118% 108% at 50% 46%, #000 62%, transparent 100%);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .scene { opacity: 1; transform: none; transition: none; }
     }
     .chapter-num {
       font-family: 'Cormorant SC', Georgia, serif;
@@ -112,10 +156,15 @@ const tracks = squireTracks(chapter.slug);
     }
 
     .closing-plate {
-      max-width: 40rem; margin: 3.5rem auto 0;
-      width: calc(100% - 3.2rem); aspect-ratio: 3 / 2;
-      border-radius: 16px; border: 1px solid rgba(180, 69, 63, .28);
-      background-size: cover; background-position: center 32%;
+      margin: 3.5rem auto 0;
+      width: min(92vw, 34rem);
+    }
+    .closing-plate img {
+      display: block; width: 100%; height: auto;
+      max-height: 82vh; object-fit: contain;
+      filter: saturate(.82) contrast(1.03) brightness(.94);
+      -webkit-mask-image: radial-gradient(118% 108% at 50% 46%, #000 62%, transparent 100%);
+      mask-image: radial-gradient(118% 108% at 50% 46%, #000 62%, transparent 100%);
     }
 
     .chapter-nav {
@@ -157,10 +206,6 @@ const tracks = squireTracks(chapter.slug);
 <main>
   <article class="chapter">
     <header class="chapter-head">
-      {chapter.plate && (
-        <div class="chapter-plate" role="img" aria-label={`Plate for ${chapter.title}`}
-             style={`background-image:url(/images/sagas/the-squire/${chapter.plate})`}></div>
-      )}
       <span class="chapter-num">Chapter {chapter.numeral} of {total}</span>
       <h1 class="chapter-title">{chapter.title}</h1>
       <p class="chapter-meta">The Squire &middot; Red Rangers &middot; about {minutes} min</p>
@@ -170,8 +215,9 @@ const tracks = squireTracks(chapter.slug);
   </article>
 
   {!next && story.closingPlate && (
-    <div class="closing-plate" role="img" aria-label="The closing plate of The Squire"
-         style={`background-image:url(/images/sagas/the-squire/${story.closingPlate})`}></div>
+    <figure class="closing-plate scene" aria-label="The closing plate of The Squire">
+      <img src={`/images/sagas/the-squire/${story.closingPlate}`} alt="" loading="lazy" decoding="async" />
+    </figure>
   )}
 
   <nav class="chapter-nav" aria-label="Chapters">
@@ -185,6 +231,23 @@ const tracks = squireTracks(chapter.slug);
                 aria-label={`Next chapter: ${next.title}`}>Next Chapter &rarr;</a>}
   </nav>
 </main>
+
+<script>
+  // The plate rises out of the dark as the reader arrives at its scene, once.
+  const scenes = document.querySelectorAll('.scene');
+  if (!('IntersectionObserver' in window)) {
+    scenes.forEach((s) => s.classList.add('is-seen'));
+  } else {
+    const io = new IntersectionObserver((entries) => {
+      for (const en of entries) {
+        if (!en.isIntersecting) continue;
+        en.target.classList.add('is-seen');
+        io.unobserve(en.target);
+      }
+    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+    scenes.forEach((s) => io.observe(s));
+  }
+</script>
 
 </body>
 </html>

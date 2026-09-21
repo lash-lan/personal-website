@@ -24,20 +24,25 @@ const minutes = Math.max(1, Math.round(total / 230));
     </p>
 
     <div class="chapter-list">
-      {story.chapters.map((c) => (
+      {story.chapters.map((c, i) => {
+        // The artwork was named for the chapter after the one it shows, so
+        // each chapter carries the next one's plate, and the last has none.
+        const plate = story.chapters[i + 1]?.plate ?? null;
+        return (
         <a href={`/sagas/red-rangers/the-squire/${c.slug}`} class="chapter-row reveal">
-          {c.plate && (
+          {plate && (
             <span class="chapter-plate"
-                  style={`background-image:url(/images/sagas/the-squire/${c.plate})`}></span>
+                  style={`background-image:url(/images/sagas/the-squire/${plate})`}></span>
           )}
-          {!c.plate && <span class="chapter-plate empty"></span>}
+          {!plate && <span class="chapter-plate empty"></span>}
           <span class="chapter-text">
             <small>Chapter {c.numeral}</small>
             <b>{c.title}</b>
             <em>{c.words.toLocaleString()} words</em>
           </span>
         </a>
-      ))}
+        );
+      })}
     </div>
   </div>
 </SectionLayout>

@@ -19,7 +19,6 @@ const INTRO_USE = 4.6;    // seconds of the fight used: the approach, the lock, 
 const CLASH_AT = 2.96;
 const CRACKS_AT = 3.4;    // seconds into the reveal where the fractures are full
 const DROP_AT = 0.7;      // seconds into the reveal where the blood strikes
-const WORDMARK_CROSS = 2.7; // seconds into the title's intro where the loop takes over
 
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -216,22 +215,16 @@ export function startFilm(section) {
     titleLayer.append(wordmark);
     title.hidden = true;
   }
-  const wmIntro = wordmark?.querySelector('.wordmark-intro');
-  const wmLoop = wordmark?.querySelector('.wordmark-loop');
-  let wmStarted = false, wmSwitching = false;
-  function toLoop() {
-    if (wmSwitching || !wmLoop) return;
-    wmSwitching = true;
-    wmLoop.play().then(() => wordmark.classList.add('is-looping')).catch(() => { wmSwitching = false; });
-  }
+  const wmCycle = wordmark?.querySelector('.wordmark-cycle');
+  let wmStarted = false;
   function startWordmark() {
-    if (wmStarted || !wmIntro) return;
+    if (wmStarted || !wmCycle) return;
     wmStarted = true;
-    wmIntro.play().catch(() => {});
-  }
-  if (wmIntro) {
-    wmIntro.addEventListener('timeupdate', () => { if (wmIntro.currentTime >= WORDMARK_CROSS) toLoop(); });
-    wmIntro.addEventListener('ended', toLoop);
+    // It is faded in only once it is actually running, so the title never
+    // shows a stalled first frame over the still artwork beneath it.
+    wmCycle.play()
+      .then(() => wordmark.classList.add('is-looping'))
+      .catch(() => { wmStarted = false; });
   }
 
   const dip = el('div', 'film-dip', layers);     // covers the change of scale
