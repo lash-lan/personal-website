@@ -5,14 +5,18 @@
 ---
 <section class="film" aria-label="Hansall and the young Hannah Icetear lock blades on a frozen field under the moon">
   <div class="film-stage">
-    <img
-      class="film-still"
-      src="/cine/open-960.webp"
-      srcset="/cine/open-960.webp 960w, /cine/open-1536.webp 1536w"
-      sizes="100vw"
-      alt="Hansall, masked and crowned in gold, and the young Hannah Icetear in blue and silver armour, face each other across a frozen lake under the moon."
-      fetchpriority="high"
-    />
+    <!-- Phones get the portrait frame here too, or the two of them would be
+         cropped out of the still exactly as they were out of the film. -->
+    <picture>
+      <source media="(max-width: 819px)" srcset="/cine/open-p-800.webp" />
+      <source srcset="/cine/open-960.webp 960w, /cine/open-1536.webp 1536w" sizes="100vw" />
+      <img
+        class="film-still"
+        src="/cine/open-960.webp"
+        alt="Hansall, masked and crowned in gold, and the young Hannah Icetear in blue and silver armour, face each other across a frozen lake under the moon."
+        fetchpriority="high"
+      />
+    </picture>
     <div class="film-title">
       <div class="film-wordmark" role="img" aria-label="Blood of Icetear: a world of frost and ember">
         <!-- The still base is the transparent artwork, so visitors who never
@@ -136,6 +140,11 @@
   @media (max-width: 819px) {
     .film-video { object-fit: contain; background: transparent; width: 150%; left: -25%; }
   }
+  /* With the portrait cut there is nothing to letterbox: the frame is already
+     the shape of the screen, so it fills it and the blurred field behind it
+     is not needed. */
+  .film.is-tall-cut .film-video { object-fit: cover; width: 100%; left: 0; }
+  .film.is-tall-cut .film-backdrop { display: none; }
   .film-backdrop { position: absolute; inset: 0; visibility: hidden; }
   .film-backdrop img {
     width: 100%; height: 100%; object-fit: cover; display: block;

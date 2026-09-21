@@ -13,10 +13,12 @@
 const BASE = '/cine/';
 const CUT = 0.62;         // progress where the fight gives way to the reveal
 const INTRO_USE = 4.6;    // seconds of the fight used: the approach, the lock, a beat
-// The blades meet at 3.46s, but the impact is at the very start of the sound
-// file, so firing on the frame itself lands late to the ear. Half a second
-// early puts the bang under the blades as they come together.
-const CLASH_AT = 2.96;
+// Where the blades meet in each cut, measured from the footage: the spark at
+// the crossing peaks at 3.46s in the landscape edit and 1.85s in the portrait
+// one, which is a shorter, differently framed telling of the same beat. The
+// impact sits at the very start of the sound file, so firing on the frame
+// itself lands late to the ear; each is fired a little early instead.
+const CLASH = { wide: 2.96, tall: 1.50 };
 const CRACKS_AT = 3.4;    // seconds into the reveal where the fractures are full
 const DROP_AT = 0.7;      // seconds into the reveal where the blood strikes
 
@@ -49,6 +51,16 @@ export function startFilm(section) {
   // On a tall screen the shots are shown whole rather than cropped, over a
   // blurred view of the frozen field instead of empty black.
   const scrub = window.matchMedia('(min-width: 820px)').matches;
+  // A 16:9 frame in a portrait screen loses most of its width, and these two
+  // stand at its left and right edges: cropped, the opening would begin on
+  // empty ruins. Tall screens get a separately composed portrait cut instead.
+  // The choice is made before any source is set, so only one is ever fetched.
+  const tall = window.matchMedia('(max-width: 819px)').matches
+    || window.innerHeight > window.innerWidth * 1.05;
+  const INTRO_SCRUB = tall ? 'intro-scrub-p.mp4' : 'intro-scrub.mp4';
+  const INTRO_PLAY = tall ? 'intro-play-p.mp4' : 'intro-play.mp4';
+  const CLASH_AT = tall ? CLASH.tall : CLASH.wide;
+  if (tall) section.classList.add('is-tall-cut');
   const backdrop = { root: el('div', 'film-backdrop', layers) };
   backdrop.img = el('img', '', backdrop.root);
 
@@ -56,8 +68,8 @@ export function startFilm(section) {
   video.muted = true;
   video.playsInline = true;
   video.preload = 'auto';
-  video.poster = `${BASE}open-960.webp`;
-  video.src = BASE + (scrub ? 'intro-scrub.mp4' : 'intro-play.mp4');
+  video.poster = BASE + (tall ? 'open-p-800.webp' : 'open-960.webp');
+  video.src = BASE + (scrub ? INTRO_SCRUB : INTRO_PLAY);
 
   const reveal = el('video', 'film-video film-reveal', layers);
   reveal.muted = true;
@@ -88,7 +100,7 @@ export function startFilm(section) {
     if (fetching) return;
     fetching = true;
     try {
-      const res = await fetch(`${BASE}intro-scrub.mp4`, { cache: 'force-cache' });
+      const res = await fetch(BASE + INTRO_SCRUB, { cache: 'force-cache' });
       if (!res.ok) throw new Error(String(res.status));
       const url = URL.createObjectURL(await res.blob());
       await new Promise((resolve, reject) => {
