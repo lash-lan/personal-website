@@ -86,8 +86,14 @@ function serveFile(res, baseDir, relPath, { download } = {}) {
     'content-length': stat.size,
   };
   if (download) {
+    // Send both forms of the filename. `filename*` carries the real name with
+    // its accents and dashes intact; the plain `filename` is a stripped-down
+    // ASCII version for anything that does not understand the first, which
+    // otherwise saves the file as "download" with no extension.
+    const name = path.basename(abs);
+    const ascii = name.replace(/[^\x20-\x7E]/g, '-').replace(/["\\]/g, '');
     headers['content-disposition'] =
-      `attachment; filename*=UTF-8''${encodeURIComponent(path.basename(abs))}`;
+      `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(name)}`;
   }
   res.writeHead(200, headers);
   fs.createReadStream(abs).pipe(res);

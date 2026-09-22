@@ -104,6 +104,10 @@ const api = {
   forms: (q) => call('/api/forms' + (q ? '?' + new URLSearchParams(q) : '')),
   formQuestions: (id) => call(`/api/forms/${id}/questions`),
   fillForm: (id, body) => call(`/api/forms/${id}/fill`, { method: 'POST', body }),
+  guides: (q) => call('/api/guides' + (q ? '?' + new URLSearchParams(q) : '')),
+  guide: (id) => call(`/api/guides/${id}`),
+  buildGuide: (id) => call(`/api/guides/${id}/build`, { method: 'POST', body: {} }),
+  buildAllGuides: (workstream) => call('/api/guides/build-all', { method: 'POST', body: { workstream } }),
   llm: () => call('/api/llm'),
   backup: () => call('/api/backup', { method: 'POST' }),
 };
@@ -250,6 +254,7 @@ function renderSidebar() {
   nav.append(item('update-workstream', null, 'Update a workstream'));
 
   nav.append(h('div.nav-label', 'Reference'));
+  nav.append(item('guides', null, 'New joiner guides'));
   nav.append(item('masterlist', null, 'Master list'));
   nav.append(item('rules', null, 'Hard rules', { count: state.boot.rules.length }));
 
@@ -392,6 +397,22 @@ async function viewWorkstream(main, id, tab) {
 function renderObservability(main, d) {
   const ws = d.workstream;
   main.append(metricRow(d.metrics));
+
+  if ((d.guides || []).length) {
+    main.append(h('div.card', { style: { marginTop: '16px' } },
+      h('header',
+        h('h2.grow', 'New joiner guides'),
+        h('span.pill.ghost', `${d.guides.length} written`),
+        h('a.btn.btn-sm', { href: '#/guides/' + ws.id }, 'Open them')),
+      h('div.card-body',
+        h('p.soft.small', { style: { margin: 0 } },
+          'The Scicom policies below, rewritten in plain English as step-by-step guides. '
+          + 'Each downloads as a Word file with the logo on it.')),
+      h('div.card-body.tight', d.guides.slice(0, 4).map(guideRow)),
+      d.guides.length > 4
+        ? h('div.card-body', h('a.btn.btn-sm', { href: '#/guides/' + ws.id }, `See all ${d.guides.length}`))
+        : null));
+  }
 
   if (ws.hasPolicies) {
     const list = d.resources.policies;
@@ -1205,6 +1226,179 @@ async function viewFormFiller(main, formId) {
   ask();
 }
 
+
+/* ------------------------------------------------- the new-joiner guides */
+
+/**
+ * Plain-English guides, one per Scicom policy, written for somebody in their
+ * first week. Each one downloads as a Word file with the logo on it, ready to
+ * hand over.
+ */
+async function viewGuides(main, workstreamId) {
+  fill(main, h('div.loading', 'Loading the guides…'));
+  const list = await api.guides(workstreamId ? { workstream: workstreamId } : null);
+
+  const groups = new Map();
+  for (const g of list) {
+    const key = g.workstreamName + (g.subArea ? ' — ' + g.subArea : '');
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(g);
+  }
+
+  fill(main,
+    h('div.page-head',
+      h('div.grow',
+        h('h1', 'New joiner guides'),
+        h('p', `${list.length} Scicom policies rewritten as simple step-by-step guides. `
+          + 'Each one downloads as a Word file with the logo on it, ready to hand to somebody on their first week.')),
+      h('button.btn.btn-primary', {
+        onclick: async (e) => {
+          e.target.disabled = true;
+          e.target.textContent = 'Writing all of them…';
+          try {
+            const r = await api.buildAllGuides(workstreamId || null);
+            toast(`${r.built.length} guides written into the exports folder.`, 'good');
+            e.target.textContent = `✓ ${r.built.length} written to ${r.folder}`;
+          } catch (err) {
+            toast(err.message, 'bad');
+            e.target.disabled = false;
+            e.target.textContent = 'Download all of them';
+          }
+        },
+      }, 'Download all of them')),
+
+    h('div.card',
+      h('div.card-body',
+        h('div.alert.info',
+          h('span.icon', 'i'),
+          h('span', 'Every guide says on its last page that it is a summary and not the policy itself, '
+            + 'and names the Scicom document it came from. Read one through before you hand it to anybody — '
+            + 'policies get revised, and a guide is only as current as the policy behind it.')))),
+
+    [...groups.entries()].map(([name, items]) => h('div.card',
+      h('header', h('h2.grow', name), h('span.pill.ghost', items.length)),
+      h('div.card-body.tight', items.map(guideRow)))));
+}
+
+function guideRow(g) {
+  return h('div.doc-row',
+    h('div.grow',
+      h('div.name', g.title),
+      h('div.sub', g.subtitle || ''),
+      h('div.sub', { style: { marginTop: '4px', color: 'var(--text-soft)' } }, g.inOneLine),
+      h('div.sub', { style: { marginTop: '4px' } },
+        g.source?.officialNo ? 'From ' + g.source.officialNo : 'From the Scicom policy',
+        g.source?.version ? ' v' + g.source.version : '',
+        g.stepCount ? ` · ${g.stepCount} steps` : '')),
+    h('div', { style: { display: 'flex', gap: '8px', flex: '0 0 auto' } },
+      h('button.btn.btn-sm', { onclick: () => openGuidePreview(g.id) }, 'Read it'),
+      h('button.btn.btn-sm.btn-navy', {
+        onclick: async (e) => {
+          const was = e.target.textContent;
+          e.target.disabled = true;
+          e.target.textContent = 'Writing…';
+          try {
+            const r = await api.buildGuide(g.id);
+            // Navigating to it lets the server's own filename be used. Setting
+            // a `download` attribute here overrode it and saved the file as
+            // "download" with no extension.
+            location.href = r.downloadUrl;
+            e.target.textContent = '✓ Word file';
+            setTimeout(() => { e.target.textContent = was; e.target.disabled = false; }, 2500);
+          } catch (err) {
+            toast(err.message, 'bad');
+            e.target.textContent = was;
+            e.target.disabled = false;
+          }
+        },
+      }, '⤓ Word')));
+}
+
+/** Read a guide on screen without downloading it. */
+async function openGuidePreview(id) {
+  let g;
+  try {
+    g = await api.guide(id);
+  } catch (err) {
+    return toast(err.message, 'bad');
+  }
+
+  const section = (title, node) => node
+    ? h('div', h('h3', { style: { marginTop: '16px', marginBottom: '6px', color: 'var(--navy)' } }, title), node)
+    : null;
+
+  const body = h('div',
+    h('div.alert.info', { style: { background: 'var(--navy-light)', borderColor: 'var(--navy-light)', color: 'var(--navy-dark)' } },
+      h('span', g.inOneLine)),
+
+    section('Who this is for', g.appliesTo ? h('p.small', g.appliesTo) : null),
+
+    section('Before you start', (g.before || []).length
+      ? h('ul.small', { style: { paddingLeft: '20px', lineHeight: '1.7' } }, g.before.map((t) => h('li', t)))
+      : null),
+
+    section('At a glance', (g.atAGlance || []).length
+      ? h('table', h('tbody', g.atAGlance.map(([k, v]) =>
+        h('tr', h('td', { style: { fontWeight: '600', width: '38%' } }, k), h('td', v)))))
+      : null),
+
+    section('What to do, step by step', (g.steps || []).length
+      ? h('div', g.steps.map((s, i) => h('div', { style: { display: 'flex', gap: '12px', padding: '9px 0', borderBottom: '1px solid var(--line)' } },
+        h('span', { style: { color: 'var(--orange)', fontWeight: '700', fontSize: '1.1rem', flex: '0 0 22px' } }, i + 1),
+        h('div',
+          h('div', { style: { fontWeight: '600' } }, s.title),
+          h('div.small.soft', s.body),
+          s.who ? h('div.small.muted', { style: { fontStyle: 'italic', marginTop: '2px' } }, 'Who does this: ' + s.who) : null))))
+      : null),
+
+    section('Who does what', (g.whoDoesWhat || []).length
+      ? h('table', h('tbody', g.whoDoesWhat.map(([k, v]) =>
+        h('tr', h('td', { style: { fontWeight: '600', width: '32%' } }, k), h('td', v)))))
+      : null),
+
+    section('Watch out for', (g.watchOut || []).length
+      ? h('div', g.watchOut.map((t) => h('p.small', {
+        style: { borderLeft: '3px solid var(--orange)', paddingLeft: '10px', margin: '0 0 8px' },
+      }, t)))
+      : null),
+
+    section('Questions people actually ask', (g.questions || []).length
+      ? h('div', g.questions.map(([q, a]) => h('div', { style: { marginBottom: '10px' } },
+        h('div', { style: { fontWeight: '600', color: 'var(--navy)' } }, q),
+        h('div.small.soft', a))))
+      : null),
+
+    section('Forms you will need', (g.forms || []).length
+      ? h('ul.small', { style: { paddingLeft: '20px', lineHeight: '1.7' } }, g.forms.map((t) => h('li', t)))
+      : null),
+
+    h('div.alert.warn', { style: { marginTop: '18px' } },
+      h('span.icon', '!'),
+      h('span', `This is a plain-English summary, not the policy itself. It is based on `
+        + `${g.source?.officialNo || 'the Scicom policy'}${g.source?.version ? ', version ' + g.source.version : ''}. `
+        + 'Where the two disagree, the policy is right.')));
+
+  const foot = h('div', { style: { display: 'flex', gap: '10px', width: '100%', justifyContent: 'flex-end' } },
+    h('button.btn', { onclick: closeDrawer }, 'Close'),
+    h('button.btn.btn-primary', {
+      onclick: async (e) => {
+        e.target.disabled = true;
+        e.target.textContent = 'Writing…';
+        try {
+          const r = await api.buildGuide(id);
+          location.href = r.downloadUrl;
+          e.target.textContent = '✓ Downloaded';
+        } catch (err) {
+          toast(err.message, 'bad');
+          e.target.disabled = false;
+          e.target.textContent = '⤓ Download as Word';
+        }
+      },
+    }, '⤓ Download as Word'));
+
+  openDrawer(g.title, body, foot);
+}
+
 /* --------------------------------------------------------- the drawer */
 
 function closeDrawer() {
@@ -1527,6 +1721,7 @@ async function render() {
     else if (view === 'deadlines') await viewDeadlines(main);
     else if (view === 'ws' && id) await viewWorkstream(main, id, tab);
     else if (view === 'form' && id) await viewFormFiller(main, id);
+    else if (view === 'guides') await viewGuides(main, id);
     else if (view === 'masterlist') await viewMasterList(main);
     else if (view === 'rules') await viewRules(main);
     else if (view === 'new-initiative') viewNewInitiative(main);

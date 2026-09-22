@@ -18,6 +18,10 @@
 resources/
 templates/converted/
 
+# The new-joiner guides. Their wording is derived from the Scicom policies, so
+# they are company content too, even though this system generated them.
+content/guides/
+
 # Your live data: tasks, finance records, rules, the master list
 data/*
 !data/.gitkeep

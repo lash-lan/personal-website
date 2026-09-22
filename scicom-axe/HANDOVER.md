@@ -38,6 +38,8 @@ lib/
   zip.js             minimal ZIP reader/writer, so a .docx can be opened
   docx.js            reads a Word form's tables; splices answers back in
   forms.js           turns a template's labels into questions, and fills them
+  builder.js         builds a Word document from nothing, logo and all
+  guides.js          lays out the new-joiner guides and loads their content
   store.js           JSON read/write, atomic saves, corrupt-file rescue, backups
   seed.js            the 8 standing workstreams, statuses, stages, starting rules
   ids.js             task refs (RES-T0007) and doc numbers (SCAI-RES-FRM-0007)
@@ -53,6 +55,7 @@ public/
 scripts/
   import_finance.py  one-time flattening of the cost spreadsheet
   demo.js            add/remove example tasks
+content/guides/      the new-joiner guide wording, one JSON file per guide
 data/                live data (JSON) — this is the user's actual work
 resources/           the supplied policies and forms, untouched
 templates/converted/ modern .docx/.xlsx copies of the legacy .doc/.xls forms
@@ -109,6 +112,25 @@ Two traps worth knowing:
   fields (`<w:checkBox>`, 95 of them in the Personnel Action Form) and plain
   ballot characters (U+2610). `docx.tickCheckbox` handles each.
 
+## How the guides work
+
+`builder.js` writes a `.docx` from nothing — six XML parts plus the logo — on
+top of `zip.js`. `guides.js` is the layout: header band, summary box, facts
+table, numbered steps, who-does-what, watch-outs, questions, and the closing
+note. The wording is data, in `content/guides/*.json`, so it can be corrected
+without touching code. Adding a guide means adding a JSON file; nothing
+registers it anywhere.
+
+Two judgements worth keeping:
+
+- **Every guide carries a footer disowning itself.** It states it is a summary,
+  names the source document and version, and says the policy wins in a
+  disagreement. Do not remove that — these guides get handed to new joiners who
+  have no way of knowing what they do not cover.
+- **Two of the 25 source PDFs are not procedures.** The MICARE Panel GP List
+  (136,000 words) and the Allianz Panel Hospital Listing are directories. They
+  are covered by one guide on how to search them, not rewritten as steps.
+
 ## Things that will bite you
 
 - **`.append()` does not flatten arrays.** Use the `fill()` helper in `app.js`,
@@ -151,6 +173,8 @@ Two traps worth knowing:
 - Hard rules chatbot, working with no AI at all.
 - Optional Ollama integration with graceful fallback everywhere.
 - Backups on demand.
+- **The new-joiner guides.** 23 Scicom policies rewritten in plain English,
+  each downloadable as a Word file built from scratch with the logo on it.
 - **The guided form filler.** Pick a form, answer one question at a time (every
   one skippable), and the answers are written into the real Scicom template.
   Letterhead, borders, footers and signature blocks come through untouched.
@@ -161,22 +185,19 @@ Two traps worth knowing:
 
 ### Not built yet
 
-1. **The rewritten new-joiner policy guides.** 25 policy PDFs to be turned into
-   simple step-by-step guides, with the logo, professional-looking, downloadable.
-
-2. **Spreadsheet forms.** Six forms are `.xlsx`/`.xls` (timesheets, payout
+1. **Spreadsheet forms.** Six forms are `.xlsx`/`.xls` (timesheets, payout
    lists, the Access Control List). The filler covers Word only; these are
    offered as downloads. Filling them would mean a `sheet.js` alongside
    `docx.js` — `zip.js` already does the container half of the work, and
    `xl/worksheets/sheet1.xml` plus `xl/sharedStrings.xml` are the two files
    that matter.
 
-3. **Attaching completed forms to tasks.** `linkedDocs[]` exists on every task
+2. **Attaching completed forms to tasks.** `linkedDocs[]` exists on every task
    but nothing writes to it yet. A form filled from inside a task should link
    back to it — `POST /api/forms/:id/fill` already accepts `taskId` and stores
    it on the document, so it is half done.
 
-4. **Side-by-side check of the converted forms.** Still outstanding. The nine
+3. **Side-by-side check of the converted forms.** Still outstanding. The nine
    converted from `.doc` have not been compared against the originals in Word.
 
 ---

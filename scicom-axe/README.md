@@ -143,6 +143,25 @@ anywhere.** Nothing is signed and nothing is submitted.
 Six of the forms are spreadsheets rather than Word files. Those are offered as
 downloads to fill in by hand.
 
+## New joiner guides
+
+**New joiner guides** in the sidebar holds 23 Scicom policies rewritten in plain
+English: what it is for, what you need before you start, then the steps, who
+does what, what to watch out for, and the questions people actually ask.
+
+- **Read it** shows the guide on screen.
+- **Word** downloads it as a Word file with the logo on it, ready to hand over.
+- **Download all of them** writes the whole set into the `exports/` folder.
+
+Every guide ends with a note saying it is a summary and not the policy, and
+names the Scicom document and version it came from. Read one through before you
+give it to anybody — policies are revised, and a guide is only as current as the
+policy behind it.
+
+The wording lives in `content/guides/`, one plain text file per guide. To change
+what a guide says, edit that file and download it again. Nothing needs code
+changing.
+
 ## Internal document numbers
 
 When the official Scicom number is unknown, or when several copies of the same

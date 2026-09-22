@@ -15,6 +15,7 @@ const analysis = require('./analysis');
 const rules = require('./rules');
 const llm = require('./llm');
 const formsLib = require('./forms');
+const guidesLib = require('./guides');
 
 const ROOT = path.join(__dirname, '..');
 
@@ -241,6 +242,10 @@ on('GET', '/api/workstreams/:id/dashboard', async ({ params, query }) => {
     resources: catalog.forWorkstream(ws),
     rules: rules.all().filter((r) => r.scope === 'global' || r.scope === ws.id),
     documents: docs().filter((d) => d.workstreamId === ws.id),
+    guides: guidesLib.forWorkstream(ws.id).map((g) => ({
+      id: g.id, title: g.title, subtitle: g.subtitle, subArea: g.subArea || null,
+      inOneLine: g.inOneLine, source: g.source || null, stepCount: (g.steps || []).length,
+    })),
   };
 });
 
@@ -671,6 +676,64 @@ on('POST', '/api/forms/:id/fill', async ({ params, body }) => {
     filled: result.filled,
     polishedCount: result.polishedCount,
   };
+});
+
+/* ------------------------------------------------------------------ guides */
+
+on('GET', '/api/guides', async ({ query }) => {
+  let list = guidesLib.all();
+  if (query.workstream) list = list.filter((g) => g.workstream === query.workstream);
+  const wsById = new Map(workstreams().map((w) => [w.id, w]));
+  return list.map((g) => ({
+    id: g.id,
+    title: g.title,
+    subtitle: g.subtitle,
+    workstream: g.workstream,
+    workstreamName: wsById.get(g.workstream)?.name || g.workstream,
+    subArea: g.subArea || null,
+    inOneLine: g.inOneLine,
+    source: g.source || null,
+    stepCount: (g.steps || []).length,
+  }));
+});
+
+on('GET', '/api/guides/:id', async ({ params }) => {
+  const g = guidesLib.load(params.id);
+  if (!g) throw new HttpError(404, 'There is no guide with that name.');
+  return g;
+});
+
+/** Build one guide as a Word file and hand back a download link. */
+on('POST', '/api/guides/:id/build', async ({ params }) => {
+  const g = guidesLib.load(params.id);
+  if (!g) throw new HttpError(404, 'There is no guide with that name.');
+  const fileName = `${g.title} — a guide for new joiners.docx`.replace(/[\\/:*?"<>|]/g, '-');
+  const outPath = path.join(ROOT, 'exports', fileName);
+  try {
+    guidesLib.build(g, outPath);
+  } catch (err) {
+    throw new HttpError(500, `That guide could not be written: ${err.message}`);
+  }
+  return { fileName, downloadUrl: '/exports/' + encodeURIComponent(fileName) };
+});
+
+/** Build every guide at once — the whole new-joiner pack. */
+on('POST', '/api/guides/build-all', async ({ body }) => {
+  const list = body && body.workstream
+    ? guidesLib.forWorkstream(body.workstream)
+    : guidesLib.all();
+  const built = [];
+  const failed = [];
+  for (const g of list) {
+    const fileName = `${g.title} — a guide for new joiners.docx`.replace(/[\\/:*?"<>|]/g, '-');
+    try {
+      guidesLib.build(g, path.join(ROOT, 'exports', fileName));
+      built.push({ id: g.id, title: g.title, fileName, downloadUrl: '/exports/' + encodeURIComponent(fileName) });
+    } catch (err) {
+      failed.push({ id: g.id, title: g.title, error: err.message });
+    }
+  }
+  return { built, failed, folder: 'scicom-axe/exports' };
 });
 
 /* -------------------------------------------------------------------- llm */
