@@ -6,9 +6,18 @@ to the internet and nothing is sent anywhere.
 
 ---
 
+**Trying it for the first time?** Read `TESTING.md` — it is a fifteen-minute
+walkthrough in the order that shows you the most.
+
 ## Running it
 
 You need Node 18 or newer. (You have Node 22, so you are fine.)
+
+**Moving it to a new laptop needs two things**, not one: this code, and the
+content bundle. The policies, forms, guides and your data are deliberately kept
+out of GitHub because that repository is public and one of the supplied HR
+files contains a person's passport and bank details. Copy the whole folder, or
+use the bundle.
 
 1. Open a terminal in this folder.
 2. Type:
