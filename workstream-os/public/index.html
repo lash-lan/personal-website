@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workstream OS — Scicom AI</title>
+<link rel="icon" href="/img/favicon.png">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="#/home">
+    <img src="/img/logo-64.png" alt="" width="34" height="34">
+    <span>
+      <strong>Workstream OS</strong>
+      <small>Scicom AI</small>
+    </span>
+  </a>
+
+  <div class="clock" id="clock" title="Live date and time on this computer">
+    <span class="clock-date" id="clock-date">—</span>
+    <span class="clock-time" id="clock-time">--:--:--</span>
+  </div>
+
+  <div class="topbar-actions">
+    <span class="llm-pill" id="llm-pill" title="Local AI status">checking…</span>
+    <button class="btn btn-primary" id="quick-add-btn">+ New task</button>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="sidebar" id="sidebar"></nav>
+  <main class="main" id="main"><div class="loading">Loading…</div></main>
+</div>
+
+<div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
+<aside class="drawer" id="drawer" hidden aria-modal="true" role="dialog"></aside>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="/app.js" type="module"></script>
+</body>
+</html>

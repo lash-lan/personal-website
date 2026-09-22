@@ -1,0 +1,15 @@
+{
+  "name": "scicom-ai-workstream-os",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local workstream, task, document and finance tracker for the Scicom AI department.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "backup": "node scripts/backup.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {}
+}

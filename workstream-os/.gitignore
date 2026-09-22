@@ -1,0 +1,31 @@
+# ---------------------------------------------------------------------------
+# IMPORTANT — READ THIS BEFORE CHANGING ANYTHING IN HERE
+#
+# The repository this folder sits in (lash-lan/personal-website) is PUBLIC on
+# GitHub. Anything committed here is readable by anyone on the internet, for
+# ever, even if it is deleted later.
+#
+# The Scicom policies, the forms, the cost figures and your task data are
+# company material, and one of the supplied files contains a named person's
+# passport number, bank account number and home address. None of it goes into
+# git. The rules below keep it out.
+#
+# This costs you nothing: the system was always meant to be moved by copying
+# the whole folder, not by cloning it. Git holds the code only.
+# ---------------------------------------------------------------------------
+
+# Scicom policies and forms — company documents, some with personal data in them
+resources/
+templates/converted/
+
+# Your live data: tasks, finance records, rules, the master list
+data/*
+!data/.gitkeep
+
+# Generated files and backups
+exports/*
+!exports/.gitkeep
+
+# Office lock files
+~$*
+.~lock.*

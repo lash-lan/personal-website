@@ -1,0 +1,562 @@
+'use strict';
+/**
+ * api.js — every question the screen can ask the system, and every change it
+ * can make. The browser talks to these addresses; nothing else does.
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+const store = require('./store');
+const ids = require('./ids');
+const seed = require('./seed');
+const catalog = require('./catalog');
+const analysis = require('./analysis');
+const rules = require('./rules');
+const llm = require('./llm');
+
+const ROOT = path.join(__dirname, '..');
+
+/* ------------------------------------------------------------ collections */
+
+function workstreams() {
+  return store.read('workstreams', () =>
+    seed.WORKSTREAMS.map((w) => ({ ...w, builtIn: true, archived: false, createdAt: new Date().toISOString() })));
+}
+
+function tasks() {
+  return store.read('tasks', []);
+}
+
+function docs() {
+  return store.read('documents', []);
+}
+
+function finance() {
+  return store.read('finance', []);
+}
+
+function masterList() {
+  return store.read('masterlist', { name: null, importedAt: null, columns: [], rows: [] });
+}
+
+function findWorkstream(id) {
+  return workstreams().find((w) => w.id === id);
+}
+
+/* ---------------------------------------------------------------- helpers */
+
+class HttpError extends Error {
+  constructor(status, message) { super(message); this.status = status; }
+}
+
+function require_(value, name) {
+  if (value === undefined || value === null || String(value).trim() === '') {
+    throw new HttpError(400, `${name} is required.`);
+  }
+  return typeof value === 'string' ? value.trim() : value;
+}
+
+const VALID_STATUS = new Set(seed.STATUSES.map((s) => s.key));
+
+function normaliseTask(input, existing) {
+  const base = existing || {};
+  const t = { ...base };
+
+  if (input.title !== undefined) t.title = require_(input.title, 'Title');
+  if (input.workstreamId !== undefined) t.workstreamId = require_(input.workstreamId, 'Workstream');
+  if (input.description !== undefined) t.description = String(input.description || '').trim();
+  if (input.subcategory !== undefined) t.subcategory = input.subcategory || null;
+  if (input.theme !== undefined) t.theme = String(input.theme || '').trim() || null;
+  if (input.stage !== undefined) t.stage = input.stage || null;
+  if (input.owner !== undefined) t.owner = String(input.owner || '').trim() || null;
+  if (input.nextActionBy !== undefined) t.nextActionBy = String(input.nextActionBy || '').trim() || null;
+  if (input.priority !== undefined) t.priority = input.priority || 'normal';
+  if (input.deadline !== undefined) t.deadline = input.deadline || null;
+  if (input.notes !== undefined) t.notes = String(input.notes || '').trim();
+  if (input.linkedDocs !== undefined) t.linkedDocs = [].concat(input.linkedDocs || []);
+  if (input.blockers !== undefined) {
+    t.blockers = [].concat(input.blockers || [])
+      .map((b) => (typeof b === 'string' ? { text: b, kind: 'blocker' } : b))
+      .filter((b) => b && String(b.text || '').trim())
+      .map((b) => ({ text: String(b.text).trim(), kind: b.kind === 'risk' ? 'risk' : 'blocker' }));
+  }
+  if (input.status !== undefined) {
+    const s = String(input.status);
+    if (!VALID_STATUS.has(s)) throw new HttpError(400, `Status must be one of: ${[...VALID_STATUS].join(', ')}.`);
+    t.status = s;
+  }
+  return t;
+}
+
+function diffSummary(before, after) {
+  const watched = ['title', 'status', 'stage', 'deadline', 'owner', 'nextActionBy', 'theme', 'subcategory', 'priority', 'description'];
+  const out = [];
+  for (const k of watched) {
+    const a = before[k] ?? null;
+    const b = after[k] ?? null;
+    if (JSON.stringify(a) !== JSON.stringify(b)) out.push({ field: k, from: a, to: b });
+  }
+  const bb = JSON.stringify(before.blockers || []);
+  const ab = JSON.stringify(after.blockers || []);
+  if (bb !== ab) out.push({ field: 'blockers', from: before.blockers || [], to: after.blockers || [] });
+  return out;
+}
+
+/* ----------------------------------------------------------------- routes */
+
+const routes = [];
+function on(method, pattern, handler) {
+  // Patterns look like '/api/tasks/:id'. Segments starting with ':' capture.
+  const parts = pattern.split('/').filter(Boolean);
+  routes.push({ method, parts, handler });
+}
+
+function match(method, pathname) {
+  const given = pathname.split('/').filter(Boolean);
+  for (const r of routes) {
+    if (r.method !== method || r.parts.length !== given.length) continue;
+    const params = {};
+    let ok = true;
+    for (let i = 0; i < r.parts.length; i++) {
+      const p = r.parts[i];
+      if (p.startsWith(':')) params[p.slice(1)] = decodeURIComponent(given[i]);
+      else if (p !== given[i]) { ok = false; break; }
+    }
+    if (ok) return { handler: r.handler, params };
+  }
+  return null;
+}
+
+/* -------------------------------------------------------------- bootstrap */
+
+on('GET', '/api/bootstrap', async () => {
+  const ws = workstreams().filter((w) => !w.archived);
+  const withCounts = ws.map((w) => {
+    const c = catalog.forWorkstream(w);
+    const mine = tasks().filter((t) => t.workstreamId === w.id);
+    return {
+      ...w,
+      policyCount: c.policies.length,
+      formCount: c.forms.length,
+      metrics: analysis.metrics(mine),
+    };
+  });
+  return {
+    serverTime: new Date().toISOString(),
+    timezoneOffsetMinutes: new Date().getTimezoneOffset(),
+    workstreams: withCounts,
+    statuses: seed.STATUSES,
+    stages: seed.STAGES,
+    docKinds: ids.DOC_KINDS,
+    rules: rules.all(),
+    llm: await llm.check(),
+    masterList: (() => { const m = masterList(); return { name: m.name, importedAt: m.importedAt, columns: m.columns, rowCount: m.rows.length }; })(),
+  };
+});
+
+on('GET', '/api/time', async () => ({ serverTime: new Date().toISOString() }));
+
+/* ------------------------------------------------------------ workstreams */
+
+on('GET', '/api/workstreams', async () => workstreams());
+
+on('POST', '/api/workstreams', async ({ body }) => {
+  const name = require_(body.name, 'Name');
+  const list = workstreams();
+  const id = (body.id || name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  if (list.some((w) => w.id === id)) throw new HttpError(409, `A workstream called "${name}" already exists.`);
+  let code = (body.code || name.replace(/[^A-Za-z]/g, '').slice(0, 3)).toUpperCase();
+  if (code.length < 2) code = id.replace(/[^a-z]/g, '').slice(0, 3).toUpperCase() || 'NEW';
+  let suffix = 1;
+  while (list.some((w) => w.code === code)) code = code.slice(0, 2) + (suffix++);
+
+  const ws = {
+    id,
+    code,
+    name,
+    blurb: String(body.blurb || '').trim(),
+    colour: body.colour || '#475569',
+    hasPolicies: Boolean(body.hasPolicies),
+    hasForms: Boolean(body.hasForms),
+    hasFinance: false,
+    resourceFolder: body.hasPolicies || body.hasForms ? `${name} resources` : null,
+    subcategories: [].concat(body.subcategories || [])
+      .map((s) => (typeof s === 'string' ? { id: s.toLowerCase().replace(/[^a-z0-9]+/g, '-'), name: s } : s))
+      .filter((s) => s && s.name),
+    builtIn: false,
+    archived: false,
+    createdAt: new Date().toISOString(),
+  };
+  if (ws.resourceFolder) {
+    fs.mkdirSync(path.join(catalog.RESOURCES, ws.resourceFolder, catalog.POLICY_DIR), { recursive: true });
+    fs.mkdirSync(path.join(catalog.RESOURCES, ws.resourceFolder, catalog.FORM_DIR), { recursive: true });
+  }
+  list.push(ws);
+  store.write('workstreams', list);
+  return ws;
+});
+
+on('PATCH', '/api/workstreams/:id', async ({ params, body }) => {
+  const list = workstreams();
+  const i = list.findIndex((w) => w.id === params.id);
+  if (i < 0) throw new HttpError(404, 'Workstream not found.');
+  const allowed = ['name', 'blurb', 'colour', 'hasPolicies', 'hasForms', 'subcategories', 'archived'];
+  for (const k of allowed) if (body[k] !== undefined) list[i][k] = body[k];
+  if (Array.isArray(list[i].subcategories)) {
+    list[i].subcategories = list[i].subcategories
+      .map((s) => (typeof s === 'string' ? { id: s.toLowerCase().replace(/[^a-z0-9]+/g, '-'), name: s } : s))
+      .filter((s) => s && s.name);
+  }
+  // Turning policies or forms on for the first time needs somewhere to put them.
+  if ((list[i].hasPolicies || list[i].hasForms) && !list[i].resourceFolder) {
+    list[i].resourceFolder = `${list[i].name} resources`;
+  }
+  if (list[i].resourceFolder) {
+    fs.mkdirSync(path.join(catalog.RESOURCES, list[i].resourceFolder, catalog.POLICY_DIR), { recursive: true });
+    fs.mkdirSync(path.join(catalog.RESOURCES, list[i].resourceFolder, catalog.FORM_DIR), { recursive: true });
+  }
+  list[i].updatedAt = new Date().toISOString();
+  store.write('workstreams', list);
+  return list[i];
+});
+
+on('GET', '/api/workstreams/:id/resources', async ({ params }) => {
+  const ws = findWorkstream(params.id);
+  if (!ws) throw new HttpError(404, 'Workstream not found.');
+  return catalog.forWorkstream(ws);
+});
+
+on('GET', '/api/workstreams/:id/dashboard', async ({ params, query }) => {
+  const ws = findWorkstream(params.id);
+  if (!ws) throw new HttpError(404, 'Workstream not found.');
+  const mine = tasks().filter((t) => t.workstreamId === ws.id);
+  const showDone = query.includeCompleted === '1';
+  const visible = showDone ? mine : mine.filter((t) => t.status !== 'completed');
+  return {
+    workstream: ws,
+    metrics: analysis.metrics(mine),
+    groups: analysis.groupByTheme(visible, ws),
+    resources: catalog.forWorkstream(ws),
+    rules: rules.all().filter((r) => r.scope === 'global' || r.scope === ws.id),
+    documents: docs().filter((d) => d.workstreamId === ws.id),
+  };
+});
+
+/* ------------------------------------------------------------------ tasks */
+
+on('GET', '/api/tasks', async ({ query }) => {
+  let list = tasks();
+  if (query.workstream) list = list.filter((t) => t.workstreamId === query.workstream);
+  if (query.status) list = list.filter((t) => t.status === query.status);
+  if (query.q) {
+    const q = query.q.toLowerCase();
+    list = list.filter((t) =>
+      [t.title, t.description, t.ref, t.theme, t.owner, t.nextActionBy, t.notes]
+        .filter(Boolean).join(' ').toLowerCase().includes(q));
+  }
+  return list;
+});
+
+on('POST', '/api/tasks', async ({ body }) => {
+  const ws = findWorkstream(require_(body.workstreamId, 'Workstream'));
+  if (!ws) throw new HttpError(400, 'That workstream does not exist.');
+  const now = new Date().toISOString();
+  const t = normaliseTask(body, {
+    id: ids.uid('task'),
+    ref: ids.nextTaskRef(ws.code),
+    status: 'open',
+    stage: 'Not started',
+    priority: 'normal',
+    blockers: [],
+    linkedDocs: [],
+    description: '',
+    notes: '',
+    createdAt: now,
+    history: [],
+  });
+  t.updatedAt = now;
+  t.history = [{ at: now, what: 'created', detail: `Task created as ${t.ref}.` }];
+  const list = tasks();
+  list.push(t);
+  store.write('tasks', list);
+  return t;
+});
+
+on('PATCH', '/api/tasks/:id', async ({ params, body }) => {
+  const list = tasks();
+  const i = list.findIndex((t) => t.id === params.id || t.ref === params.id);
+  if (i < 0) throw new HttpError(404, 'Task not found.');
+  const before = { ...list[i] };
+  const after = normaliseTask(body, list[i]);
+  const changes = diffSummary(before, after);
+  after.updatedAt = new Date().toISOString();
+  if (changes.length) {
+    after.history = (after.history || []).concat([{
+      at: after.updatedAt,
+      what: 'updated',
+      detail: changes.map((c) => `${c.field}: ${JSON.stringify(c.from)} → ${JSON.stringify(c.to)}`).join('; '),
+      changes,
+    }]);
+  }
+  if (body.note) {
+    after.history = (after.history || []).concat([{ at: after.updatedAt, what: 'note', detail: String(body.note).trim() }]);
+  }
+  if (after.status === 'completed' && before.status !== 'completed') after.completedAt = after.updatedAt;
+  if (after.status !== 'completed') after.completedAt = null;
+  list[i] = after;
+  store.write('tasks', list);
+  return after;
+});
+
+on('DELETE', '/api/tasks/:id', async ({ params }) => {
+  const list = tasks();
+  const i = list.findIndex((t) => t.id === params.id || t.ref === params.id);
+  if (i < 0) throw new HttpError(404, 'Task not found.');
+  const [gone] = list.splice(i, 1);
+  store.write('tasks', list);
+  return { deleted: gone.ref };
+});
+
+/* -------------------------------------------------------------- dashboard */
+
+on('GET', '/api/dashboard', async () => {
+  const all = tasks();
+  const ws = workstreams().filter((w) => !w.archived);
+  const wsById = new Map(ws.map((w) => [w.id, w]));
+  const live = all.filter((t) => t.status !== 'completed');
+
+  const upcoming = live
+    .filter((t) => t.deadline)
+    .sort((a, b) => a.deadline.localeCompare(b.deadline))
+    .slice(0, 40)
+    .map((t) => ({
+      ...t,
+      workstreamName: wsById.get(t.workstreamId)?.name || t.workstreamId,
+      workstreamColour: wsById.get(t.workstreamId)?.colour || '#475569',
+      daysUntil: analysis.daysUntil(t.deadline),
+    }));
+
+  const fin = finance();
+  return {
+    serverTime: new Date().toISOString(),
+    metrics: analysis.metrics(all),
+    perWorkstream: ws.map((w) => ({
+      id: w.id, name: w.name, colour: w.colour, code: w.code,
+      metrics: analysis.metrics(all.filter((t) => t.workstreamId === w.id)),
+    })),
+    upcoming,
+    attention: {
+      blocked: live.filter((t) => t.status === 'blocked').length,
+      noNextActor: live.filter((t) => !t.nextActionBy).length,
+      noDeadline: live.filter((t) => !t.deadline).length,
+    },
+    finance: { concerns: analysis.financeConcerns(fin, rules.all()).slice(0, 6), summary: analysis.financeSummary(fin) },
+  };
+});
+
+/* ---------------------------------------------------------------- finance */
+
+on('GET', '/api/finance', async ({ query }) => {
+  let list = finance();
+  if (query.q) {
+    const q = query.q.toLowerCase();
+    list = list.filter((r) => Object.values(r).filter((v) => typeof v === 'string').join(' ').toLowerCase().includes(q));
+  }
+  if (query.month) list = list.filter((r) => r.month === query.month);
+  if (query.vendor) list = list.filter((r) => (r.vendor || '').toLowerCase() === query.vendor.toLowerCase());
+  return {
+    records: list,
+    summary: analysis.financeSummary(list),
+    concerns: analysis.financeConcerns(finance(), rules.all()),
+  };
+});
+
+on('POST', '/api/finance', async ({ body }) => {
+  const now = new Date().toISOString();
+  const rec = {
+    id: ids.uid('fin'),
+    ref: ids.nextFinanceRef(),
+    vendor: require_(body.vendor, 'Vendor'),
+    item: body.item || body.vendor,
+    company: body.company || null,
+    type: body.type || null,
+    purpose: body.purpose || null,
+    costType: body.costType || null,
+    invoiceNo: body.invoiceNo || null,
+    card: body.card || null,
+    amountUSD: body.amountUSD != null && body.amountUSD !== '' ? Number(body.amountUSD) : null,
+    amountRM: body.amountRM != null && body.amountRM !== '' ? Number(body.amountRM) : null,
+    fxRate: body.fxRate != null && body.fxRate !== '' ? Number(body.fxRate) : null,
+    date: body.date || now.slice(0, 10),
+    month: (body.date || now.slice(0, 10)).slice(0, 7),
+    accountCode: body.accountCode || null,
+    project: body.project || null,
+    remark: body.remark || null,
+    status: body.status || 'recorded',
+    source: 'manual',
+    createdAt: now,
+  };
+  const list = finance();
+  list.push(rec);
+  store.write('finance', list);
+  return rec;
+});
+
+on('PATCH', '/api/finance/:id', async ({ params, body }) => {
+  const list = finance();
+  const i = list.findIndex((r) => r.id === params.id || r.ref === params.id);
+  if (i < 0) throw new HttpError(404, 'Finance record not found.');
+  const editable = ['vendor', 'company', 'type', 'purpose', 'costType', 'invoiceNo', 'card',
+    'amountUSD', 'amountRM', 'fxRate', 'date', 'accountCode', 'project', 'remark', 'status'];
+  for (const k of editable) {
+    if (body[k] === undefined) continue;
+    list[i][k] = ['amountUSD', 'amountRM', 'fxRate'].includes(k)
+      ? (body[k] === '' || body[k] == null ? null : Number(body[k]))
+      : body[k];
+  }
+  if (body.date) list[i].month = String(body.date).slice(0, 7);
+  list[i].updatedAt = new Date().toISOString();
+  store.write('finance', list);
+  return list[i];
+});
+
+/* -------------------------------------------------------------- documents */
+
+on('GET', '/api/documents', async ({ query }) => {
+  let list = docs();
+  if (query.workstream) list = list.filter((d) => d.workstreamId === query.workstream);
+  if (query.q) {
+    const q = query.q.toLowerCase();
+    list = list.filter((d) => [d.internalNo, d.officialNo, d.title, d.notes, d.owner]
+      .filter(Boolean).join(' ').toLowerCase().includes(q));
+  }
+  return list;
+});
+
+on('POST', '/api/documents', async ({ body }) => {
+  const ws = findWorkstream(require_(body.workstreamId, 'Workstream'));
+  if (!ws) throw new HttpError(400, 'That workstream does not exist.');
+  const kind = ids.DOC_KINDS[body.kind] ? body.kind : 'OTH';
+  const now = new Date().toISOString();
+  const doc = {
+    id: ids.uid('doc'),
+    internalNo: ids.nextDocNumber(ws.code, kind),
+    workstreamId: ws.id,
+    kind,
+    kindLabel: ids.DOC_KINDS[kind],
+    title: require_(body.title, 'Title'),
+    officialNo: body.officialNo || null,
+    subject: body.subject || null,
+    owner: body.owner || null,
+    status: body.status || 'draft',
+    taskId: body.taskId || null,
+    filePath: body.filePath || null,
+    notes: body.notes || '',
+    createdAt: now,
+    updatedAt: now,
+  };
+  const list = docs();
+  list.push(doc);
+  store.write('documents', list);
+  return doc;
+});
+
+on('PATCH', '/api/documents/:id', async ({ params, body }) => {
+  const list = docs();
+  const i = list.findIndex((d) => d.id === params.id || d.internalNo === params.id);
+  if (i < 0) throw new HttpError(404, 'Document not found.');
+  for (const k of ['title', 'officialNo', 'subject', 'owner', 'status', 'taskId', 'notes', 'filePath']) {
+    if (body[k] !== undefined) list[i][k] = body[k];
+  }
+  list[i].updatedAt = new Date().toISOString();
+  store.write('documents', list);
+  return list[i];
+});
+
+/* ------------------------------------------------------------ master list */
+
+on('GET', '/api/masterlist', async ({ query }) => {
+  const m = masterList();
+  let rows = m.rows;
+  if (query.q) {
+    const q = query.q.toLowerCase();
+    rows = rows.filter((r) => Object.values(r).join(' ').toLowerCase().includes(q));
+  }
+  return { ...m, rows, totalRows: m.rows.length };
+});
+
+on('POST', '/api/masterlist/import', async ({ body }) => {
+  const columns = [].concat(body.columns || []).map(String);
+  const incoming = [].concat(body.rows || []);
+  if (!columns.length) throw new HttpError(400, 'The file has no column headings.');
+  const rows = incoming.map((r, i) => {
+    const row = { _id: ids.uid('row'), _n: i + 1 };
+    for (const c of columns) row[c] = r[c] == null ? '' : String(r[c]);
+    return row;
+  });
+  const m = {
+    name: body.name || 'Master list',
+    importedAt: new Date().toISOString(),
+    columns,
+    rows,
+  };
+  store.write('masterlist', m);
+  return { ...m, rows: m.rows.slice(0, 50), totalRows: m.rows.length };
+});
+
+on('PATCH', '/api/masterlist/row/:rowId', async ({ params, body }) => {
+  const m = masterList();
+  const i = m.rows.findIndex((r) => r._id === params.rowId);
+  if (i < 0) throw new HttpError(404, 'Row not found.');
+  for (const c of m.columns) if (body[c] !== undefined) m.rows[i][c] = String(body[c]);
+  m.rows[i]._updatedAt = new Date().toISOString();
+  store.write('masterlist', m);
+  return m.rows[i];
+});
+
+on('POST', '/api/masterlist/row', async ({ body }) => {
+  const m = masterList();
+  if (!m.columns.length) throw new HttpError(400, 'Import a master list first.');
+  const row = { _id: ids.uid('row'), _n: m.rows.length + 1, _addedAt: new Date().toISOString() };
+  for (const c of m.columns) row[c] = body[c] == null ? '' : String(body[c]);
+  m.rows.push(row);
+  store.write('masterlist', m);
+  return row;
+});
+
+on('DELETE', '/api/masterlist/row/:rowId', async ({ params }) => {
+  const m = masterList();
+  const i = m.rows.findIndex((r) => r._id === params.rowId);
+  if (i < 0) throw new HttpError(404, 'Row not found.');
+  const [gone] = m.rows.splice(i, 1);
+  store.write('masterlist', m);
+  return { deleted: gone._id };
+});
+
+/* -------------------------------------------------------------- hard rules */
+
+on('GET', '/api/rules', async ({ query }) => rules.listFor(query.scope || null));
+
+on('POST', '/api/rules/chat', async ({ body }) => {
+  const message = String(body.message || '');
+  const ws = workstreams().filter((w) => !w.archived);
+  const parsed = rules.parse(message, ws);
+  const result = await rules.apply(parsed, { workstreams: ws });
+  return { ...result, intent: parsed.intent };
+});
+
+/* -------------------------------------------------------------------- llm */
+
+on('GET', '/api/llm', async () => llm.check(true));
+
+on('POST', '/api/llm/polish', async ({ body }) => {
+  const out = await llm.polish(String(body.text || ''), { field: body.field, formName: body.formName, maxWords: body.maxWords });
+  return out;
+});
+
+/* ---------------------------------------------------------------- backups */
+
+on('POST', '/api/backup', async () => ({ savedTo: store.backupAll('manual') }));
+
+module.exports = { match, HttpError, workstreams, tasks, docs, finance, masterList, ROOT };
