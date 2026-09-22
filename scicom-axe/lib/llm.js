@@ -83,17 +83,29 @@ async function generate(prompt, { system, temperature = 0.2, maxTokens = 600 } =
 
 /* ------------------------------------------------- rule-based fallbacks */
 
+/**
+ * Only expansions that cannot be mistaken for something else.
+ *
+ * Single letters are deliberately absent. "w" for "with" and "r" for "are"
+ * look harmless until a form says "R&D" or "P&L", which split into single
+ * letters at a word boundary and come out as "are&D".
+ */
 const ABBREVIATIONS = {
   asap: 'as soon as possible',
   approx: 'approximately',
   info: 'information',
-  req: 'request',
   mgmt: 'management',
   dept: 'department',
-  w: 'with',
-  'b/c': 'because',
+  pls: 'please',
+  plz: 'please',
+  thx: 'thanks',
   fyi: 'for your information',
+  eta: 'estimated time of arrival',
 };
+
+// Currencies and units that should always be capitals, including when they are
+// written straight against a number: "rm9k" -> "RM9k".
+const UPPERCASE_RE = /\b(rm|usd|myr|sgd|gbp|eur|gpu|cpu|ram|api|llm|ict|hr|isms|sop|po|pr)\b/gi;
 
 /**
  * Tidy free text without any AI: fix spacing, capitalise sentences, expand a
@@ -102,11 +114,25 @@ const ABBREVIATIONS = {
 function tidy(text) {
   if (!text) return '';
   let t = String(text).replace(/\s+/g, ' ').trim();
-  t = t.replace(/\b([a-z/]+)\b/gi, (m) => {
+
+  // Expand only the abbreviations above, and only whole words.
+  t = t.replace(/[A-Za-z]{2,}/g, (m) => {
     const k = m.toLowerCase();
     return Object.prototype.hasOwnProperty.call(ABBREVIATIONS, k) ? ABBREVIATIONS[k] : m;
   });
-  t = t.replace(/\s+([,.;:!?])/g, '$1').replace(/([,.;:!?])(?=[^\s])/g, '$1 ');
+
+  // Currencies and common acronyms in capitals, even against a number.
+  t = t.replace(UPPERCASE_RE, (m) => m.toUpperCase());
+  t = t.replace(/\b(rm|usd|myr)(?=\d)/gi, (m) => m.toUpperCase());
+
+  // Tidy the spacing around punctuation without breaking decimals or times.
+  t = t.replace(/\s+([,.;:!?])/g, '$1');
+  // A colon between digits is a time (09:30) or a ratio, so leave those alone.
+  t = t.replace(/([,;!?])(?=[^\s])/g, '$1 ');
+  t = t.replace(/(?<!\d):(?=[^\s\d])/g, ': ');
+  t = t.replace(/\.(?=[A-Za-z])/g, '. ');
+
+  // Capitalise the first letter of each sentence.
   t = t.replace(/(^|[.!?]\s+)([a-z])/g, (m, p, c) => p + c.toUpperCase());
   if (t && !/[.!?]$/.test(t)) t += '.';
   return t;

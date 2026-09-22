@@ -14,6 +14,7 @@ const catalog = require('./catalog');
 const analysis = require('./analysis');
 const rules = require('./rules');
 const llm = require('./llm');
+const formsLib = require('./forms');
 
 const ROOT = path.join(__dirname, '..');
 
@@ -546,6 +547,132 @@ on('POST', '/api/rules/chat', async ({ body }) => {
   return { ...result, intent: parsed.intent };
 });
 
+/* ------------------------------------------------------------------- forms */
+
+/** Find a catalogued form by its id, whichever workstream it belongs to. */
+function findForm(formId) {
+  const rel = catalog.decodeId(formId);
+  if (!rel) return null;
+  for (const ws of workstreams()) {
+    for (const f of catalog.forWorkstream(ws).forms) {
+      if (f.relPath === rel) return { form: f, workstream: ws };
+    }
+  }
+  return null;
+}
+
+on('GET', '/api/forms', async ({ query }) => {
+  const out = [];
+  for (const ws of workstreams().filter((w) => !w.archived)) {
+    if (query.workstream && ws.id !== query.workstream) continue;
+    for (const f of catalog.forWorkstream(ws).forms) {
+      out.push({
+        ...f,
+        workstreamId: ws.id,
+        workstreamName: ws.name,
+        guided: /\.docx$/i.test(f.fillablePath || f.relPath),
+      });
+    }
+  }
+  return out;
+});
+
+on('GET', '/api/forms/:id/questions', async ({ params }) => {
+  const found = findForm(params.id);
+  if (!found) throw new HttpError(404, 'That form is not in the system.');
+  const abs = catalog.absolutePath(found.form);
+  if (!/\.docx$/i.test(abs)) {
+    throw new HttpError(400,
+      'This one is a spreadsheet, so it cannot be filled in by question and answer yet. Download it and fill it in directly.');
+  }
+  let set;
+  try {
+    set = formsLib.questionsFor(abs, found.form.title);
+  } catch (err) {
+    throw new HttpError(500, `That form could not be read: ${err.message}`);
+  }
+  // Strip the internal document positions — the screen has no business with them.
+  const clean = (q) => ({
+    id: q.id,
+    kind: q.kind,
+    type: q.type,
+    question: q.question,
+    label: q.label,
+    hint: q.hint || null,
+    section: q.section || null,
+    sectionOwner: q.sectionOwner || null,
+    optional: true,
+    multi: Boolean(q.multi),
+    options: q.options ? q.options.map((o) => ({ value: o.value, label: o.label })) : undefined,
+  });
+  return {
+    form: {
+      ...found.form,
+      workstreamId: found.workstream.id,
+      workstreamName: found.workstream.name,
+    },
+    questions: set.asked.map(clean),
+    autoFilled: set.auto.map((q) => ({ label: q.label, value: q.value, why: q.why })),
+    llm: await llm.check(),
+  };
+});
+
+on('POST', '/api/forms/:id/fill', async ({ params, body }) => {
+  const found = findForm(params.id);
+  if (!found) throw new HttpError(404, 'That form is not in the system.');
+  const abs = catalog.absolutePath(found.form);
+
+  // Every completed form gets an internal number, so it stays tracked even
+  // when several copies of it share one official Scicom number.
+  const kind = /requisition/i.test(found.form.title) ? 'REQ'
+    : /claim/i.test(found.form.title) ? 'CLM' : 'FRM';
+  const doc = await routeHandler('POST', '/api/documents', {
+    body: {
+      workstreamId: found.workstream.id,
+      kind,
+      title: body.title || found.form.title,
+      officialNo: found.form.officialNo || null,
+      subject: body.subject || null,
+      owner: body.owner || null,
+      status: 'draft',
+      taskId: body.taskId || null,
+    },
+  });
+
+  const stamp = new Date().toISOString().slice(0, 10);
+  const safe = `${doc.internalNo} ${found.form.title}`
+    .replace(/[^A-Za-z0-9 ._-]/g, '').replace(/\s+/g, ' ').trim();
+  const fileName = `${safe} ${stamp}.docx`;
+  const outPath = path.join(ROOT, 'exports', fileName);
+
+  let result;
+  try {
+    result = await formsLib.fill(abs, body.answers || {}, {
+      outPath,
+      formTitle: found.form.title,
+      usePolish: body.usePolish !== false,
+    });
+  } catch (err) {
+    throw new HttpError(500, `The form could not be written: ${err.message}`);
+  }
+
+  // Note where the file ended up against the document entry.
+  const list = docs();
+  const i = list.findIndex((d) => d.id === doc.id);
+  if (i >= 0) {
+    list[i].filePath = fileName;
+    store.write('documents', list);
+  }
+
+  return {
+    document: { ...doc, filePath: fileName },
+    downloadUrl: '/exports/' + encodeURIComponent(fileName),
+    fileName,
+    filled: result.filled,
+    polishedCount: result.polishedCount,
+  };
+});
+
 /* -------------------------------------------------------------------- llm */
 
 on('GET', '/api/llm', async () => llm.check(true));
@@ -558,5 +685,12 @@ on('POST', '/api/llm/polish', async ({ body }) => {
 /* ---------------------------------------------------------------- backups */
 
 on('POST', '/api/backup', async () => ({ savedTo: store.backupAll('manual') }));
+
+/** Call one of the routes above from inside another one. */
+async function routeHandler(method, pathname, ctx) {
+  const r = match(method, pathname);
+  if (!r) throw new HttpError(500, `Internal route missing: ${method} ${pathname}`);
+  return r.handler({ params: r.params, query: {}, body: {}, ...ctx });
+}
 
 module.exports = { match, HttpError, workstreams, tasks, docs, finance, masterList, ROOT };

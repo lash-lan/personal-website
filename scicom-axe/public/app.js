@@ -101,6 +101,9 @@ const api = {
   addRow: (body) => call('/api/masterlist/row', { method: 'POST', body }),
   deleteRow: (id) => call(`/api/masterlist/row/${id}`, { method: 'DELETE' }),
   ruleChat: (message, scope) => call('/api/rules/chat', { method: 'POST', body: { message, scope } }),
+  forms: (q) => call('/api/forms' + (q ? '?' + new URLSearchParams(q) : '')),
+  formQuestions: (id) => call(`/api/forms/${id}/questions`),
+  fillForm: (id, body) => call(`/api/forms/${id}/fill`, { method: 'POST', body }),
   llm: () => call('/api/llm'),
   backup: () => call('/api/backup', { method: 'POST' }),
 };
@@ -437,6 +440,9 @@ function renderObservability(main, d) {
 }
 
 function resourceRow(r) {
+  // A Word form can be filled in by question and answer; a spreadsheet or a
+  // PDF policy can only be opened.
+  const guided = r.kind === 'form' && /docx/i.test(r.fillablePath || r.format);
   return h('div.doc-row',
     h('span.fmt.' + r.format, r.format),
     h('div.grow',
@@ -444,7 +450,9 @@ function resourceRow(r) {
       h('div.sub',
         r.officialNo ? r.officialNo : 'no official number',
         r.version ? ' · v' + r.version : '',
-        r.subArea ? ' · ' + r.subArea : '')),
+        r.subArea ? ' · ' + r.subArea : '',
+        r.legacy ? ' · converted from the older format' : '')),
+    guided ? h('a.btn.btn-sm.btn-navy', { href: '#/form/' + r.id }, 'Fill it in') : null,
     h('a.btn.btn-sm', { href: `/file?id=${r.id}`, target: '_blank', rel: 'noopener' }, 'Open'),
     h('a.btn.btn-sm', { href: `/file?id=${r.id}&download=1` }, 'Download'));
 }
@@ -478,8 +486,9 @@ function renderActions(main, d) {
       'Assign a number', () => openDocumentDrawer(ws.id)),
     ws.hasForms
       ? actionCard('Fill out a form',
-        `${d.resources.forms.length} forms are filed under this workstream. Open one to fill in by hand, or wait for the guided filler.`,
-        'See the forms', () => go(`/ws/${ws.id}/act#forms`))
+        'Pick a form and I will ask you what it needs, one question at a time. '
+        + 'You get a Word file to check, and an internal document number so the copy stays tracked.',
+        'Choose a form', () => openFormPicker(ws.id))
       : null));
 
   if (ws.hasForms) {
@@ -487,11 +496,14 @@ function renderActions(main, d) {
     main.append(h('div.card',
       h('header',
         h('h2.grow', 'Forms'),
-        h('span.pill.ghost', `${forms.filter((f) => f.fillable).length} of ${forms.length} ready for guided filling`)),
+        h('span.pill.ghost',
+          `${forms.filter((f) => /docx/i.test(f.fillablePath || f.format)).length} of ${forms.length} can be filled in here`)),
       h('div.card-body',
         h('div.alert.info',
           h('span.icon', 'i'),
-          h('span', 'The guided form filler — where the system asks you the questions and writes the Word file for you — is the next piece of work. For now you can open or download any form, and assign it an internal number above so it stays tracked.'))),
+          h('span', 'Anything marked "Fill it in" can be answered question by question. '
+            + 'The answers are written into the real Scicom template, so the letterhead, the borders and the '
+            + 'signature blocks come through untouched. Spreadsheet forms have to be filled in by hand for now.'))),
       h('div.card-body.tight', forms.map(resourceRow))));
   }
 }
@@ -926,6 +938,273 @@ function viewUpdateWorkstream(main, id) {
         : emptyState('Turn on policies or forms above and save, and a folder will be created for this workstream.'))));
 }
 
+
+/* ------------------------------------------------- the guided form filler */
+
+/**
+ * Fill a Scicom form by answering one question at a time.
+ *
+ * The answers are written into the real template, so the finished file keeps
+ * the Scicom letterhead, the borders and the signature blocks exactly as they
+ * are. Every question can be skipped — a blank on this screen is a blank on
+ * the form, which is how a paper form works too.
+ */
+async function viewFormFiller(main, formId) {
+  fill(main, h('div.loading', 'Reading the form…'));
+
+  let data;
+  try {
+    data = await api.formQuestions(formId);
+  } catch (err) {
+    return fill(main, h('div.card', h('div.card-body',
+      h('div.alert.alert-alert', h('span.icon', '!'), h('span', err.message)),
+      h('a.btn', { href: '#/home' }, 'Back to the dashboard'))));
+  }
+
+  const { form, questions, autoFilled } = data;
+  const answers = {};
+  let at = 0;
+
+  const log = h('div.chat-log', { style: { maxHeight: '54vh' } });
+  const inputArea = h('div.chat-input', { style: { flexWrap: 'wrap' } });
+  const progress = h('div.bar', { style: { margin: '0 16px 12px' } },
+    h('span', { style: { width: '0%', background: 'var(--orange)' } }));
+  const counter = h('span.pill.ghost', `0 of ${questions.length}`);
+
+  const say = (who, text, extra) => {
+    const node = h('div.msg.' + who, text, extra || null);
+    log.append(node);
+    log.scrollTop = log.scrollHeight;
+    return node;
+  };
+
+  const setProgress = () => {
+    progress.firstChild.style.width = (questions.length ? (at / questions.length) * 100 : 100) + '%';
+    counter.textContent = `${Math.min(at, questions.length)} of ${questions.length}`;
+  };
+
+  say('bot',
+    `${form.title}.\n\n` +
+    `${questions.length} question${questions.length === 1 ? '' : 's'}, and every one of them can be skipped — ` +
+    `a blank here is a blank on the form.` +
+    (autoFilled.length
+      ? `\n\nAlready filled in for you: ${autoFilled.map((a) => `${a.label} — ${a.value}`).join('; ')}.`
+      : ''));
+
+  /* ---- asking ---- */
+
+  function ask() {
+    setProgress();
+    if (at >= questions.length) return review();
+
+    const q = questions[at];
+    say('bot', q.question
+      + (q.hint ? `\n\nThe form suggests: ${q.hint}` : '')
+      + (q.sectionOwner ? `\n\n(This part of the form is normally completed by the ${q.sectionOwner}.)` : ''));
+
+    fill(inputArea, ...controlsFor(q));
+    const first = inputArea.querySelector('input, textarea, select');
+    if (first) first.focus();
+  }
+
+  function advance(q, value, shown) {
+    if (value !== null && value !== undefined && value !== '' && !(Array.isArray(value) && !value.length)) {
+      answers[q.id] = value;
+      say('user', shown);
+    } else {
+      say('user', '— skipped —');
+    }
+    at += 1;
+    ask();
+  }
+
+  function controlsFor(q) {
+    const back = at > 0
+      ? h('button.btn.btn-sm', { onclick: () => { at -= 1; rewind(); } }, '← Back')
+      : null;
+
+    if (q.kind === 'choice') {
+      const boxes = q.options.map((o) => {
+        const cb = h('input', { type: 'checkbox', value: o.value });
+        return h('label.small', {
+          style: {
+            display: 'flex', gap: '7px', alignItems: 'center', padding: '4px 9px',
+            border: '1px solid var(--line)', borderRadius: '6px', cursor: 'pointer',
+            background: 'var(--surface)',
+          },
+        }, cb, o.label);
+      });
+      const picked = () => q.options
+        .filter((o, i) => boxes[i].querySelector('input').checked)
+        .map((o) => o.value);
+      return [
+        h('div', { style: { display: 'flex', gap: '7px', flexWrap: 'wrap', width: '100%', marginBottom: '9px' } }, boxes),
+        back,
+        h('div.spacer'),
+        h('button.btn', { onclick: () => advance(q, null) }, 'Skip'),
+        h('button.btn.btn-navy', {
+          onclick: () => {
+            const chosen = picked();
+            const labels = q.options.filter((o) => chosen.includes(o.value)).map((o) => o.label);
+            advance(q, chosen, labels.join(', '));
+          },
+        }, 'Next'),
+      ];
+    }
+
+    const input = q.type === 'long'
+      ? h('textarea', { placeholder: 'Write it however it comes out — I will tidy the wording.', style: { minHeight: '64px' } })
+      : h('input', {
+        type: q.type === 'date' ? 'date' : q.type === 'number' ? 'number' : 'text',
+        placeholder: q.type === 'date' ? '' : 'Your answer',
+      });
+
+    const submit = () => advance(q, input.value.trim(), input.value.trim());
+    if (q.type !== 'long') {
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+    }
+
+    return [
+      h('div', { style: { width: '100%', marginBottom: '9px' } }, input),
+      back,
+      h('div.spacer'),
+      h('button.btn', { onclick: () => advance(q, null) }, 'Skip'),
+      h('button.btn.btn-navy', { onclick: submit }, 'Next'),
+    ];
+  }
+
+  /** Going back drops the answer to the question we are returning to. */
+  function rewind() {
+    const q = questions[at];
+    delete answers[q.id];
+    // Remove the last exchange from the log: our question and their answer.
+    for (let i = 0; i < 2 && log.lastChild; i++) log.lastChild.remove();
+    if (log.lastChild && log.lastChild.classList.contains('msg')) log.lastChild.remove();
+    ask();
+  }
+
+  /* ---- the review, then the file ---- */
+
+  function review() {
+    fill(inputArea);
+    const given = questions.filter((q) => answers[q.id] !== undefined);
+    const blank = questions.length - given.length;
+
+    say('bot',
+      `That is everything.\n\n` +
+      `${given.length} answered, ${blank} left blank.\n\n` +
+      `Check the list below, then make the Word file. You will get a document ` +
+      `number with it so this copy stays tracked.`);
+
+    const summary = h('div.card', { style: { margin: '0 16px 12px' } },
+      h('header', h('h3.grow', 'What will go on the form')),
+      h('div.card-body.tight',
+        autoFilled.map((a) => reviewRow(a.label, a.value, 'filled in for you')),
+        given.map((q) => {
+          const v = answers[q.id];
+          const shown = Array.isArray(v)
+            ? q.options.filter((o) => v.includes(o.value)).map((o) => o.label).join(', ')
+            : v;
+          return reviewRow(q.label || q.section, shown, null, () => { at = questions.indexOf(q); rewindTo(); });
+        }),
+        given.length || autoFilled.length ? null : emptyState('Nothing was filled in.')));
+
+    const owner = h('input', { type: 'text', placeholder: 'Who is handling it (optional)' });
+    const subject = h('input', { type: 'text', placeholder: 'Who or what it is about (optional)' });
+
+    const makeBtn = h('button.btn.btn-primary', {
+      onclick: async () => {
+        makeBtn.disabled = true;
+        makeBtn.textContent = 'Writing the Word file…';
+        try {
+          const r = await api.fillForm(formId, {
+            answers,
+            owner: owner.value.trim() || null,
+            subject: subject.value.trim() || null,
+          });
+          done(r);
+        } catch (err) {
+          toast(err.message, 'bad');
+          makeBtn.disabled = false;
+          makeBtn.textContent = 'Make the Word file';
+        }
+      },
+    }, 'Make the Word file');
+
+    fill(inputArea,
+      h('div', { style: { width: '100%' } },
+        summary,
+        h('div.row', { style: { margin: '0 0 10px' } },
+          h('div.field.optional', { style: { margin: 0 } }, h('label', 'Owner'), owner),
+          h('div.field.optional', { style: { margin: 0 } }, h('label', 'Subject'), subject)),
+        h('div.flex.end',
+          h('button.btn', { onclick: () => { at = 0; fill(log); ask(); } }, 'Start again'),
+          makeBtn)));
+  }
+
+  function rewindTo() {
+    // Re-ask from the chosen question, keeping the answers already given.
+    fill(log);
+    say('bot', 'Back to that one.');
+    ask();
+  }
+
+  function reviewRow(label, value, note, onEdit) {
+    return h('div.doc-row',
+      h('div.grow',
+        h('div.name', label),
+        h('div.sub', value || '—', note ? h('span.muted', '  · ' + note) : null)),
+      onEdit ? h('button.btn.btn-sm', { onclick: onEdit }, 'Change') : null);
+  }
+
+  function done(r) {
+    fill(inputArea);
+    say('bot',
+      `Done.\n\n` +
+      `Internal number: ${r.document.internalNo}\n` +
+      `File: ${r.fileName}` +
+      (r.polishedCount ? `\n\n${r.polishedCount} answer${r.polishedCount === 1 ? ' was' : 's were'} reworded by the local model.` : ''));
+
+    fill(inputArea, h('div', { style: { width: '100%' } },
+      h('div.alert.good', { style: { marginBottom: '10px' } },
+        h('span.icon', '✓'),
+        h('span', 'Open it in Word and read it through before you send it anywhere. Nothing has been signed and nothing has been submitted.')),
+      h('div.flex',
+        h('a.btn.btn-primary', { href: r.downloadUrl, download: r.fileName }, '⤓ Download the Word file'),
+        h('a.btn', { href: '#/ws/' + form.workstreamId }, 'Back to ' + form.workstreamName),
+        h('button.btn', {
+          onclick: () => { Object.keys(answers).forEach((k) => delete answers[k]); at = 0; fill(log); ask(); },
+        }, 'Fill in another copy'))));
+    render_sidebarRefresh();
+  }
+
+  async function render_sidebarRefresh() {
+    try { state.boot = await api.bootstrap(); renderSidebar(); } catch { /* not important */ }
+  }
+
+  /* ---- the page ---- */
+
+  fill(main,
+    h('div.page-head',
+      h('div.grow',
+        h('h1', form.title),
+        h('p', `${form.workstreamName}${form.officialNo ? ' · ' + form.officialNo : ''}`
+          + (form.legacy ? ' · converted from the older Word format' : ''))),
+      h('a.btn', { href: `/file?id=${form.id}&download=1` }, 'Download the blank form')),
+    h('div.card',
+      h('header',
+        h('h2.grow', 'Guided filling'),
+        counter,
+        data.llm.available
+          ? h('span.pill.ghost', 'local AI on — wording will be tightened')
+          : h('span.pill.ghost', 'no local AI — your words kept as typed')),
+      progress,
+      log,
+      inputArea));
+
+  ask();
+}
+
 /* --------------------------------------------------------- the drawer */
 
 function closeDrawer() {
@@ -1086,6 +1365,40 @@ async function openTaskPicker(workstreamId) {
       'Completed tasks are hidden here. Find them on the workstream dashboard.')));
 }
 
+/** Choose a form to fill in. */
+async function openFormPicker(workstreamId) {
+  const all = await api.forms(workstreamId ? { workstream: workstreamId } : null);
+  const guided = all.filter((f) => f.guided);
+  const manual = all.filter((f) => !f.guided);
+
+  openDrawer('Which form?', h('div',
+    h('p.soft.small', 'Pick one and I will ask you what it needs, one question at a time.'),
+    h('div.card', { style: { margin: '0 0 14px' } },
+      h('div.card-body.tight', guided.length
+        ? guided.map((f) => h('div.doc-row', {
+          style: { cursor: 'pointer' },
+          onclick: () => { closeDrawer(); go('/form/' + f.id); },
+        },
+          h('span.fmt.docx', 'docx'),
+          h('div.grow',
+            h('div.name', f.title),
+            h('div.sub', (f.officialNo || 'no official number')
+              + (f.subArea ? ' · ' + f.subArea : '')
+              + (workstreamId ? '' : ' · ' + f.workstreamName))),
+          h('span.pill.ghost', 'fill in')))
+        : emptyState('No forms here can be filled in automatically yet.'))),
+    manual.length
+      ? h('div.card', { style: { margin: 0 } },
+        h('header', h('h3.grow', 'Fill these in by hand')),
+        h('div.card-body',
+          h('p.soft.small', 'These are spreadsheets. Download one, fill it in, then give it an internal number so it stays tracked.')),
+        h('div.card-body.tight', manual.map((f) => h('div.doc-row',
+          h('span.fmt.' + f.format, f.format),
+          h('div.grow', h('div.name', f.title)),
+          h('a.btn.btn-sm', { href: `/file?id=${f.id}&download=1` }, 'Download')))))
+      : null));
+}
+
 /* ---- internal document number ---- */
 
 async function openDocumentDrawer(workstreamId) {
@@ -1213,6 +1526,7 @@ async function render() {
     if (view === 'home') await viewHome(main);
     else if (view === 'deadlines') await viewDeadlines(main);
     else if (view === 'ws' && id) await viewWorkstream(main, id, tab);
+    else if (view === 'form' && id) await viewFormFiller(main, id);
     else if (view === 'masterlist') await viewMasterList(main);
     else if (view === 'rules') await viewRules(main);
     else if (view === 'new-initiative') viewNewInitiative(main);

@@ -35,6 +35,9 @@ requirement. Don't.
 ```
 server.js            HTTP server, static files, file downloads
 lib/
+  zip.js             minimal ZIP reader/writer, so a .docx can be opened
+  docx.js            reads a Word form's tables; splices answers back in
+  forms.js           turns a template's labels into questions, and fills them
   store.js           JSON read/write, atomic saves, corrupt-file rescue, backups
   seed.js            the 8 standing workstreams, statuses, stages, starting rules
   ids.js             task refs (RES-T0007) and doc numbers (SCAI-RES-FRM-0007)
@@ -82,6 +85,30 @@ write a migration in `scripts/`.
 
 ---
 
+## How the form filler works
+
+`forms.js` reads the labels straight off the template. Scicom's forms lay their
+fields out in four different ways and all four are handled — see the comment at
+the top of that file. Nothing is hard-coded per form, so a form dropped into
+`resources/` becomes fillable immediately; `OVERRIDES` at the bottom of
+`forms.js` corrects the wording of a question where the automatic reading is
+clumsy, keyed by filename.
+
+Answers are written by **splicing runs into the original XML at recorded
+character offsets**, never by rebuilding the document. Everything untouched
+comes through byte for byte. `applyWrites` works backwards from the end of the
+file so earlier edits never shift later positions.
+
+Two traps worth knowing:
+
+- **"To be filled by the Line Manager" is not an approval section.** It names
+  the role that completes it, and the user is very often that role. Treating it
+  as someone else's emptied three whole forms of every question. Only genuine
+  sign-off blocks (`APPROVAL_RE`) are dropped.
+- **Word has two kinds of tick-box** and Scicom's forms use both: real form
+  fields (`<w:checkBox>`, 95 of them in the Personnel Action Form) and plain
+  ballot characters (U+2610). `docx.tickCheckbox` handles each.
+
 ## Things that will bite you
 
 - **`.append()` does not flatten arrays.** Use the `fill()` helper in `app.js`,
@@ -124,33 +151,33 @@ write a migration in `scripts/`.
 - Hard rules chatbot, working with no AI at all.
 - Optional Ollama integration with graceful fallback everywhere.
 - Backups on demand.
+- **The guided form filler.** Pick a form, answer one question at a time (every
+  one skippable), and the answers are written into the real Scicom template.
+  Letterhead, borders, footers and signature blocks come through untouched.
+  Dates the form wants for itself are filled in automatically; dates you give
+  are reformatted to "14 November 2026". Tick-boxes are offered as a choice and
+  ticked in place. Each finished form gets an internal document number and is
+  added to the register.
 
 ### Not built yet
 
-1. **The guided form filler.** The biggest remaining piece. The intent: pick a
-   form, the system asks one question per field (each skippable), optionally
-   runs the answers through the local model to tighten wording, writes the
-   answers into the real `.docx` template, auto-fills any date fields, and hands
-   back a Word file to review and download.
-
-   Groundwork already in place: all 22 forms are catalogued with a `fillable`
-   flag; the 9 legacy `.doc`/`.xls` ones have modern twins in
-   `templates/converted/`; `llm.polish()` already does the rewriting with a
-   safe fallback; `exports/` and the `/exports/` download route exist.
-
-   The approach that will work: fill the original `.docx` in place by writing
-   text into its table cells (the forms are almost entirely tables), which
-   preserves the Scicom letterhead and layout exactly. Do **not** rebuild the
-   forms from scratch — they have to look like what colleagues approve.
-
-   Note: the converted forms have not yet been checked side by side against the
-   originals. Do that before relying on them.
-
-2. **The rewritten new-joiner policy guides.** 25 policy PDFs to be turned into
+1. **The rewritten new-joiner policy guides.** 25 policy PDFs to be turned into
    simple step-by-step guides, with the logo, professional-looking, downloadable.
 
+2. **Spreadsheet forms.** Six forms are `.xlsx`/`.xls` (timesheets, payout
+   lists, the Access Control List). The filler covers Word only; these are
+   offered as downloads. Filling them would mean a `sheet.js` alongside
+   `docx.js` — `zip.js` already does the container half of the work, and
+   `xl/worksheets/sheet1.xml` plus `xl/sharedStrings.xml` are the two files
+   that matter.
+
 3. **Attaching completed forms to tasks.** `linkedDocs[]` exists on every task
-   but nothing writes to it yet.
+   but nothing writes to it yet. A form filled from inside a task should link
+   back to it — `POST /api/forms/:id/fill` already accepts `taskId` and stores
+   it on the document, so it is half done.
+
+4. **Side-by-side check of the converted forms.** Still outstanding. The nine
+   converted from `.doc` have not been compared against the originals in Word.
 
 ---
 

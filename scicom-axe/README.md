@@ -119,6 +119,30 @@ shows you the exact folder for each workstream.
 
 ---
 
+## Filling in a form
+
+Open a workstream, go to **Action**, then **Fill out a form**. Pick one and it
+asks you what it needs, one question at a time.
+
+- **Every question can be skipped.** A blank here is a blank on the form, the
+  same as leaving a box empty on paper.
+- **Dates the form wants for itself** — "Date of Requisition" and the like —
+  are filled in for you. Dates you give are written out properly: type
+  14/11/2026 and the form says 14 November 2026.
+- **Tick-boxes** are offered as a list. Tick any number, or skip.
+- **Long answers get tidied.** Write it however it comes out; the wording is
+  cleaned up before it goes on the form. With Ollama installed it is reworded
+  properly; without it, it is tidied by fixed rules and your words are kept.
+- **Sections somebody else signs** — approvals, budget sign-off — are never
+  asked for and never filled in.
+
+At the end you get a Word file to download and an internal document number, so
+that copy stays tracked. **Read it through in Word before you send it
+anywhere.** Nothing is signed and nothing is submitted.
+
+Six of the forms are spreadsheets rather than Word files. Those are offered as
+downloads to fill in by hand.
+
 ## Internal document numbers
 
 When the official Scicom number is unknown, or when several copies of the same
