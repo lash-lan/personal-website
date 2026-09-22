@@ -1,6 +1,11 @@
 ---
 import SiteHeader from '../../../components/SiteHeader.astro';
 import ReadAloud from '../../../components/ReadAloud.astro';
+import { storyTracks } from '../../../data/narration.js';
+
+// Narrated in one of the voices Lash's friends recorded and gave him to use.
+// If the recording is ever missing the player falls back to the browser's voice.
+const tracks = storyTracks('the-serpent-wars');
 ---
 <html lang="en">
 <head>
@@ -434,7 +439,7 @@ import ReadAloud from '../../../components/ReadAloud.astro';
 
 <SiteHeader back={{ href: "/library/foundation-age", label: "The Foundation Age" }} current="library" accent="#5ab85c" dim="#4e6e4a" bright="#cce0c2" bg="rgba(2,7,4,0.94)" />
 
-<ReadAloud selector=".story-body p, .story-body .pull-quote, .story-body .horror-line" title="The Serpent Wars. Chapter One. The First Wrongness." />
+<ReadAloud selector=".story-body p, .story-body .pull-quote, .story-body .horror-line" title="The Serpent Wars. Chapter One. The First Wrongness." tracks={tracks} />
 
 <div id="cursor"></div>
 <div id="cursor-ring"></div>
