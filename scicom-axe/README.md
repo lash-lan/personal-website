@@ -11,7 +11,15 @@ walkthrough in the order that shows you the most.
 
 ## Running it
 
-You need Node 18 or newer. (You have Node 22, so you are fine.)
+**The easy way, on Windows:** double-click **`Start Scicom Axe.cmd`** in this
+folder. A black window opens — that is the system running — and your browser
+opens by itself. Close that window when you are finished.
+
+To reach it from your phone instead, double-click
+**`Start Scicom Axe - phone.cmd`**. Read the warning it prints first.
+
+**From a terminal**, on any machine: you need Node 18 or newer. (You have Node
+22, so you are fine.)
 
 **Moving it to a new laptop needs two things**, not one: this code, and the
 content bundle. The policies, forms, guides and your data are deliberately kept
@@ -29,6 +37,9 @@ use the bundle.
 3. Open **http://localhost:4173** in your browser.
 
 To stop it, go back to the terminal window and press **Ctrl + C**.
+
+Leave it running the whole time you are using the system. It is the system —
+the browser is only a window onto it.
 
 There is nothing to install. No packages are downloaded, no build step runs.
 `npm start` simply starts the small server in `server.js`.

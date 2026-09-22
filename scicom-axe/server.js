@@ -13,6 +13,7 @@ const http = require('http');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { spawn } = require('child_process');
 const { URL } = require('url');
 
 const api = require('./lib/api');
@@ -152,6 +153,27 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
+/**
+ * Open the browser on the right page, once the server is actually listening.
+ *
+ * Only runs when started by double-clicking, which sets OPEN=1. If it fails —
+ * no desktop, an unusual setup — it fails quietly, because the address is
+ * printed above anyway and the system itself is running perfectly well.
+ */
+function openBrowser(url) {
+  const cmd = process.platform === 'win32' ? 'cmd'
+    : process.platform === 'darwin' ? 'open'
+      : 'xdg-open';
+  const args = process.platform === 'win32' ? ['/c', 'start', '""', url] : [url];
+  try {
+    const child = spawn(cmd, args, { stdio: 'ignore', detached: true });
+    child.on('error', () => {});
+    child.unref();
+  } catch {
+    /* nothing to do; the address is on screen */
+  }
+}
+
 /** The addresses this machine can be reached on from the rest of the network. */
 function networkAddresses() {
   const out = [];
@@ -169,6 +191,8 @@ server.listen(PORT, HOST, () => {
   const bar = '─'.repeat(line.length);
   console.log(`\n┌${bar}┐\n│${line}│\n└${bar}┘`);
   console.log('  Open that address in your browser. Press Ctrl+C here to stop.');
+
+  if (process.env.OPEN === '1') openBrowser(`http://localhost:${PORT}`);
 
   if (!onNetwork) {
     console.log('  Only this computer can reach it.\n');
@@ -205,8 +229,18 @@ server.listen(PORT, HOST, () => {
 
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
-    console.error(`\nPort ${PORT} is already in use — something else is running there.`);
-    console.error(`Either stop it, or start this on a different port:  PORT=4174 npm start\n`);
+    console.error(`\n  Port ${PORT} is already in use.`);
+    console.error('');
+    console.error('  The usual reason is that Scicom Axe is ALREADY RUNNING in');
+    console.error('  another window. Look for it — you may simply be able to open');
+    console.error(`  http://localhost:${PORT} and carry on.`);
+    console.error('');
+    console.error('  Otherwise, close whatever is using that port, or start this one');
+    console.error('  somewhere else:');
+    console.error('');
+    console.error(`    Windows PowerShell   $env:PORT=${PORT + 1}; npm start`);
+    console.error(`    Git Bash or Mac      PORT=${PORT + 1} npm start`);
+    console.error('');
     process.exit(1);
   }
   throw err;

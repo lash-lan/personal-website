@@ -30,15 +30,20 @@ anything — and if you want a clean slate afterwards, the last section says how
    These are not on GitHub on purpose. That repository is public, and one of
    the supplied HR files contains a person's passport and bank details.
 
-3. **Start it.** In a terminal inside `personal-website/scicom-axe`:
+3. **Start it.** Open the `scicom-axe` folder in File Explorer and
+   **double-click `Start Scicom Axe.cmd`**.
 
-   ```
-   npm start
-   ```
+   A black window opens and stays open — that is the system running. Your
+   browser opens by itself a second later.
 
-4. Open **http://localhost:4173**.
+   If you would rather use a terminal, open one inside `scicom-axe` and run
+   `npm start`, then go to **http://localhost:4173**.
 
-To stop it, press **Ctrl + C** in that terminal window.
+**To stop it:** close the black window, or press **Ctrl + C** in it.
+
+Leave that window open the whole time you are using the system. Closing it
+stops everything — nothing is lost, but the page will stop working until you
+start it again.
 
 You should see the dashboard, eight workstreams down the left, and a clock
 ticking in the top right. If you do, everything is working.
