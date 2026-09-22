@@ -78,8 +78,11 @@ together, what is finished and what is not.
 
 ## On a phone
 
-`npm run phone` instead of `npm start`. It prints an address like
-`http://192.168.1.42:4173` — open that on your phone, on the same Wi-Fi.
+Double-click **`Start Scicom Axe - phone.cmd`**, or run `npm run phone`.
+
+It prints a **QR code**. Point your phone's camera at it and tap the link. The
+address is printed underneath too, if you would rather type it.
+
 Add it to your home screen and it opens like an app.
 
 The laptop has to be on and running it; the phone is only a window onto it.

@@ -213,3 +213,24 @@ Two judgements worth keeping:
   separate ones.
 - There is no login. It listens on `127.0.0.1` only, so nothing outside the
   computer can reach it.
+
+## The QR code
+
+`lib/qr.js` is a QR encoder written from scratch — byte mode, versions 1 to 10,
+levels L and M. It exists so that starting in phone mode prints a code you can
+point a camera at, instead of an IP address you have to type into a phone.
+
+It is verified against a real decoder (`pyzbar`): all ten versions, both levels,
+and the terminal output itself parsed back and scanned. Re-run that check if you
+touch it — a QR code that is subtly wrong looks completely convincing.
+
+**The bug that cost the most time, in case it recurs:** the fifteen format bits
+run most-significant-first along their positions — bit 14 first, bit 0 last.
+Writing them the other way round produces a code with perfect finder patterns,
+perfect timing, correct data and correct error correction, that no scanner on
+earth will read, because format is the first thing a scanner decodes and it
+fails before reaching anything else.
+
+The terminal rendering sets its colours explicitly rather than inheriting the
+theme. A QR code must be dark-on-light; a terminal may be either way round, so
+inheriting means it works on one machine and silently fails on the next.

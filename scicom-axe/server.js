@@ -18,6 +18,7 @@ const { URL } = require('url');
 
 const api = require('./lib/api');
 const catalog = require('./lib/catalog');
+const qr = require('./lib/qr');
 
 const PORT = Number(process.env.PORT || 4173);
 const HOST = process.env.HOST || '127.0.0.1';
@@ -210,12 +211,30 @@ server.listen(PORT, HOST, () => {
   console.log('');
   console.log('  ┌' + '─ ON THE NETWORK '.padEnd(W, '─') + '┐');
   if (addrs.length) {
-    row('From your phone, on the same Wi-Fi, open:');
-    for (const a of addrs) row(`  http://${a}:${PORT}`);
+    row('Point your phone camera at this:');
   } else {
     row('No network address found — are you connected to Wi-Fi?');
   }
   rule();
+
+  // A QR code saves typing an IP address into a phone, which is the single
+  // most annoying part of this. If drawing it fails for any reason, the
+  // address below is still there to type by hand.
+  if (addrs.length) {
+    const url = `http://${addrs[0]}:${PORT}`;
+    try {
+      console.log('');
+      for (const line of qr.toText(qr.encode(url, { level: 'M' })).split('\n')) {
+        console.log('  ' + line);
+      }
+      console.log('');
+    } catch {
+      /* fall through to the typed address */
+    }
+    row('Or type it in:');
+    for (const a of addrs) row(`  http://${a}:${PORT}`);
+    rule();
+  }
   row('There is NO PASSWORD on this. Anyone else on the');
   row('same network can open it and see your tasks, the');
   row('policies and the finance figures.');

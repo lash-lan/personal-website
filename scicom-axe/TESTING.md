@@ -140,8 +140,11 @@ switched on with the system running — the phone is just a window onto it.
    npm run phone
    ```
 
-2. It prints an address like `http://192.168.1.42:4173`. Type that into your
-   phone's browser. Both devices must be on the same Wi-Fi.
+2. **Point your phone's camera at the QR code it prints.** Tap the link that
+   pops up. Both devices must be on the same Wi-Fi.
+
+   If the camera will not play along, the address is printed underneath —
+   something like `http://192.168.1.42:4173` — and you can type it in.
 
 3. Add it to your home screen — Safari: Share then Add to Home Screen; Chrome:
    the three dots then Add to Home screen. It then opens like an app.
