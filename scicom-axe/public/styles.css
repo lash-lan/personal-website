@@ -79,7 +79,15 @@ a  { color: var(--navy); }
   text-decoration: none;
   flex: 0 0 auto;
 }
-.brand img { border-radius: 50%; background: #fff; }
+/* The mark is navy on transparent, so it needs a light chip to sit on against
+   the navy bar. A rounded square, not a circle — the axe reaches past the
+   badge on both diagonals and a circular chip would clip it. */
+.brand img {
+  background: #fff;
+  border-radius: 8px;
+  padding: 3px;
+  box-sizing: border-box;
+}
 .brand span { display: flex; flex-direction: column; line-height: 1.15; }
 .brand strong { font-size: .98rem; letter-spacing: -.01em; }
 .brand small { font-size: .72rem; opacity: .72; letter-spacing: .06em; text-transform: uppercase; }
