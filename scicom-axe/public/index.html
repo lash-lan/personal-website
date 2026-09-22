@@ -10,6 +10,10 @@
 <body>
 
 <header class="topbar">
+  <button class="menu-btn" id="menu-btn" aria-label="Menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+
   <a class="brand" href="#/home">
     <img src="/img/logo-64.png" alt="" width="36" height="36">
     <span>
@@ -30,6 +34,7 @@
 </header>
 
 <div class="shell">
+  <div class="sidebar-backdrop" id="sidebar-backdrop" hidden></div>
   <nav class="sidebar" id="sidebar"></nav>
   <main class="main" id="main"><div class="loading">Loading…</div></main>
 </div>

@@ -65,6 +65,18 @@ together, what is finished and what is not.
 
 ---
 
+## On a phone
+
+`npm run phone` instead of `npm start`. It prints an address like
+`http://192.168.1.42:4173` — open that on your phone, on the same Wi-Fi.
+Add it to your home screen and it opens like an app.
+
+The laptop has to be on and running it; the phone is only a window onto it.
+
+**There is no password.** Anyone else on the same Wi-Fi who knows the address
+can open it. Fine at home; think first on an office network. The system says so
+when you start it that way, and `npm start` goes back to this computer only.
+
 ## Backing up
 
 Click **Back up my data now** at the bottom of the sidebar. It copies every
@@ -104,6 +116,7 @@ OLLAMA_MODEL=mistral npm start
 | Command                       | What it does                                     |
 |-------------------------------|--------------------------------------------------|
 | `npm start`                   | Start the system                                 |
+| `npm run phone`               | Start it so a phone on the same Wi-Fi can reach it |
 | `node scripts/demo.js add`    | Put the example tasks in                         |
 | `node scripts/demo.js clear`  | Take the example tasks back out                  |
 | `python3 scripts/import_finance.py` | Re-import the cost spreadsheet             |

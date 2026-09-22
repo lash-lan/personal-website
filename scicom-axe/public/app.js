@@ -217,6 +217,32 @@ function emptyState(text, action) {
 
 function go(hash) { location.hash = hash; }
 
+/* ---- the sidebar menu on a narrow screen ---- */
+
+/**
+ * On a phone the sidebar slides in over the page. On a wide screen it is
+ * always there and none of this runs.
+ */
+const menu = {
+  get button() { return $('#menu-btn'); },
+  get backdrop() { return $('#sidebar-backdrop'); },
+  get isNarrow() { return window.matchMedia('(max-width: 860px)').matches; },
+
+  open() {
+    $('#sidebar').classList.add('open');
+    this.button.setAttribute('aria-expanded', 'true');
+    this.backdrop.hidden = false;
+  },
+  close() {
+    $('#sidebar').classList.remove('open');
+    this.button.setAttribute('aria-expanded', 'false');
+    this.backdrop.hidden = true;
+  },
+  toggle() {
+    $('#sidebar').classList.contains('open') ? this.close() : this.open();
+  },
+};
+
 function parseRoute() {
   const raw = location.hash.replace(/^#\/?/, '');
   const [view, id, tab] = raw.split('/');
@@ -226,6 +252,8 @@ function parseRoute() {
 function renderSidebar() {
   const nav = clear($('#sidebar'));
   const r = state.route;
+  // Tapping anything in here navigates, so the menu should get out of the way.
+  nav.onclick = (e) => { if (e.target.closest('a, button') && menu.isNarrow) menu.close(); };
 
   const item = (view, id, label, opts = {}) => {
     const active = r.view === view && (!id || r.id === id);
@@ -1767,6 +1795,12 @@ async function start() {
   pill.addEventListener('click', async () => { setPill(await api.llm()); toast('Checked for a local AI.'); });
 
   $('#quick-add-btn').addEventListener('click', () => openTaskDrawer(null));
+
+  menu.button.addEventListener('click', () => menu.toggle());
+  menu.backdrop.addEventListener('click', () => menu.close());
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') menu.close(); });
+  // Rotating the phone, or widening the window, should not leave it half open.
+  window.addEventListener('resize', () => { if (!menu.isNarrow) menu.close(); });
 
   window.addEventListener('hashchange', render);
   if (!location.hash) location.hash = '#/home';

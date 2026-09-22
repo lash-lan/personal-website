@@ -41,6 +41,9 @@
 html, body {
   margin: 0;
   height: 100%;
+  /* A phone must never be able to scroll the whole page sideways. Anything
+     genuinely too wide, like the finance table, scrolls inside its own card. */
+  overflow-x: hidden;
   font-family: var(--font);
   font-size: 15px;
   line-height: 1.5;
@@ -114,6 +117,32 @@ a  { color: var(--navy); }
 }
 .llm-pill.on  { background: rgba(34,197,94,.24); border-color: rgba(134,239,172,.5); }
 .llm-pill.off { background: rgba(255,255,255,.1); }
+
+/* The three-line menu button. Only ever visible on a narrow screen. */
+.menu-btn {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: 38px;
+  height: 38px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .12);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.menu-btn span {
+  display: block;
+  height: 2px;
+  background: #fff;
+  border-radius: 2px;
+  transition: transform .18s, opacity .18s;
+}
+.menu-btn[aria-expanded="true"] span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.menu-btn[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+.menu-btn[aria-expanded="true"] span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
 
 /* --------------------------------------------------------------- shell */
 
@@ -519,9 +548,73 @@ tbody tr:last-child td { border-bottom: 0; }
 .flex.end { justify-content: flex-end; }
 .spacer { flex: 1; }
 
+/* --------------------------------------------------------------- phones */
+
 @media (max-width: 860px) {
-  .shell { flex-direction: column; }
-  .sidebar { width: 100%; flex: none; position: static; max-height: none; border-right: 0; border-bottom: 1px solid var(--line); }
-  .main { padding: 16px 14px 60px; }
+  /* The sidebar slides in over the content instead of sitting above it.
+     Stacking it pushed the dashboard a whole screen down, so every visit
+     started with a scroll past eight workstreams. */
+  .menu-btn { display: flex; }
+
+  .sidebar {
+    position: fixed;
+    top: var(--topbar-h);
+    bottom: 0;
+    left: 0;
+    width: min(290px, 84vw);
+    flex: none;
+    max-height: none;
+    z-index: 45;
+    transform: translateX(-102%);
+    transition: transform .2s ease-out;
+    box-shadow: var(--shadow-lg);
+    border-right: 1px solid var(--line);
+  }
+  .sidebar.open { transform: translateX(0); }
+
+  .sidebar-backdrop {
+    position: fixed;
+    inset: var(--topbar-h) 0 0 0;
+    background: rgba(15, 23, 42, .4);
+    z-index: 44;
+  }
+  .sidebar-backdrop[hidden] { display: none; }
+
+  .main { padding: 14px 16px 70px; }
+  .page-head h1 { font-size: 1.28rem; }
+
+  /* Keep the top bar on one line. The date and the model badge are the two
+     things worth losing first. */
+  .topbar { gap: 10px; padding: 0 12px; }
   .clock-date { display: none; }
+  .llm-pill { display: none; }
+  .brand small { display: none; }
+  .brand strong { font-size: .92rem; }
+  .clock-time { font-size: .95rem; }
+
+  /* Tables scroll inside their own card rather than widening the page. */
+  .scroll-x { -webkit-overflow-scrolling: touch; }
+  .card-body.tight > table,
+  .scroll-x > table { min-width: 560px; }
+
+  /* A task row stacks: status and countdown go under the title, not beside it. */
+  .task { flex-direction: column; gap: 7px; }
+  .task .right { flex-direction: row; align-items: center; gap: 10px; }
+
+  .doc-row { flex-wrap: wrap; }
+  .doc-row .grow { flex: 1 1 100%; }
+
+  .metrics { grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 8px; }
+  .metric { padding: 10px 11px; }
+  .metric .n { font-size: 1.45rem; }
+
+  .drawer { width: 100vw; }
+  .row > * { min-width: 100%; }
+  .chat-input { flex-wrap: wrap; }
+  .msg { max-width: 92%; }
+}
+
+@media (max-width: 420px) {
+  .brand strong { font-size: .85rem; }
+  .btn { font-size: .82rem; padding: 6px 11px; }
 }

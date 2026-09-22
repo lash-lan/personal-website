@@ -11,6 +11,7 @@
 
 const http = require('http');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { URL } = require('url');
 
@@ -151,11 +152,55 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
+/** The addresses this machine can be reached on from the rest of the network. */
+function networkAddresses() {
+  const out = [];
+  for (const [, list] of Object.entries(os.networkInterfaces())) {
+    for (const net of list || []) {
+      if (net.family === 'IPv4' && !net.internal) out.push(net.address);
+    }
+  }
+  return out;
+}
+
 server.listen(PORT, HOST, () => {
-  const line = `  Scicom Axe  —  http://${HOST}:${PORT}  `;
+  const onNetwork = HOST !== '127.0.0.1' && HOST !== 'localhost';
+  const line = `  Scicom Axe  —  http://localhost:${PORT}  `;
   const bar = '─'.repeat(line.length);
   console.log(`\n┌${bar}┐\n│${line}│\n└${bar}┘`);
-  console.log('  Open that address in your browser. Press Ctrl+C here to stop.\n');
+  console.log('  Open that address in your browser. Press Ctrl+C here to stop.');
+
+  if (!onNetwork) {
+    console.log('  Only this computer can reach it.\n');
+    return;
+  }
+
+  // Bound to the whole network, so say so loudly and say what it means.
+  const addrs = networkAddresses();
+  const W = 58;                                   // inside width of the box
+  const row = (text = '') => console.log('  │' + ` ${text}`.padEnd(W) + '│');
+  const rule = (label) => console.log('  ' + (label
+    ? '├' + `─ ${label} `.padEnd(W, '─') + '┤'
+    : '├' + '─'.repeat(W) + '┤'));
+
+  console.log('');
+  console.log('  ┌' + '─ ON THE NETWORK '.padEnd(W, '─') + '┐');
+  if (addrs.length) {
+    row('From your phone, on the same Wi-Fi, open:');
+    for (const a of addrs) row(`  http://${a}:${PORT}`);
+  } else {
+    row('No network address found — are you connected to Wi-Fi?');
+  }
+  rule();
+  row('There is NO PASSWORD on this. Anyone else on the');
+  row('same network can open it and see your tasks, the');
+  row('policies and the finance figures.');
+  row();
+  row('Fine on your home Wi-Fi. Think twice on an office');
+  row('or a public one.');
+  row();
+  row('Press Ctrl+C when you are finished.');
+  console.log('  └' + '─'.repeat(W) + '┘\n');
 });
 
 server.on('error', (err) => {

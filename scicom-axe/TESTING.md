@@ -124,6 +124,34 @@ the sidebar immediately with its own colour and its own task numbering.
 
 ---
 
+## Using it on your phone
+
+It works on a phone, over the same Wi-Fi as the laptop. The laptop has to be
+switched on with the system running — the phone is just a window onto it.
+
+1. On the laptop, instead of `npm start`, run:
+
+   ```
+   npm run phone
+   ```
+
+2. It prints an address like `http://192.168.1.42:4173`. Type that into your
+   phone's browser. Both devices must be on the same Wi-Fi.
+
+3. Add it to your home screen — Safari: Share then Add to Home Screen; Chrome:
+   the three dots then Add to Home screen. It then opens like an app.
+
+**One thing to understand before you do this.** There is no password on it.
+Anybody else on that same Wi-Fi who knows the address can open it and see your
+tasks, the policies and the finance figures. On your home Wi-Fi that is
+nothing. On the office network, or a café, think about it first. The system
+prints the same warning when you start it that way.
+
+Press Ctrl+C on the laptop when you are finished and it goes back to being
+reachable only from the laptop itself.
+
+---
+
 ## If something goes wrong
 
 - **It will tell you.** Errors appear on screen in plain words, not codes.
