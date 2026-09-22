@@ -146,7 +146,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
-  const line = `  Scicom AI Workstream OS  —  http://${HOST}:${PORT}  `;
+  const line = `  Scicom Axe  —  http://${HOST}:${PORT}  `;
   const bar = '─'.repeat(line.length);
   console.log(`\n┌${bar}┐\n│${line}│\n└${bar}┘`);
   console.log('  Open that address in your browser. Press Ctrl+C here to stop.\n');

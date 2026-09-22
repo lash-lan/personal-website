@@ -1,4 +1,4 @@
-# Workstream OS
+# Scicom Axe
 
 A local system for tracking every workstream, task, deadline, document and cost
 in the Scicom AI department. It runs on your own computer. Nothing is published
@@ -34,7 +34,7 @@ PORT=4174 npm start
 
 ## Moving it to another computer
 
-Copy the whole `workstream-os` folder. That is the entire move.
+Copy the whole `scicom-axe` folder. That is the entire move.
 
 Everything the system knows lives inside the folder:
 
@@ -77,7 +77,7 @@ and no cost per use:
 
 1. Download it from <https://ollama.com/download>.
 2. After installing, open a terminal and run: `ollama pull llama3.2`
-3. Leave Ollama running. Workstream OS finds it by itself.
+3. Leave Ollama running. Scicom Axe finds it by itself.
 
 The badge in the top right tells you which of the two it is using. Click the
 badge to make it check again.

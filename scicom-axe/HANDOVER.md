@@ -1,4 +1,4 @@
-# Handover notes
+# Scicom Axe — handover notes
 
 For whoever picks this up next — a different computer, a different Claude, or
 the same one months later. Read this before changing anything.
@@ -11,7 +11,7 @@ unrequested changes into a piece of work.
 
 ## What this is
 
-A local-only workstream tracker for the Scicom AI department. It runs as a small
+Scicom Axe is a local-only workstream tracker for the Scicom AI department. It runs as a small
 Node HTTP server on `127.0.0.1:4173` and serves one page.
 
 **Design constraint that drives everything: it must be liftable.** Copy the

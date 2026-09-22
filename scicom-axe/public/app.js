@@ -1,4 +1,4 @@
-/* Workstream OS — the whole screen, in one file.
+/* Scicom Axe — the whole screen, in one file.
    Written as plain JavaScript so it runs straight from the folder with no
    build step and no downloaded packages. */
 
@@ -916,7 +916,7 @@ function viewUpdateWorkstream(main, id) {
         ? [
           h('p.soft.small', 'This workstream reads its documents straight out of this folder:'),
           h('p.mono.small', { style: { background: 'var(--surface-2)', padding: '9px 12px', borderRadius: '6px', border: '1px solid var(--line)' } },
-            `workstream-os/resources/${ws.resourceFolder}/`),
+            `scicom-axe/resources/${ws.resourceFolder}/`),
           h('ul.small.soft', { style: { paddingLeft: '20px', lineHeight: '1.8' } },
             h('li', h('strong', 'To add one:'), ' put the file into the "Procedures - Policies" or "Forms" folder inside it.'),
             h('li', h('strong', 'To replace one:'), ' overwrite the file, keeping the same name.'),
