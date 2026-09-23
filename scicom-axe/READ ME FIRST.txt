@@ -1,0 +1,85 @@
+SCICOM AXE
+==========
+
+Everything is in this folder. There is nothing to download and nothing to
+install except Node.js, once.
+
+
+STEP 1 — Node.js (once only)
+----------------------------
+
+Open https://nodejs.org and download the big green LTS button. Run the
+installer and click Next until it finishes. Restart the computer afterwards.
+
+If you already have Node.js, skip this.
+
+
+STEP 2 — Put this folder somewhere sensible
+-------------------------------------------
+
+Unzip it, then drag the "scicom-axe" folder to your Documents folder, or
+wherever you will remember it. Do not leave it inside the Downloads folder or
+inside the zip file itself — Windows will not run it properly from there.
+
+
+STEP 3 — Start it
+-----------------
+
+Open the folder and double-click the one for your computer:
+
+    Windows        Start Scicom Axe.cmd
+    Mac or Linux   Start Scicom Axe.command
+
+A black window opens and stays open. That IS the system running. Your browser
+opens by itself a second later showing the dashboard.
+
+Leave the black window alone while you are using it. Close it when you have
+finished.
+
+
+TO USE IT ON YOUR PHONE
+-----------------------
+
+Double-click "Start Scicom Axe - phone.cmd" (Windows) or
+"Start Scicom Axe - phone.command" (Mac) instead. It prints a QR code —
+point your phone camera at it. Your phone must be on the same Wi-Fi as this
+laptop, and the laptop must stay switched on with that window open.
+
+There is no password on it. Anyone else on the same Wi-Fi who scans it can see
+your tasks, the policies and the finance figures. Fine at home. Think first on
+the office network.
+
+
+IF THE WINDOW FLASHES AND DISAPPEARS
+------------------------------------
+
+Node.js is not installed, or the computer cannot see it yet. Do step 1, restart
+the computer, and try again.
+
+ON A MAC, IF IT REFUSES TO OPEN
+-------------------------------
+
+macOS blocks downloaded scripts the first time. Right-click the file, choose
+Open, then click Open again in the box that appears. You only do this once.
+
+
+WHAT IS IN HERE
+---------------
+
+TESTING.md   a fifteen-minute walkthrough of what to try first
+README.md    how it all works, in plain words
+HANDOVER.md  the technical notes, for a developer or another Claude
+
+resources/   your Scicom policies and forms
+content/     the new joiner guides
+data/        your tasks, rules, finance records and master list
+exports/     the Word files it makes for you
+
+
+A NOTE ON WHAT IS IN THIS FOLDER
+---------------------------------
+
+This holds company documents. One of the supplied HR files contains a named
+person's passport number, bank account and home address. Keep this folder
+somewhere sensible and do not put it on a public website, a shared drive or
+anywhere it does not belong.

@@ -11,12 +11,16 @@ walkthrough in the order that shows you the most.
 
 ## Running it
 
-**The easy way, on Windows:** double-click **`Start Scicom Axe.cmd`** in this
-folder. A black window opens — that is the system running — and your browser
-opens by itself. Close that window when you are finished.
+**The easy way:** double-click the starter for your computer —
+**`Start Scicom Axe.cmd`** on Windows, **`Start Scicom Axe.command`** on a Mac.
+A terminal window opens — that is the system running — and your browser opens by
+itself. Close that window when you are finished.
 
-To reach it from your phone instead, double-click
-**`Start Scicom Axe - phone.cmd`**. Read the warning it prints first.
+To reach it from your phone instead, use the matching `- phone` starter. Read
+the warning it prints first.
+
+On a Mac, the first time: right-click the file, choose Open, then Open again.
+macOS blocks downloaded scripts until you do.
 
 **From a terminal**, on any machine: you need Node 18 or newer. (You have Node
 22, so you are fine.)
