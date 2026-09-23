@@ -82,6 +82,16 @@ Try the **Personnel Action Form** too, under Resource Administrative. That one
 has tick-boxes — pick a movement type and check the right box is ticked in the
 Word file and the other 94 are not.
 
+### 3b. Check your name on it (30 seconds)
+
+**Settings** in the sidebar. Your name, your job title, and the standing
+second-level approver — Shefeeque Abdul Rahman — are filled into every form
+automatically, so you never type them and they can never come out different on
+two forms.
+
+Change your name there, fill in a form again, and check the new name appears.
+Only boxes that are already empty are ever written into.
+
 ### 4. Read a new joiner guide (2 minutes)
 
 **New joiner guides** in the sidebar. Click **Read it** on Medical Leave and
@@ -91,19 +101,34 @@ Read it as if you were new. Does it tell you what you actually need? Is
 anything wrong for how your department really works? That is the feedback I
 need most — I wrote these from the policies, and you know the practice.
 
-### 5. Look at the finances (2 minutes)
+### 5. Upload an invoice (2 minutes) — *the new part*
 
-**Department Finances → Finances**. Your spreadsheet, flattened into 402
-individual charges.
+**Upload a file** in the sidebar. Drag in a PDF invoice from a supplier — an
+emailed one, not a scan.
 
-Look at the points of concern. It has noticed that the ChatGPT Plus and Cursor
-subscriptions for Ganesan, Inam, Andrea and Maqsood have had no charge since
-December 2025. Is that right? Were they cancelled?
+It reads the supplier, the invoice number, the date, the total, whether it is a
+subscription, and the last four digits of the card, and shows you all of it
+with every box editable. **Nothing is saved until you press Save this charge.**
+Change something that is wrong and save it, then look at Department Finances →
+Finances and see it there.
 
-Click any row to edit it. Add an invoice number and a card to one and watch it
-drop off the incomplete list.
+Then try a spreadsheet of charges and a Word report. And try a photo of a
+receipt, which it will honestly tell you it cannot read — the boxes come up
+blank for you to type in, because reading words out of a picture needs OCR
+software that is not installed and would break the "copy the folder and it
+runs" rule.
 
-### 6. Talk to the hard rules (1 minute)
+### 6. Look at the finances (1 minute)
+
+**Department Finances → Finances**. This starts **empty** — the figures from
+the capitalised-cost spreadsheet were cleared at your request. A copy of them
+is in `data/_backups`, so nothing is lost.
+
+Fill it back up by uploading, or click **Record a charge** to type one in. The
+points of concern above the table are checked against your hard rules, and a
+charge with no invoice number or no card is flagged.
+
+### 7. Talk to the hard rules (1 minute)
 
 **Hard rules** in the sidebar. Type into the box at the bottom:
 
@@ -114,7 +139,7 @@ for finance add rule: every subscription must name the person it is for
 It should add it and show it in the list above. Then try `show rules for
 finance`, and `remove rule 6`.
 
-### 7. Search the master list (1 minute)
+### 8. Search the master list (1 minute)
 
 **Master list**. There is a four-row sample in there. Type in the search box.
 Click any cell and change it — it saves as soon as you click away.
@@ -122,7 +147,7 @@ Click any cell and change it — it saves as soon as you click away.
 When you have your real list, save it from Excel as CSV and import it over the
 top.
 
-### 8. Create a workstream (1 minute)
+### 9. Create a workstream (1 minute)
 
 **New initiative**. Give it a name and tick "has its own forms". It appears in
 the sidebar immediately with its own colour and its own task numbering.

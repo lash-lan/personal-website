@@ -618,3 +618,47 @@ tbody tr:last-child td { border-bottom: 0; }
   .brand strong { font-size: .85rem; }
   .btn { font-size: .82rem; padding: 6px 11px; }
 }
+
+/* ---- the uploader ---------------------------------------------------- */
+
+.dropzone {
+  border: 2px dashed var(--line);
+  border-radius: 12px;
+  padding: 34px 20px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--surface-2);
+  transition: border-color .15s, background .15s;
+}
+.dropzone:hover,
+.dropzone.over { border-color: var(--orange); background: #fff7ed; }
+.dropzone-icon { font-size: 2rem; line-height: 1; margin-bottom: 8px; color: var(--orange); }
+.dropzone p { margin: 6px auto 0; max-width: 46ch; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: -4px 0 12px; }
+.chip {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: .76rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+.chip:hover { border-color: var(--navy); color: var(--navy); }
+
+.excerpt {
+  max-height: 340px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-size: .78rem;
+  line-height: 1.55;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 0;
+}
+
+label.check { display: flex; gap: 9px; align-items: center; font-size: .9rem; cursor: pointer; }
+label.check input { width: auto; margin: 0; }

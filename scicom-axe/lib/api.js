@@ -15,6 +15,9 @@ const analysis = require('./analysis');
 const rules = require('./rules');
 const llm = require('./llm');
 const formsLib = require('./forms');
+const settings = require('./settings');
+const extract = require('./extract');
+const intake = require('./intake');
 const guidesLib = require('./guides');
 
 const ROOT = path.join(__dirname, '..');
@@ -154,8 +157,15 @@ on('GET', '/api/bootstrap', async () => {
     rules: rules.all(),
     llm: await llm.check(),
     masterList: (() => { const m = masterList(); return { name: m.name, importedAt: m.importedAt, columns: m.columns, rowCount: m.rows.length }; })(),
+    settings: settings.all(),
   };
 });
+
+/* --------------------------------------------------------------- settings */
+
+on('GET', '/api/settings', async () => settings.all());
+
+on('PATCH', '/api/settings', async ({ body }) => settings.patch(body));
 
 on('GET', '/api/time', async () => ({ serverTime: new Date().toISOString() }));
 
@@ -407,6 +417,21 @@ on('POST', '/api/finance', async ({ body }) => {
   list.push(rec);
   store.write('finance', list);
   return rec;
+});
+
+/**
+ * Throw away every finance record and start again.
+ *
+ * Everything is copied into data/_backups first, so this can be undone by
+ * copying finance.json back out of that folder. The internal FIN- numbering
+ * carries on from where it left off rather than restarting, so a number that
+ * has already been written on a piece of paper is never handed out twice.
+ */
+on('POST', '/api/finance/clear', async () => {
+  const before = finance().length;
+  const savedTo = store.backupAll('before-finance-clear');
+  store.write('finance', []);
+  return { removed: before, savedTo };
 });
 
 on('PATCH', '/api/finance/:id', async ({ params, body }) => {
@@ -746,6 +771,194 @@ on('POST', '/api/llm/polish', async ({ body }) => {
 });
 
 /* ---------------------------------------------------------------- backups */
+
+/* ---------------------------------------------------------------- uploads */
+
+/**
+ * The uploader.
+ *
+ * An uploaded file is kept exactly as it arrived, in the `uploads` folder, and
+ * a proposal is worked out from it. Nothing is written into the finance
+ * records, the master list or the documents register until a separate, second
+ * request says so — so an amount read wrongly off a scan is something you
+ * correct on screen, not something you discover in your accounts later.
+ */
+
+const UPLOAD_DIR = path.join(ROOT, 'uploads');
+
+function uploads() {
+  return store.read('uploads', []);
+}
+
+function uploadPath(rec) {
+  return path.join(UPLOAD_DIR, rec.savedAs);
+}
+
+/** A filename safe on every operating system, that still reads like the original. */
+function safeName(original) {
+  const ext = path.extname(original).toLowerCase().slice(0, 12);
+  const base = path.basename(original, path.extname(original))
+    .replace(/[^A-Za-z0-9 ._-]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 70) || 'file';
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  return `${stamp}-${base}${ext}`;
+}
+
+function knownVendors() {
+  return [...new Set(finance().map((r) => r.vendor).filter(Boolean))];
+}
+
+on('GET', '/api/uploads', async () => uploads().slice().reverse());
+
+on('POST', '/api/uploads', async ({ body }) => {
+  const filename = require_(body.filename, 'File name');
+  const raw = require_(body.dataBase64, 'File contents');
+  const buf = Buffer.from(String(raw).replace(/^data:[^,]*,/, ''), 'base64');
+  if (!buf.length) throw new HttpError(400, 'That file arrived empty.');
+
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  const savedAs = safeName(filename);
+  fs.writeFileSync(path.join(UPLOAD_DIR, savedAs), buf);
+
+  const extraction = extract.extract(filename, buf);
+  const proposal = await intake.propose(filename, extraction, { knownVendors: knownVendors() });
+
+  const rec = {
+    id: ids.uid('up'),
+    filename,
+    savedAs,
+    size: buf.length,
+    kind: extraction.kind,
+    readable: extraction.readable,
+    target: proposal.target,
+    confidence: proposal.confidence,
+    status: 'proposed',
+    uploadedAt: new Date().toISOString(),
+    applied: null,
+  };
+  const list = uploads();
+  list.push(rec);
+  store.write('uploads', list);
+
+  return { upload: rec, proposal, excerpt: (extraction.text || '').slice(0, 4000) };
+});
+
+/** Look at an upload again — the file is still there, so it is read afresh. */
+on('GET', '/api/uploads/:id', async ({ params }) => {
+  const rec = uploads().find((u) => u.id === params.id);
+  if (!rec) throw new HttpError(404, 'That upload is not in the system.');
+  const abs = uploadPath(rec);
+  if (!fs.existsSync(abs)) throw new HttpError(404, 'The file itself is no longer in the uploads folder.');
+  const buf = fs.readFileSync(abs);
+  const extraction = extract.extract(rec.filename, buf);
+  const proposal = await intake.propose(rec.filename, extraction, { knownVendors: knownVendors() });
+  return { upload: rec, proposal, excerpt: (extraction.text || '').slice(0, 4000) };
+});
+
+/**
+ * Save what was proposed, after you have checked it.
+ *
+ * Whatever the screen sends is what gets written — the figures you can see,
+ * not the ones the system first guessed at.
+ */
+on('POST', '/api/uploads/:id/apply', async ({ params, body }) => {
+  const list = uploads();
+  const i = list.findIndex((u) => u.id === params.id);
+  if (i < 0) throw new HttpError(404, 'That upload is not in the system.');
+  const rec = list[i];
+  const target = body.target || rec.target;
+  const written = { finance: [], documents: [], masterListRows: 0, tasks: [] };
+
+  if (target === 'finance') {
+    const rows = [].concat(body.records || (body.fields ? [body.fields] : []));
+    if (!rows.length) throw new HttpError(400, 'There is nothing to save — every row was left out.');
+    for (const row of rows) {
+      const created = await routeHandler('POST', '/api/finance', { body: { ...row, vendor: row.vendor || rec.filename } });
+      created.sourceUploadId = rec.id;
+      created.sourceFile = rec.filename;
+      created.source = 'uploaded';
+      written.finance.push(created);
+    }
+    // Stamp the source onto the records just written.
+    const fin = finance();
+    for (const c of written.finance) {
+      const f = fin.find((x) => x.id === c.id);
+      if (f) Object.assign(f, { sourceUploadId: rec.id, sourceFile: rec.filename, source: 'uploaded' });
+    }
+    store.write('finance', fin);
+  } else if (target === 'masterlist') {
+    const columns = [].concat(body.columns || []);
+    const rows = [].concat(body.rows || []);
+    if (!columns.length) throw new HttpError(400, 'No column headings were given for the master list.');
+    const imported = await routeHandler('POST', '/api/masterlist/import', {
+      body: { columns, rows, name: body.name || rec.filename },
+    });
+    written.masterListRows = imported.totalRows;
+  } else if (target === 'document') {
+    const doc = await routeHandler('POST', '/api/documents', {
+      body: {
+        workstreamId: require_(body.workstreamId, 'Workstream'),
+        kind: body.kindCode || 'OTH',
+        title: body.title || rec.filename,
+        officialNo: body.officialNo || null,
+        subject: body.subject || null,
+        status: 'received',
+        filePath: path.join('uploads', rec.savedAs),
+        notes: body.notes || `Uploaded on ${new Date().toLocaleDateString('en-GB')}.`,
+      },
+    });
+    written.documents.push(doc);
+  } else {
+    throw new HttpError(400, `"${target}" is not something this can be saved as.`);
+  }
+
+  if (body.createTask && body.createTask.title) {
+    const task = await routeHandler('POST', '/api/tasks', {
+      body: {
+        ...body.createTask,
+        workstreamId: body.createTask.workstreamId || body.workstreamId,
+        linkedDocs: written.documents.map((d) => d.internalNo),
+      },
+    });
+    written.tasks.push(task);
+  }
+
+  rec.status = 'applied';
+  rec.target = target;
+  rec.applied = {
+    at: new Date().toISOString(),
+    financeRefs: written.finance.map((f) => f.ref),
+    documentNos: written.documents.map((d) => d.internalNo),
+    masterListRows: written.masterListRows,
+    taskRefs: written.tasks.map((t) => t.ref),
+  };
+  store.write('uploads', list);
+
+  return { upload: rec, written };
+});
+
+/** Put an upload aside without recording anything from it. */
+on('POST', '/api/uploads/:id/dismiss', async ({ params }) => {
+  const list = uploads();
+  const rec = list.find((u) => u.id === params.id);
+  if (!rec) throw new HttpError(404, 'That upload is not in the system.');
+  rec.status = 'set aside';
+  store.write('uploads', list);
+  return rec;
+});
+
+/** Forget an upload entirely, and delete the file with it. */
+on('DELETE', '/api/uploads/:id', async ({ params }) => {
+  const list = uploads();
+  const i = list.findIndex((u) => u.id === params.id);
+  if (i < 0) throw new HttpError(404, 'That upload is not in the system.');
+  const [rec] = list.splice(i, 1);
+  try { fs.unlinkSync(uploadPath(rec)); } catch { /* already gone */ }
+  store.write('uploads', list);
+  return { removed: rec.filename };
+});
 
 on('POST', '/api/backup', async () => ({ savedTo: store.backupAll('manual') }));
 

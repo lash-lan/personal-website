@@ -65,6 +65,7 @@ Everything the system knows lives inside the folder:
 | Folder       | What is in it                                               |
 |--------------|-------------------------------------------------------------|
 | `data/`      | Your tasks, rules, documents, finance records, master list   |
+| `uploads/`   | The invoices, receipts and reports you have uploaded          |
 | `resources/` | The Scicom policies and forms, exactly as supplied           |
 | `templates/` | Modern copies of the old `.doc` / `.xls` forms               |
 | `lib/`       | The logic                                                    |
@@ -138,6 +139,7 @@ OLLAMA_MODEL=mistral npm start
 | `node scripts/demo.js add`    | Put the example tasks in                         |
 | `node scripts/demo.js clear`  | Take the example tasks back out                  |
 | `python3 scripts/import_finance.py` | Re-import the cost spreadsheet             |
+| `node scripts/clear-finance.js` | Empty the finance records (backs up first)    |
 
 The finance importer needs Python with `openpyxl` (`pip install openpyxl`).
 It is only needed when the spreadsheet changes; the system itself does not use

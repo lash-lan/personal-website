@@ -28,6 +28,7 @@
 const path = require('path');
 const docx = require('./docx');
 const llm = require('./llm');
+const settings = require('./settings');
 
 /* -------------------------------------------------------- classification */
 
@@ -64,6 +65,106 @@ const COLON_ONLY_RE = /^[:：\s/]+$/;
 
 // A cell holding guidance rather than content, which we replace when answering.
 const EXAMPLE_RE = /^\s*(e\.?g\b|\[x{2,}\]|x{3,}\b|<[^>]+>|insert\b|enter\b|state\b|specify\b)/i;
+
+/* ------------------------------------------------------ standing names */
+
+/**
+ * The boxes that always take the same answer.
+ *
+ * Every form asks who is raising it, and every change request is signed off at
+ * second level by the same person. Those are not questions worth asking, so
+ * they are filled from Settings instead — and they can be changed there, or
+ * switched off altogether.
+ *
+ * Deliberately narrow. A change request asks for a designation and a mobile
+ * number twice: once for the requestor and once for the person the access is
+ * *for*, who is usually somebody else. Only boxes that name the requestor
+ * outright are filled.
+ */
+const STANDING = [
+  {
+    key: 'requesterName',
+    shown: 'Requested by',
+    why: 'your name, from Settings',
+    match: /^(?:name (?:and|&) signature of (?:the )?request[eo]r|name of (?:the )?request[eo]r|request[eo]r(?:'s)? name|name of (?:the )?applicant|applicant(?:'s)? name|requested by|request[eo]r|applicant|prepared by|raised by|submitted by|completed by)\b/i,
+  },
+  {
+    key: 'requesterDesignation',
+    shown: 'Your job title',
+    why: 'your job title, from Settings',
+    match: /^(?:designation|job title|position) of (?:the )?request[eo]r\b|^request[eo]r(?:'s)? (?:designation|job title)\b/i,
+  },
+  {
+    key: 'hodApprover',
+    shown: 'HOD / second-level approval',
+    why: 'the standing second-level approver, from Settings',
+    match: /^(?:hod|head of department|hod\s*[/&]\s*(?:manager|head)|department head|2nd level(?: approval)?|second level(?: approval)?|l2 approval)\b/i,
+  },
+];
+
+function standingFor(label) {
+  const t = String(label).replace(/\s+/g, ' ').trim();
+  return STANDING.find((s) => s.match.test(t)) || null;
+}
+
+/**
+ * The approval grid at the foot of a change request.
+ *
+ *     Description | Requestor | L1 Approval | L2 Approval (VP/SVP) | L3 …
+ *     Name        | …         |             |                      |
+ *     Date        | …         |             |                      |
+ *
+ * The column heading says whose box it is and the row heading says what goes
+ * in it, so neither cell on its own means anything. This reads the heading
+ * row, remembers which column is which, and then fills the "Name" row.
+ *
+ * Only empty boxes are written to. A form that already carries a name — a
+ * completed copy used as a template — is left exactly as it is.
+ */
+const GRID_REQUESTER_RE = /^request[eo]r$/i;
+const GRID_HOD_RE = /^(?:l2 approval|2nd level|second level|hod)\b|^l2\b|\b(?:vp\s*\/\s*svp)\b/i;
+
+function approvalGridWrites(doc, values) {
+  const writes = [];
+  const record = [];
+
+  for (const table of doc.tables) {
+    let map = null;                                  // column index -> settings key
+
+    for (const row of table.rows) {
+      const cells = row.cells.map((c) => ({ cell: c, text: c.text.replace(/\s+/g, ' ').trim() }));
+
+      // A heading row: does it name the people who sign?
+      const heads = {};
+      cells.forEach((c, i) => {
+        if (GRID_REQUESTER_RE.test(c.text)) heads[i] = 'requesterName';
+        else if (GRID_HOD_RE.test(c.text)) heads[i] = 'hodApprover';
+      });
+      if (Object.keys(heads).length) { map = heads; continue; }
+
+      if (!map) continue;
+      if (!/^names?$/i.test(cells[0]?.text || '')) continue;
+
+      for (const [index, key] of Object.entries(map)) {
+        const target = cells[Number(index)];
+        const value = values[key];
+        if (!target || !value) continue;
+        if (target.text) continue;                   // already has a name in it
+        const para = target.cell.paragraphs[0];
+        if (!para) continue;
+        writes.push(docx.writeIntoParagraph(para, value, { space: false }));
+        record.push({
+          label: key === 'hodApprover' ? 'Second-level approval — name' : 'Requestor — name',
+          value,
+          source: 'filled in for you',
+        });
+      }
+      map = null;                                    // one Name row per grid
+    }
+  }
+
+  return { writes, record };
+}
 
 // A heading rather than a field: all capitals, or a lone phrase spanning a row.
 function looksLikeHeading(text) {
@@ -177,10 +278,17 @@ function discover(templatePath) {
         const rawLabel = c.cell.paragraphs.map((p) => p.text).join(' ');
         const label = cleanLabel(c.text);
         if (!label || label.length < 2 || label.length > 80) continue;
-        if (NEVER_RE.test(label)) continue;
-        if (SIGN_BLOCK_RE.test(c.text)) continue;
-        if (APPROVAL_RE.test(c.text)) continue;
-        if (TOO_VAGUE_RE.test(label)) continue;
+
+        // A box that always takes the same answer is kept even where the rest
+        // of the section is somebody else's, because that is exactly where the
+        // requestor's name and the approver's name live.
+        const standing = standingFor(label);
+        if (!standing) {
+          if (NEVER_RE.test(label)) continue;
+          if (SIGN_BLOCK_RE.test(c.text)) continue;
+          if (APPROVAL_RE.test(c.text)) continue;
+          if (TOO_VAGUE_RE.test(label)) continue;
+        }
         if (/^\d+[.)]?$/.test(label)) continue;          // a row number
 
         // Look right for somewhere to put the answer, stepping over colon cells.
@@ -199,6 +307,7 @@ function discover(templatePath) {
         }
 
         // Nothing beside it — does the label end with a colon and have room below?
+        const fromOwnCell = !target;
         if (!target) {
           if (!/[:：]\s*(\([^)]*\)\s*)?$/.test(c.text)) continue;
           const labelPara = c.cell.paragraphs.find((p) => p.text.trim());
@@ -208,6 +317,15 @@ function discover(templatePath) {
             ? { kind: 'into', para: below }
             : { kind: 'append', para: labelPara || c.cell.paragraphs[0] };
         }
+
+        // A sign-off box is usually three lines in one cell — "HOD", "Name :",
+        // "Date :". A name belongs on the Name line, not on whichever line
+        // happens to be blank, so look for it before falling back.
+        if (standing && fromOwnCell) {
+          const namePara = c.cell.paragraphs.find((p) => /^\s*name\s*[:：]?\s*$/i.test(p.text));
+          if (namePara) target = { kind: 'append', para: namePara };
+        }
+
         if (!target || !target.para) continue;
 
         fields.push({
@@ -219,6 +337,11 @@ function discover(templatePath) {
           forOthers: sectionIsOthers,
           sectionOwner,
           autoToday: TODAY_RE.test(label),
+          standing: standing ? standing.key : null,
+          standingWhy: standing ? standing.why : null,
+          // The label on the form can read "HOD/Manager Date : Name", which is
+          // three fields run together. Say the plain thing instead.
+          standingLabel: standing ? standing.shown : null,
           targetAt: target.para.end,
           targetKind: target.kind,
         });
@@ -288,10 +411,20 @@ function questionsFor(templatePath, formTitle) {
 
   const asked = [];
   const auto = [];
+  const standingValues = settings.all();
+  const useStanding = standingValues.autoFillStandingNames !== false;
 
   for (const q of fields) {
-    if (q.forOthers) continue;
+    if (q.forOthers && !q.standing) continue;
     if (skip.has(q.label.toLowerCase())) continue;
+
+    if (q.standing) {
+      const value = useStanding ? String(standingValues[q.standing] || '').trim() : '';
+      // Nothing set for it, or switched off: leave the box blank rather than
+      // asking a question the answer to which never changes.
+      if (value) auto.push({ ...q, label: q.standingLabel || q.label, value, why: q.standingWhy });
+      continue;
+    }
 
     if (q.autoToday) {
       auto.push({ ...q, value: longDate(), why: "today's date" });
@@ -368,9 +501,25 @@ async function fill(templatePath, answers, { outPath, usePolish = true, formTitl
   const record = [];
   let polishedCount = 0;
 
+  const taken = new Set();                   // paragraphs already spoken for
+
   for (const q of set.auto) {
     writes.push(makeWrite(doc, q, q.value));
+    taken.add(q.targetAt);
     record.push({ label: q.label, value: q.value, source: 'filled in for you' });
+  }
+
+  // The sign-off grid at the foot of a change request, where the column
+  // heading says whose box it is. Read separately because neither the row
+  // heading nor the column heading means anything on its own.
+  if (settings.all().autoFillStandingNames !== false) {
+    const grid = approvalGridWrites(doc, settings.all());
+    for (let i = 0; i < grid.writes.length; i++) {
+      if (taken.has(grid.writes[i].at)) continue;
+      taken.add(grid.writes[i].at);
+      writes.push(grid.writes[i]);
+      record.push(grid.record[i]);
+    }
   }
 
   for (const [id, raw] of Object.entries(answers || {})) {
@@ -450,7 +599,9 @@ function prettyDate(value) {
  */
 const OVERRIDES = {
   'SCKLFINFR006 - Purchase Requisition v1.2.docx': {
-    skip: ['name and signature of requester', 'hod/manager date', 'chief financial officer',
+    // "Name and Signature of Requester" is no longer skipped: the name half of
+    // it is a standing detail and is filled from Settings.
+    skip: ['hod/manager date', 'chief financial officer',
       'chief executive officer', 'cost account allocated to', 'name and details of finance provider',
       'terms of financing', 'recommended quote', 'quote 1', 'quote 2', 'quote 3'],
     ask: {

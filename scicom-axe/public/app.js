@@ -108,6 +108,15 @@ const api = {
   guide: (id) => call(`/api/guides/${id}`),
   buildGuide: (id) => call(`/api/guides/${id}/build`, { method: 'POST', body: {} }),
   buildAllGuides: (workstream) => call('/api/guides/build-all', { method: 'POST', body: { workstream } }),
+  settings: () => call('/api/settings'),
+  patchSettings: (body) => call('/api/settings', { method: 'PATCH', body }),
+  clearFinance: () => call('/api/finance/clear', { method: 'POST', body: {} }),
+  uploads: () => call('/api/uploads'),
+  upload: (filename, dataBase64) => call('/api/uploads', { method: 'POST', body: { filename, dataBase64 } }),
+  uploadDetail: (id) => call(`/api/uploads/${id}`),
+  applyUpload: (id, body) => call(`/api/uploads/${id}/apply`, { method: 'POST', body }),
+  dismissUpload: (id) => call(`/api/uploads/${id}/dismiss`, { method: 'POST', body: {} }),
+  deleteUpload: (id) => call(`/api/uploads/${id}`, { method: 'DELETE' }),
   llm: () => call('/api/llm'),
   backup: () => call('/api/backup', { method: 'POST' }),
 };
@@ -278,6 +287,7 @@ function renderSidebar() {
   }
 
   nav.append(h('div.nav-label', 'Manage'));
+  nav.append(item('uploads', null, 'Upload a file'));
   nav.append(item('new-initiative', null, 'New initiative'));
   nav.append(item('update-workstream', null, 'Update a workstream'));
 
@@ -285,6 +295,7 @@ function renderSidebar() {
   nav.append(item('guides', null, 'New joiner guides'));
   nav.append(item('masterlist', null, 'Master list'));
   nav.append(item('rules', null, 'Hard rules', { count: state.boot.rules.length }));
+  nav.append(item('settings', null, 'Settings'));
 
   nav.append(h('div', { style: { padding: '18px 10px 0' } },
     h('button.btn.btn-sm', {
@@ -603,25 +614,50 @@ async function renderFinance(main, d) {
 
   const search = h('input', { type: 'search', placeholder: 'Search vendor, project, account code, purpose…' });
   const tableHolder = h('div.scroll-x.scroll-y');
-  const draw = (records) => {
+  const draw = (records, searched) => {
+    records.__searched = Boolean(searched);
     fill(tableHolder, financeTable(records));
   };
-  draw(f.records);
+  draw(f.records, false);
   let timer;
   search.addEventListener('input', () => {
     clearTimeout(timer);
     timer = setTimeout(async () => {
       const q = search.value.trim();
       const r = await api.finance(q ? { q } : null);
-      draw(r.records);
+      draw(r.records, Boolean(q));
     }, 200);
   });
 
   holder.append(h('div.card',
     h('header', h('h2.grow', 'Every charge'),
       h('div', { style: { width: '320px' } }, search),
+      h('a.btn.btn-sm', { href: '#/uploads' }, '⇪ Upload an invoice'),
       h('button.btn.btn-sm.btn-navy', { onclick: () => openFinanceDrawer(null) }, '+ Record a charge')),
     h('div.card-body.tight', tableHolder)));
+
+  // Starting again. Everything is copied into data/_backups first, and the
+  // button says so, because a finance record that vanishes without a copy is
+  // not something anybody should be able to do by misreading a button.
+  if (f.records.length) holder.append(h('div.card',
+    h('header', h('h2.grow', 'Start the finance records again')),
+    h('div.card-body',
+      h('p.soft.small',
+        `This removes all ${f.records.length} charges and leaves the finance records empty. `
+        + 'Everything is copied into the data/_backups folder first, so it can be put back by '
+        + 'copying finance.json out of there. The FIN- numbering carries on rather than '
+        + 'restarting, so a number already written on paper is never used twice.'),
+      h('button.btn.btn-danger.btn-sm', {
+        onclick: async (e) => {
+          if (!confirm(`Remove all ${f.records.length} charges?\n\nA copy is saved in data/_backups first.`)) return;
+          e.target.disabled = true;
+          try {
+            const r = await api.clearFinance();
+            toast(`${r.removed} charges removed. A copy is in data/_backups.`, 'good');
+            render();
+          } catch (err) { toast(err.message, 'bad'); e.target.disabled = false; }
+        },
+      }, 'Clear all finance records'))));
 }
 
 function financeTable(records) {
@@ -643,7 +679,10 @@ function financeTable(records) {
         h('td.num', r.amountRM != null ? r.amountRM.toFixed(2) : '—'),
         h('td.mono.small', r.accountCode || '—'),
         h('td.small', r.project || '—')))
-      : h('tr', h('td', { colspan: 11 }, emptyState('No charges match that search.')))));
+      : h('tr', h('td', { colspan: 11 }, emptyState(
+        records.__searched
+          ? 'No charges match that search.'
+          : 'No charges recorded yet. Upload an invoice or a spreadsheet, or record one by hand.')))));
 }
 
 function monthChart(byMonth) {
@@ -1735,6 +1774,513 @@ async function openFinanceDrawer(recordId) {
   openDrawer(rec ? 'Charge ' + rec.ref : 'Record a charge', body, foot);
 }
 
+
+/* --------------------------------------------------------- the uploader */
+
+/**
+ * Upload a file and let the system read it.
+ *
+ * Nothing an upload says is saved by pressing this button. The file is read,
+ * a suggestion comes back, and you check it on the next screen before anything
+ * is written down.
+ */
+
+const UPLOAD_ACCEPT = '.pdf,.xlsx,.xlsm,.csv,.tsv,.docx,.txt,.jpg,.jpeg,.png,.heic,.webp';
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('That file could not be read off your computer.'));
+    reader.onload = () => resolve(String(reader.result).replace(/^data:[^,]*,/, ''));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function sendFiles(files) {
+  const list = [...files];
+  if (!list.length) return;
+  let last = null;
+  for (const file of list) {
+    if (file.size > 30 * 1024 * 1024) { toast(`${file.name} is bigger than 30 MB — too large to upload.`, 'bad'); continue; }
+    toast(`Reading ${file.name}…`);
+    try {
+      last = await api.upload(file.name, await fileToBase64(file));
+    } catch (err) {
+      toast(`${file.name}: ${err.message}`, 'bad');
+    }
+  }
+  if (last) go('#/upload/' + last.upload.id);
+  else render();
+}
+
+function uploadDropZone() {
+  const input = h('input', {
+    type: 'file', multiple: true, accept: UPLOAD_ACCEPT,
+    style: { display: 'none' },
+    // Copy the list before clearing the input: the browser's FileList is live,
+    // so resetting the input empties the list you are still holding.
+    onchange: (e) => { const chosen = [...e.target.files]; e.target.value = ''; sendFiles(chosen); },
+  });
+
+  const zone = h('div.dropzone', { onclick: () => input.click() },
+    h('div.dropzone-icon', '⇪'),
+    h('div', h('strong', 'Choose a file, or drag one here')),
+    h('p.soft.small',
+      'Invoices and receipts (PDF), spreadsheets (Excel or CSV), reports (Word), '
+      + 'and photographs of receipts.'),
+    input);
+
+  const stop = (e) => { e.preventDefault(); e.stopPropagation(); };
+  zone.addEventListener('dragover', (e) => { stop(e); zone.classList.add('over'); });
+  zone.addEventListener('dragleave', (e) => { stop(e); zone.classList.remove('over'); });
+  zone.addEventListener('drop', (e) => {
+    stop(e);
+    zone.classList.remove('over');
+    if (e.dataTransfer?.files?.length) sendFiles(e.dataTransfer.files);
+  });
+  return zone;
+}
+
+const TARGET_LABEL = {
+  finance: 'a charge for the finance records',
+  masterlist: 'a list for the master list',
+  document: 'a document to file',
+};
+
+async function viewUploads(main) {
+  clear(main);
+  main.append(h('div.page-head', h('div.grow',
+    h('h1', 'Upload a file'),
+    h('p', 'Hand the system an invoice, a spreadsheet, a report or a photo of a receipt. '
+      + 'It reads what it can and shows you what it thinks should be recorded — nothing is '
+      + 'saved until you have looked at it and agreed.'))));
+
+  main.append(h('div.card', h('div.card-body', uploadDropZone())));
+
+  main.append(h('div.card',
+    h('header', h('h2.grow', 'What it can and cannot read')),
+    h('div.card-body',
+      h('table', h('tbody',
+        h('tr', h('td', h('strong', 'Excel and CSV')), h('td', 'Read in full, row by row. Columns are matched to the finance fields by their headings.')),
+        h('tr', h('td', h('strong', 'PDF invoices')), h('td', 'Read where the PDF was made by a computer — an emailed invoice. Amounts, dates, invoice numbers and card endings are picked out.')),
+        h('tr', h('td', h('strong', 'Word documents')), h('td', 'Read in full and filed as a document with its own internal number.')),
+        h('tr', h('td', h('strong', 'Photos and scans')), h('td',
+          'Kept and attached, but ',
+          h('strong', 'not read'),
+          '. Reading words out of a picture needs OCR software this system does not install, '
+          + 'so the boxes come up blank for you to type in. Same for a PDF that is really a scan.')),
+        h('tr', h('td', h('strong', '.xls and .doc')), h('td', 'The old Microsoft formats cannot be opened. Save them as .xlsx or .docx first.')))))));
+
+  const list = await api.uploads();
+  main.append(h('div.card',
+    h('header', h('h2.grow', 'Everything uploaded'), h('span.pill.ghost', `${list.length} file${list.length === 1 ? '' : 's'}`)),
+    h('div.card-body.tight',
+      list.length
+        ? h('table',
+          h('thead', h('tr', h('th', 'File'), h('th', 'Uploaded'), h('th', 'Read as'), h('th', 'State'), h('th', ''))),
+          h('tbody', list.map((u) => h('tr',
+            h('td', h('a', { href: '#/upload/' + u.id }, u.filename),
+              u.readable ? null : h('div.muted.small', 'nothing could be read out of it')),
+            h('td.small.soft.nowrap', new Date(u.uploadedAt).toLocaleString()),
+            h('td.small', TARGET_LABEL[u.target] || u.target),
+            h('td', u.status === 'applied'
+              ? h('span.pill.completed', 'saved')
+              : u.status === 'set aside' ? h('span.pill.ghost', 'set aside') : h('span.pill.warn', 'waiting for you')),
+            h('td',
+              u.status === 'applied' && u.applied
+                ? h('span.muted.small', [
+                  ...(u.applied.financeRefs || []),
+                  ...(u.applied.documentNos || []),
+                  ...(u.applied.taskRefs || []),
+                  u.applied.masterListRows ? `${u.applied.masterListRows} rows` : null,
+                ].filter(Boolean).join(', '))
+                : h('a.btn.btn-sm', { href: '#/upload/' + u.id }, 'Check it'))))))
+        : emptyState('Nothing uploaded yet.'))));
+}
+
+/* ---- checking one upload before anything is written down ---- */
+
+async function viewUploadReview(main, id) {
+  clear(main);
+  const holder = h('div', h('div.loading', 'Reading the file…'));
+  main.append(holder);
+
+  const d = await api.uploadDetail(id);
+  const { upload, proposal } = d;
+  clear(holder);
+
+  holder.append(h('div.page-head',
+    h('div.grow',
+      h('h1', upload.filename),
+      h('p', 'Nothing here has been saved yet. Change anything that is wrong, then press the button at the bottom.')),
+    h('a.btn', { href: '#/uploads' }, '← All uploads')));
+
+  if (upload.status === 'applied') {
+    holder.append(h('div.card', h('div.card-body',
+      h('div.alert.good', h('span.icon', '✓'),
+        h('span', 'This one has already been saved: '
+          + [...(upload.applied.financeRefs || []), ...(upload.applied.documentNos || []),
+            upload.applied.masterListRows ? `${upload.applied.masterListRows} rows into the master list` : null]
+            .filter(Boolean).join(', ') + '. Saving it again would record it twice.')))));
+  }
+
+  for (const note of proposal.notes || []) {
+    holder.append(h('div.alert.warn', h('span.icon', '!'), h('span', note)));
+  }
+
+  if (proposal.target === 'finance' && !proposal.sheets) reviewOneCharge(holder, d);
+  else if (proposal.sheets) reviewSpreadsheet(holder, d);
+  else reviewDocument(holder, d);
+
+  if (d.excerpt) {
+    const pre = h('pre.excerpt', { hidden: true }, d.excerpt);
+    holder.append(h('div.card',
+      h('header', h('h2.grow', 'What was read out of the file'),
+        h('button.btn.btn-sm', {
+          onclick: (e) => {
+            pre.hidden = !pre.hidden;
+            e.target.textContent = pre.hidden ? 'Show it' : 'Hide it';
+          },
+        }, 'Show it')),
+      h('div.card-body', pre)));
+  }
+
+  holder.append(h('div.card', h('div.card-body',
+    h('div.row',
+      h('button.btn', {
+        onclick: async () => {
+          await api.dismissUpload(id);
+          toast('Set aside. The file is kept, but nothing was recorded.');
+          go('#/uploads');
+        },
+      }, 'Set aside without recording anything'),
+      h('button.btn.btn-danger', {
+        onclick: async () => {
+          if (!confirm('Delete this upload and the file with it? This cannot be undone.')) return;
+          await api.deleteUpload(id);
+          toast('Deleted.');
+          go('#/uploads');
+        },
+      }, 'Delete the file')))));
+}
+
+/** One invoice or receipt: every field editable, then saved as one charge. */
+function reviewOneCharge(holder, d) {
+  const f = { ...d.proposal.fields };
+  const field = (label, node, hint) =>
+    h('div.field', h('label', label), node, hint ? h('div.hint', hint) : null);
+
+  const input = (key, attrs = {}) => h('input', {
+    type: 'text', value: f[key] == null ? '' : f[key],
+    oninput: (e) => { f[key] = e.target.value.trim() || null; },
+    ...attrs,
+  });
+  const numberInput = (key) => h('input', {
+    type: 'number', step: '0.01', value: f[key] == null ? '' : f[key],
+    oninput: (e) => { f[key] = e.target.value === '' ? null : Number(e.target.value); },
+  });
+
+  const confidence = { high: 'Most of it was found', medium: 'Some of it was found', low: 'Very little was found', none: 'Nothing could be read' };
+
+  const amounts = (d.proposal.evidence?.amounts || []);
+  const amountHints = amounts.length
+    ? h('div.chips', h('span.muted.small', 'Other figures on the page: '),
+      amounts.slice(0, 8).map((a) => h('button.chip', {
+        onclick: () => {
+          const key = a.currency === 'USD' ? 'amountUSD' : 'amountRM';
+          f[key] = a.value;
+          render();
+        },
+      }, `${a.currency} ${a.value.toFixed(2)}${a.role ? ' (' + a.role + ')' : ''}`)))
+    : null;
+
+  holder.append(h('div.card',
+    h('header', h('h2.grow', 'Record this as a charge'),
+      h('span.pill.ghost', confidence[d.proposal.confidence] || d.proposal.confidence)),
+    h('div.card-body',
+      field('Supplier', input('vendor'), 'Who is being paid. This is the one field that must be filled in.'),
+      field('What it was for', input('item')),
+      h('div.row',
+        field('Invoice number', input('invoiceNo'), 'What makes this charge traceable later.'),
+        field('Date', h('input', {
+          type: 'date', value: f.date || '',
+          oninput: (e) => { f.date = e.target.value || null; },
+        }))),
+      h('div.row',
+        field('Amount USD', numberInput('amountUSD')),
+        field('Amount RM', numberInput('amountRM')),
+        field('Exchange rate', h('input', {
+          type: 'number', step: '0.0001', value: f.fxRate == null ? '' : f.fxRate,
+          oninput: (e) => { f.fxRate = e.target.value === '' ? null : Number(e.target.value); },
+        }))),
+      amountHints,
+      h('div.row',
+        field('One-off or recurring', costTypeSelect(f)),
+        field('Card or account used', input('card'))),
+      h('div.row',
+        field('Purpose', input('purpose')),
+        field('Project', input('project'))),
+      h('div.row',
+        field('Account code', input('accountCode')),
+        field('Remark', input('remark'))),
+      h('div', { style: { marginTop: '16px' } },
+        h('button.btn.btn-primary', {
+          onclick: async (e) => {
+            if (!f.vendor) return toast('Fill in who is being paid first.', 'bad');
+            e.target.disabled = true;
+            try {
+              const r = await api.applyUpload(d.upload.id, { target: 'finance', fields: f });
+              toast(`Saved as ${r.written.finance[0].ref}.`, 'good');
+              go('#/ws/finance/finance');
+            } catch (err) { toast(err.message, 'bad'); e.target.disabled = false; }
+          },
+        }, 'Save this charge')))));
+}
+
+/**
+ * The same five choices the finance screen offers.
+ *
+ * Only one option is marked as chosen. Marking two — which happens easily if
+ * "subscription" is matched loosely against both the monthly and the yearly
+ * option — silently selects the last one, and a monthly charge quietly becomes
+ * a yearly one.
+ */
+const COST_TYPES = ['One time cost', 'Monthly Subscription', 'Yearly subscription', 'Pay per Use', 'Project Cost'];
+
+function costTypeSelect(f) {
+  const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z]/g, '');
+  const chosen = COST_TYPES.find((c) => norm(c) === norm(f.costType)) || '';
+  return h('select', { onchange: (e) => { f.costType = e.target.value || null; } },
+    ['', ...COST_TYPES].map((c) => h('option', { value: c, selected: c === chosen }, c || '— not set —')));
+}
+
+/** A spreadsheet: many rows at once, previewed before any of them are saved. */
+function reviewSpreadsheet(holder, d) {
+  const sheets = d.proposal.sheets;
+  let current = sheets.find((s) => s.finance) || sheets[0];
+
+  const body = h('div.card-body');
+  const card = h('div.card',
+    h('header', h('h2.grow', 'What is in this spreadsheet'),
+      sheets.length > 1
+        ? h('select', {
+          onchange: (e) => { current = sheets[Number(e.target.value)]; draw(); },
+        }, sheets.map((s, i) => h('option', { value: i }, `${s.name} — ${s.rowCount} rows`)))
+        : h('span.pill.ghost', `${current.rowCount} rows`)),
+    body);
+  holder.append(card);
+
+  function draw() {
+    clear(body);
+
+    if (current.finance) {
+      const records = current.finance.records;
+      body.append(
+        h('p', `${records.length} charge${records.length === 1 ? '' : 's'} were recognised on the sheet `
+          + `"${current.name}". Check a few of them before saving.`),
+        current.finance.unmapped.length
+          ? h('div.alert.warn', h('span.icon', '!'),
+            h('span', 'These columns were not recognised and will not be saved: '
+              + current.finance.unmapped.join(', ') + '.'))
+          : null,
+        h('div.scroll-x',
+          h('table',
+            h('thead', h('tr', h('th', 'Date'), h('th', 'Supplier'), h('th', 'What for'),
+              h('th', 'Invoice'), h('th.right', 'USD'), h('th.right', 'RM'), h('th', 'Cost type'))),
+            h('tbody', records.slice(0, 25).map((r) => h('tr',
+              h('td.nowrap', r.date || h('span.pill.warn', 'none')),
+              h('td', r.vendor || '—'),
+              h('td.small', r.item || '—'),
+              h('td', r.invoiceNo || h('span.pill.warn', 'missing')),
+              h('td.num', r.amountUSD == null ? '—' : r.amountUSD.toFixed(2)),
+              h('td.num', r.amountRM == null ? '—' : r.amountRM.toFixed(2)),
+              h('td.small.soft', r.costType || '—')))))),
+        records.length > 25 ? h('p.muted.small', `…and ${records.length - 25} more.`) : null,
+        h('div', { style: { marginTop: '16px' } },
+          h('button.btn.btn-primary', {
+            onclick: async (e) => {
+              e.target.disabled = true;
+              try {
+                const r = await api.applyUpload(d.upload.id, { target: 'finance', records });
+                toast(`Saved ${r.written.finance.length} charges.`, 'good');
+                go('#/ws/finance/finance');
+              } catch (err) { toast(err.message, 'bad'); e.target.disabled = false; }
+            },
+          }, `Save all ${records.length} charges`),
+          h('button.btn', {
+            style: { marginLeft: '8px' },
+            onclick: () => { current = { ...current, finance: null }; draw(); },
+          }, 'No — import it as a list instead')));
+      return;
+    }
+
+    // Not charges: offer it as the master list, which replaces what is there.
+    const header = current.header.map((c) => String(c).trim()).filter(Boolean);
+    const rows = current.rows.slice(1);
+    body.append(
+      h('p', `The sheet "${current.name}" has ${rows.length} rows under ${header.length} headings. `
+        + 'It can be imported as your master list, which replaces whatever is in the master list now.'),
+      h('div.scroll-x',
+        h('table',
+          h('thead', h('tr', header.map((c) => h('th', c)))),
+          h('tbody', rows.slice(0, 8).map((r) => h('tr', header.map((c, i) => h('td.small', r[i] || ''))))))),
+      h('div', { style: { marginTop: '16px' } },
+        h('button.btn.btn-primary', {
+          onclick: async (e) => {
+            if (!confirm('This replaces the whole master list. Carry on?')) return;
+            e.target.disabled = true;
+            try {
+              const objects = rows.map((r) => Object.fromEntries(header.map((c, i) => [c, r[i] || ''])));
+              await api.applyUpload(d.upload.id, {
+                target: 'masterlist', columns: header, rows: objects, name: current.name,
+              });
+              toast(`Imported ${objects.length} rows.`, 'good');
+              go('#/masterlist');
+            } catch (err) { toast(err.message, 'bad'); e.target.disabled = false; }
+          },
+        }, 'Import as the master list')));
+  }
+
+  draw();
+}
+
+/** A report, a memo, a policy: filed with its own internal number. */
+function reviewDocument(holder, d) {
+  const f = { ...d.proposal.fields };
+  const field = (label, node, hint) =>
+    h('div.field', h('label', label), node, hint ? h('div.hint', hint) : null);
+
+  const workstream = h('select',
+    h('option', { value: '' }, '— choose one —'),
+    state.boot.workstreams.map((w) => h('option', { value: w.id }, w.name)));
+  const title = h('input', { type: 'text', value: f.title || '', oninput: (e) => { f.title = e.target.value; } });
+  const subject = h('textarea', { rows: 3, oninput: (e) => { f.subject = e.target.value; } }, f.subject || '');
+  const kind = h('select', Object.entries(state.boot.docKinds).map(([k, label]) =>
+    h('option', { value: k, selected: k === f.kindCode }, `${label} (${k})`)));
+  const officialNo = h('input', {
+    type: 'text', value: f.officialNo || '', placeholder: 'If it has a Scicom number',
+    oninput: (e) => { f.officialNo = e.target.value.trim() || null; },
+  });
+  const taskTitle = h('input', { type: 'text', placeholder: 'Leave blank if there is nothing to do' });
+  const taskDeadline = h('input', { type: 'date' });
+
+  holder.append(h('div.card',
+    h('header', h('h2.grow', 'File this as a document')),
+    h('div.card-body',
+      field('Which workstream does it belong to?', workstream),
+      field('Title', title),
+      field('What it is about', subject, 'The first few lines of the file, which you can rewrite.'),
+      h('div.row',
+        field('What kind of document', kind),
+        field('Official Scicom number', officialNo,
+          'Leave blank if it has none — the system gives it an internal number either way.')),
+      h('hr'),
+      field('Is there something to do about it?', taskTitle,
+        'Fill this in and a task is created at the same time, linked to the document.'),
+      field('By when', taskDeadline),
+      h('div', { style: { marginTop: '16px' } },
+        h('button.btn.btn-primary', {
+          onclick: async (e) => {
+            if (!workstream.value) return toast('Choose which workstream it belongs to.', 'bad');
+            e.target.disabled = true;
+            try {
+              const r = await api.applyUpload(d.upload.id, {
+                target: 'document',
+                workstreamId: workstream.value,
+                title: title.value.trim() || d.upload.filename,
+                subject: subject.value.trim() || null,
+                kindCode: kind.value,
+                officialNo: f.officialNo,
+                createTask: taskTitle.value.trim()
+                  ? {
+                    title: taskTitle.value.trim(),
+                    workstreamId: workstream.value,
+                    deadline: taskDeadline.value || null,
+                    status: 'open',
+                  }
+                  : null,
+              });
+              toast(`Filed as ${r.written.documents[0].internalNo}.`, 'good');
+              go('#/ws/' + workstream.value + '/observe');
+            } catch (err) { toast(err.message, 'bad'); e.target.disabled = false; }
+          },
+        }, 'File it')))));
+}
+
+/* ---------------------------------------------------------------- settings */
+
+/**
+ * The facts every form asks for, kept in one place.
+ *
+ * Changing a name here changes what gets written into every form filled in
+ * from now on. Forms already produced are files on your computer and are not
+ * touched.
+ */
+async function viewSettings(main) {
+  clear(main);
+  const s = await api.settings();
+
+  main.append(h('div.page-head', h('div.grow',
+    h('h1', 'Settings'),
+    h('p', 'The details every Scicom form asks for. They are filled in automatically so you '
+      + 'never type them twice — and because typing them twice is how they end up different.'))));
+
+  const field = (label, node, hint) =>
+    h('div.field', h('label', label), node, hint ? h('div.hint', hint) : null);
+  const text = (key, placeholder) => h('input', {
+    type: 'text', value: s[key] || '', placeholder: placeholder || '',
+    oninput: (e) => { s[key] = e.target.value; },
+  });
+
+  const autoFill = h('input', {
+    type: 'checkbox', checked: s.autoFillStandingNames !== false,
+    onchange: (e) => { s.autoFillStandingNames = e.target.checked; },
+  });
+
+  main.append(h('div.card',
+    h('header', h('h2.grow', 'You, the person raising the form')),
+    h('div.card-body',
+      field('Your name', text('requesterName'),
+        'Written into the "Requestor" or "Requested by" box on every form.'),
+      h('div.row',
+        field('Your job title', text('requesterDesignation')),
+        field('Your department', text('department'))),
+      h('div.row',
+        field('Your work e-mail', text('requesterEmail', 'name@scicom.com.my')),
+        field('Your mobile number', text('requesterMobile'))),
+      h('div.row',
+        field('Your employee ID', text('requesterEmployeeId')),
+        field('Company', text('company'))))));
+
+  main.append(h('div.card',
+    h('header', h('h2.grow', 'Who signs it off')),
+    h('div.card-body',
+      field('Head of Department — second-level approval', text('hodApprover'),
+        'On a change request this is the HOD / L2 (VP/SVP) column. It is always the same person, '
+        + 'so it is filled in for you.'),
+      field('Their job title', text('hodDesignation', 'Optional')))));
+
+  main.append(h('div.card',
+    h('header', h('h2.grow', 'How much to fill in')),
+    h('div.card-body',
+      h('label.check', autoFill, h('span', 'Fill these names into forms automatically')),
+      h('p.soft.small', 'Turn this off and every one of those boxes is left blank, as if the form '
+        + 'had been printed out. Only boxes that are already empty are ever written into — a form '
+        + 'that already carries a name is left exactly as it is.'))));
+
+  main.append(h('div.card', h('div.card-body',
+    h('button.btn.btn-primary', {
+      onclick: async (e) => {
+        e.target.disabled = true;
+        try {
+          state.boot.settings = await api.patchSettings(s);
+          toast('Saved. Forms filled in from now on will use these.', 'good');
+        } catch (err) { toast(err.message, 'bad'); }
+        e.target.disabled = false;
+      },
+    }, 'Save these details'))));
+}
+
 /* ------------------------------------------------------------ routing */
 
 async function render() {
@@ -1752,6 +2298,9 @@ async function render() {
     else if (view === 'guides') await viewGuides(main, id);
     else if (view === 'masterlist') await viewMasterList(main);
     else if (view === 'rules') await viewRules(main);
+    else if (view === 'uploads') await viewUploads(main);
+    else if (view === 'upload' && id) await viewUploadReview(main, id);
+    else if (view === 'settings') await viewSettings(main);
     else if (view === 'new-initiative') viewNewInitiative(main);
     else if (view === 'update-workstream') viewUpdateWorkstream(main, id);
     else {

@@ -46,6 +46,9 @@ lib/
   catalog.js         reads resources/ off disk; works out policies vs forms
   analysis.js        metrics, theme grouping, finance concern detection
   rules.js           the Hard Rules chatbot (intent parsing, no AI needed)
+  settings.js        the standing details every form asks for (names, titles)
+  extract.js         text and tables out of csv/xlsx/docx/pdf; images refused
+  intake.js          classifies an upload and proposes what to record from it
   llm.js             optional Ollama client + rule-based fallbacks
   api.js             all routes
 public/
@@ -54,9 +57,11 @@ public/
   app.js             the whole screen: router, views, drawer, live clock
 scripts/
   import_finance.py  one-time flattening of the cost spreadsheet
+  clear-finance.js   empties finance.json after backing everything up
   demo.js            add/remove example tasks
 content/guides/      the new-joiner guide wording, one JSON file per guide
 data/                live data (JSON) — this is the user's actual work
+uploads/             uploaded originals, kept as they arrived
 resources/           the supplied policies and forms, untouched
 templates/converted/ modern .docx/.xlsx copies of the legacy .doc/.xls forms
 ```
@@ -79,10 +84,18 @@ write a migration in `scripts/`.
   end of that day.
 - **`documents.json`** — the internal document register.
 - **`finance.json`** — one record per *charge* (vendor × month), not per vendor.
-  Imported rows carry `source: "spreadsheet-import"`; hand-entered ones carry
-  `source: "manual"` and are never overwritten by a re-import.
+  Imported rows carry `source: "spreadsheet-import"`, hand-entered ones
+  `source: "manual"`, and ones taken from an upload `source: "uploaded"` plus
+  `sourceUploadId`. **Emptied on 23 September 2026 at the user's request**; the
+  402 imported rows are in `data/_backups/…-before-finance-clear`.
 - **`rules.json`** — hard rules. `scope` is `"global"` or a workstream id.
 - **`masterlist.json`** — `{name, columns[], rows[]}`; rows carry `_id` and `_n`.
+- **`uploads.json`** — one record per uploaded file: `{id, filename, savedAs,
+  kind, readable, target, status, applied{}}`. `status` is `proposed |
+  applied | set aside`. The proposal itself is **not** stored — the file is
+  re-read and re-proposed on every view, so there is one source of truth.
+- **`settings.json`** — the standing details: requester name and job title,
+  department, and `hodApprover`, which defaults to Shefeeque Abdul Rahman.
 - **`counters.json`** — running numbers. **Never reset these**, or reference
   numbers will be reused and start pointing at two different things.
 
@@ -166,9 +179,17 @@ Two judgements worth keeping:
 - Policies and forms read live off disk, with official numbers and versions
   parsed out of the filenames.
 - Internal document numbering and a document register.
-- Finance: 402 charges imported from the capitalised-cost spreadsheet, with
-  RM/USD totals, exchange rates matched to the right month, spend by month, top
-  vendors, an editable table, and automatic concern detection.
+- Finance: RM/USD totals, exchange rates matched to the right month, spend by
+  month, top vendors, an editable table, and automatic concern detection. The
+  records themselves start empty; they come from uploads or by hand.
+- **The uploader.** Drop in a PDF invoice, an Excel or CSV sheet, a Word report
+  or a photo. It reads what it can, proposes what should be recorded, and
+  writes nothing until the user has checked it on screen and pressed the
+  button. Amounts and dates always come from the text, never from the model.
+- **Standing details.** The requester's name and the second-level approver are
+  filled into every form from Settings, including the approval grid at the foot
+  of a change request, where the column heading names whose box it is. Only
+  empty boxes are ever written into.
 - Master list: CSV import, live search, click-to-edit cells, add/delete rows.
 - Hard rules chatbot, working with no AI at all.
 - Optional Ollama integration with graceful fallback everywhere.
@@ -209,8 +230,16 @@ Two judgements worth keeping:
 - Finance concern detection is rule-based, not clever. It will not catch a
   wrong amount that looks plausible.
 - Imported finance rows have no invoice number or card, because the spreadsheet
-  has no such columns. This is surfaced as one summary concern rather than 402
-  separate ones.
+  has no such columns. This is surfaced as one summary concern rather than one
+  per row.
+- **Photographs and scans are not read.** There is no OCR, deliberately: it
+  would mean installing something. The file is kept and attached and the boxes
+  come up blank. A PDF that is really a scan behaves the same way and says so.
+- PDF text extraction handles computer-made PDFs. A font with a private
+  encoding can still come out as nonsense; that shows in the excerpt, which is
+  why the excerpt is on screen.
+- `.xls` and `.doc` cannot be opened at all. The uploader says so and names the
+  fix (save as `.xlsx` / `.docx`).
 - There is no login. It listens on `127.0.0.1` only, so nothing outside the
   computer can reach it.
 

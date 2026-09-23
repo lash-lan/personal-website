@@ -26,6 +26,10 @@ content/guides/
 data/*
 !data/.gitkeep
 
+# Anything you upload: invoices, receipts, spreadsheets, reports. These are
+# the originals of company documents, so they never go into git either.
+uploads/
+
 # Generated files and backups
 exports/*
 !exports/.gitkeep

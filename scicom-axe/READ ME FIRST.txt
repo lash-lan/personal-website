@@ -37,6 +37,28 @@ Leave the black window alone while you are using it. Close it when you have
 finished.
 
 
+FIRST THING TO DO — CHECK YOUR NAME
+-----------------------------------
+
+Click "Settings" in the list down the left. Your name, your job title and the
+person who signs off at second level (Shefeeque Abdul Rahman) are written into
+every form automatically, so you never type them twice. Correct anything that
+is wrong and press Save.
+
+
+TO GIVE IT AN INVOICE OR A REPORT
+---------------------------------
+
+Click "Upload a file" in the list down the left, and drop in a PDF invoice, an
+Excel or CSV sheet, or a Word report. It reads what it can and shows you what
+it thinks should be recorded. NOTHING IS SAVED until you have looked at it and
+pressed the button.
+
+A photograph of a receipt is kept but not read — the words in a photo are a
+picture, and reading them needs software this does not install. The boxes come
+up blank for you to type in.
+
+
 TO USE IT ON YOUR PHONE
 -----------------------
 
@@ -73,6 +95,7 @@ HANDOVER.md  the technical notes, for a developer or another Claude
 resources/   your Scicom policies and forms
 content/     the new joiner guides
 data/        your tasks, rules, finance records and master list
+uploads/     the invoices and reports you have given it
 exports/     the Word files it makes for you
 
 
