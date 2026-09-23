@@ -26,3 +26,8 @@ pnpm-debug.log*
 
 # local secrets for the private atelier page (never committed)
 .dev.vars
+
+# Update bundles built to hand over Scicom Axe. These only repackage files
+# that are already in this repository, so committing them would duplicate
+# the whole folder in a public repo for no benefit.
+scicom-axe-update.zip
