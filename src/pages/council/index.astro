@@ -459,19 +459,38 @@ const problem = {
     return isNaN(d.getTime()) ? '' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
+  /**
+   * Write a line into an element, turning **this** into real emphasis rather
+   * than leaving the asterisks lying on the page. Built from text nodes, so
+   * nothing in a message can smuggle markup into the app.
+   */
+  function writeLine(into, text) {
+    var bits = String(text).split(/\*\*(.+?)\*\*/g);
+    for (var i = 0; i < bits.length; i++) {
+      if (!bits[i]) continue;
+      if (i % 2) {
+        var b = document.createElement('strong');
+        b.textContent = bits[i];
+        into.appendChild(b);
+      } else {
+        into.appendChild(document.createTextNode(bits[i].replace(/\*/g, '')));
+      }
+    }
+  }
+
   function paragraphs(into, body) {
     var blocks = String(body || '').split(/\n{2,}/), wrote = false;
     for (var i = 0; i < blocks.length; i++) {
       var t = blocks[i].replace(/\s*\n\s*/g, ' ').trim();
       if (!t) continue;
       var p = document.createElement('p');
-      p.textContent = t;
+      writeLine(p, t);
       into.appendChild(p);
       wrote = true;
     }
     if (!wrote) {
       var q = document.createElement('p');
-      q.textContent = String(body || '');
+      writeLine(q, String(body || ''));
       into.appendChild(q);
     }
   }
