@@ -15,6 +15,24 @@ async function locked(cookies) {
   return !(await ticketHolds(env.ATELIER_SESSION_SECRET, ticketFrom(cookies)));
 }
 
+/**
+ * Keeping a file needs a different permission from leaving a comment, so a
+ * key that can talk in the room may still be unable to hold anything. Say
+ * which switch is missing rather than repeating GitHub's shrug.
+ */
+function trouble(err, doing) {
+  const said = err && err.message ? String(err.message) : '';
+  if (said.startsWith('__blind__')) {
+    return json({
+      error:
+        'The key may talk in the room but not ' + doing + ' there. In GitHub, open the ' +
+        'council-app token and set Contents to "Read and write" as well. ' +
+        '(GitHub said ' + said.slice(9) + '.)',
+    }, 502);
+  }
+  return json({ error: said || 'GitHub would not answer. Try again in a moment.' }, 502);
+}
+
 // Only ever the shelf, and never a path that tries to climb out of it.
 const onTheShelf = (p) => /^uploads\/[A-Za-z0-9._-]+$/.test(p) && !p.includes('..');
 
@@ -38,7 +56,7 @@ export async function GET({ url, cookies }) {
       },
     });
   } catch (err) {
-    return json({ error: (err && err.message) || 'Could not fetch that.' }, 502);
+    return trouble(err, 'read anything');
   }
 }
 
@@ -69,6 +87,6 @@ export async function POST({ request, cookies }) {
     await shelve(token, path, data);
     return json({ path: path });
   } catch (err) {
-    return json({ error: (err && err.message) || 'GitHub would not keep that.' }, 502);
+    return trouble(err, 'keep anything');
   }
 }
