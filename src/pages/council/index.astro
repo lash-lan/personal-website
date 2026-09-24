@@ -12,6 +12,11 @@ export const prerender = false;
 
 const unlocked = await ticketHolds(env.ATELIER_SESSION_SECRET, ticketFrom(Astro.cookies));
 
+// The app lives inside this page, so a cached copy of it is a cached copy of
+// the whole thing. Lash spent an evening reloading and being handed the same
+// old version back. Never store this one.
+Astro.response.headers.set('Cache-Control', 'no-store, must-revalidate');
+
 const problem = {
   wrong: 'That is not the password.',
   unconfigured: 'The password has not been set on the server yet.',
