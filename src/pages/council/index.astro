@@ -213,6 +213,19 @@ const problem = {
     .meta a { color: var(--ink3); text-decoration: none; border-bottom: 1px solid var(--edge); }
     .ticks { color: var(--amelia); letter-spacing: -2px; font-size: 11px; }
 
+    /* Read this one aloud. Only appears when the voice server answers. */
+    .speak {
+      margin-right: auto; display: inline-grid; place-items: center;
+      width: 24px; height: 24px; border-radius: 50%; cursor: pointer;
+      border: 1px solid var(--edge); background: var(--slab2); color: var(--ink3);
+      padding: 0;
+    }
+    .speak svg { width: 12px; height: 12px; fill: currentColor; stroke: none; }
+    .speak:hover { color: var(--ink); border-color: var(--ink3); }
+    .speak.busy { color: var(--ember); border-color: rgba(212,86,59,.5); }
+    .speak.playing { color: var(--lash); border-color: var(--lashEdge); background: var(--lashSlab); }
+    .speak.busy svg { animation: breathe 1.1s ease-in-out infinite; }
+
     .sysnote {
       margin: 16px auto; max-width: 460px; text-align: center; font-size: 12.5px;
       color: var(--ink3); background: var(--slab); border: 1px dashed var(--edge);
@@ -285,6 +298,13 @@ const problem = {
       display: inline-flex; align-items: center; gap: 7px;
     }
     .lbtn:hover { border-color: var(--ink3); }
+    .pinrow { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pinrow select {
+      flex: 1 1 200px; min-width: 0;
+      border: 1px solid var(--edge); border-radius: 10px; padding: 9px 12px;
+      background: var(--slab2); color: var(--ink); font: inherit; font-size: 13px;
+    }
+    .pinrow select:disabled { opacity: .5; }
     .fine { font-size: 12px; color: var(--ink3); margin-top: 9px; }
 
     @media (max-width: 460px) { .bub { max-width: 86%; } }
@@ -366,6 +386,12 @@ const problem = {
           <a class="lbtn" href="https://github.com/lash-lan/the-dark-lords-council/pull/1" target="_blank" rel="noopener">The room on GitHub</a>
           <a class="lbtn" href="https://chatgpt.com/" target="_blank" rel="noopener">Wake Amelia</a>
         </div>
+
+        <h2>Her voice</h2>
+        <div class="pinrow">
+          <select id="voice" aria-label="Which voice reads replies aloud"></select>
+        </div>
+        <p class="fine" id="voice-state">Asking your PC whether it is awake&hellip;</p>
 
         <h2>Installing this</h2>
         <p class="fine">In Chrome, tap the three dots and <b>Add to Home screen</b>. It then opens like any other app, without the browser's bars.</p>
@@ -489,6 +515,18 @@ const problem = {
 
     var meta = document.createElement('div');
     meta.className = 'meta';
+
+    if (!mine && !pending && voices && m.body) {
+      var speak = document.createElement('button');
+      speak.type = 'button';
+      speak.className = 'speak';
+      speak.setAttribute('aria-label', 'Read this aloud');
+      speak.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path d="M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z"/></svg>';
+      speak.addEventListener('click', function () { readAloud(m.id, m.body, speak); });
+      meta.appendChild(speak);
+    }
+
     if (m.url) {
       var link = document.createElement('a');
       link.href = m.url; link.target = '_blank'; link.rel = 'noopener';
@@ -528,6 +566,163 @@ const problem = {
       n.appendChild(b);
     }
     return n;
+  }
+
+  /* ---------------------------------------------------------------------
+     Reading replies aloud.
+
+     The voice lives on the home PC and answers through a tunnel, so it is
+     only there when that machine is awake. Everything below stays out of
+     sight until the PC says hello.
+
+     Audio is held in the phone's memory, not on disk. Each clip is kept for
+     two further messages so you can hear it again, then released — which is
+     what "auto delete to make space" means here: the memory goes back.
+     --------------------------------------------------------------------- */
+  var voices = null, tongue = 'English', spoken = {}, nowPlaying = null;
+  var SPOKEN_LIFE = 2, CHUNK = 1300;
+
+  function chosenVoice() {
+    var sel = el('voice');
+    return sel && sel.value ? sel.value : (voices && voices[0]) || '';
+  }
+
+  /** Break a long reply into pieces the voice server will accept, on
+   *  paragraph breaks where possible and sentence ends where not. */
+  function intoBreaths(text) {
+    var parts = [], left = String(text || '').trim();
+    while (left.length > CHUNK) {
+      var cut = left.lastIndexOf('\n\n', CHUNK);
+      if (cut < CHUNK * 0.4) cut = left.lastIndexOf('. ', CHUNK);
+      if (cut < CHUNK * 0.4) cut = left.lastIndexOf(' ', CHUNK);
+      if (cut < 1) cut = CHUNK;
+      parts.push(left.slice(0, cut + 1).trim());
+      left = left.slice(cut + 1).trim();
+    }
+    if (left) parts.push(left);
+    return parts;
+  }
+
+  function hush() {
+    if (nowPlaying) {
+      try { nowPlaying.audio.pause(); } catch (e) {}
+      if (nowPlaying.btn) nowPlaying.btn.className = 'speak';
+      nowPlaying.stopped = true;
+      nowPlaying = null;
+    }
+  }
+
+  /** Let go of clips older than two messages, and their memory with them. */
+  function forgetOldClips(total) {
+    Object.keys(spoken).forEach(function (id) {
+      if (total - spoken[id].at >= SPOKEN_LIFE) {
+        spoken[id].urls.forEach(function (u) { URL.revokeObjectURL(u); });
+        delete spoken[id];
+      }
+    });
+  }
+
+  function fetchVoice(text) {
+    return fetch('/api/forge/speak', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ voice: chosenVoice(), text: text, language: tongue, format: 'mp3' })
+    }).then(function (r) {
+      if (!r.ok) {
+        return r.json().catch(function () { return {}; }).then(function (d) {
+          throw new Error(d.error || 'The voice server would not speak.');
+        });
+      }
+      return r.blob().then(function (b) { return URL.createObjectURL(b); });
+    });
+  }
+
+  function playThrough(urls, btn, session) {
+    var i = 0;
+    function next() {
+      if (session.stopped || i >= urls.length) {
+        if (!session.stopped) { btn.className = 'speak'; nowPlaying = null; }
+        return;
+      }
+      var audio = new Audio(urls[i++]);
+      session.audio = audio;
+      btn.className = 'speak playing';
+      audio.addEventListener('ended', next);
+      audio.addEventListener('error', function () { btn.className = 'speak'; nowPlaying = null; });
+      audio.play().catch(function () { btn.className = 'speak'; nowPlaying = null; });
+    }
+    next();
+  }
+
+  function readAloud(id, text, btn) {
+    if (nowPlaying && nowPlaying.id === id) { hush(); return; }
+    hush();
+
+    var session = { id: id, stopped: false, btn: btn };
+    nowPlaying = session;
+
+    if (spoken[id]) { playThrough(spoken[id].urls, btn, session); return; }
+
+    btn.className = 'speak busy';
+    var breaths = intoBreaths(text), urls = [];
+
+    breaths.reduce(function (chain, piece) {
+      return chain.then(function () {
+        if (session.stopped) return null;
+        return fetchVoice(piece).then(function (u) { urls.push(u); });
+      });
+    }, Promise.resolve()).then(function () {
+      if (session.stopped || !urls.length) return;
+      spoken[id] = { urls: urls, at: Object.keys(seen).length };
+      playThrough(urls, btn, session);
+    }, function (err) {
+      btn.className = 'speak';
+      nowPlaying = null;
+      say(err.message || 'The voice would not come.', true);
+    });
+  }
+
+  /** Ask the home PC whether it is awake, and which voices it has. */
+  function findVoices() {
+    fetch('/api/forge/voices', { headers: { Accept: 'application/json' } })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        var sel = el('voice');
+        if (!res.ok || !res.d.voices || !res.d.voices.length) {
+          el('voice-state').textContent = res.d.error || 'Your PC is not answering, so replies stay silent.';
+          sel.disabled = true;
+          return;
+        }
+        voices = res.d.voices;
+        if (res.d.languages && res.d.languages.length) tongue = res.d.languages[0];
+
+        var keep = '';
+        try { keep = window.localStorage.getItem('council.voice') || ''; } catch (e) {}
+        sel.innerHTML = '';
+        voices.forEach(function (name) {
+          var o = document.createElement('option');
+          o.value = name;
+          o.textContent = name;
+          if (name === keep) o.selected = true;
+          sel.appendChild(o);
+        });
+        sel.disabled = false;
+        sel.addEventListener('change', function () {
+          try { window.localStorage.setItem('council.voice', sel.value); } catch (e) {}
+          // A different voice means the old recordings are the wrong voice.
+          Object.keys(spoken).forEach(function (id) {
+            spoken[id].urls.forEach(function (u) { URL.revokeObjectURL(u); });
+            delete spoken[id];
+          });
+        });
+        el('voice-state').textContent =
+          'Your PC is awake with ' + voices.length + ' voices. Tap the speaker on any reply.';
+        first = true;          // redraw so the speaker buttons appear
+        load(true);
+      })
+      .catch(function () {
+        el('voice-state').textContent = 'Could not reach your PC, so replies stay silent.';
+      });
   }
 
   /**
@@ -594,6 +789,7 @@ const problem = {
     } else {
       messages.forEach(function (m) { seen[m.id] = true; threadEl.appendChild(bubble(m, false)); });
     }
+    forgetOldClips(messages.length);
     drawWaiting();
     if (stick) { toBottom(); first = false; }
     return true;
@@ -704,6 +900,7 @@ const problem = {
   function attend() { schedule(EAGER); }
 
   load(false).then(attend);
+  findVoices();
 
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'visible') attend();
