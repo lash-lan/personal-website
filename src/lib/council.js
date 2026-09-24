@@ -182,12 +182,32 @@ export function shelveAs(name) {
   return `${SHELF}/${when}-${salt}-${clean}`;
 }
 
-/** Commit one file into the room's repository. */
+/** The three faces of the Council, at fixed names so they can be replaced. */
+export const FACES = { lash: 'faces/lash.jpg', aquila: 'faces/aquila.jpg', amelia: 'faces/amelia.jpg' };
+
+/**
+ * Commit one file into the room's repository. A file that is already there
+ * can only be replaced by naming the version being replaced, so look first.
+ */
 export async function shelve(token, path, base64) {
-  const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`, {
+  let sha;
+  const look = await fetch(
+    `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodeURI(path)}`,
+    { headers: headers(token) }
+  );
+  if (look.ok) {
+    const found = await look.json();
+    sha = found && found.sha;
+  }
+
+  const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodeURI(path)}`, {
     method: 'PUT',
     headers: { ...headers(token), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: `Lash shows the Council ${path}`, content: base64 }),
+    body: JSON.stringify({
+      message: sha ? `A new face for the Council: ${path}` : `Lash shows the Council ${path}`,
+      content: base64,
+      ...(sha ? { sha } : {}),
+    }),
   });
   if (!res.ok) throw await refusal(res);
   return path;

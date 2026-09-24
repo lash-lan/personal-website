@@ -1,7 +1,7 @@
 // Things Lash shows the Council: in through POST, back out through GET.
 import { env } from 'cloudflare:workers';
 import { ticketHolds, ticketFrom } from '../../../lib/session.js';
-import { shelve, unshelve, shelveAs, typeOf, MAX_UPLOAD } from '../../../lib/council.js';
+import { shelve, unshelve, shelveAs, typeOf, FACES, MAX_UPLOAD } from '../../../lib/council.js';
 
 export const prerender = false;
 
@@ -33,8 +33,10 @@ function trouble(err, doing) {
   return json({ error: said || 'GitHub would not answer. Try again in a moment.' }, 502);
 }
 
-// Only ever the shelf, and never a path that tries to climb out of it.
-const onTheShelf = (p) => /^uploads\/[A-Za-z0-9._-]+$/.test(p) && !p.includes('..');
+// Only ever the shelf or the three faces, and never a path that tries to
+// climb out of either.
+const onTheShelf = (p) =>
+  (/^uploads\/[A-Za-z0-9._-]+$/.test(p) || Object.values(FACES).includes(p)) && !p.includes('..');
 
 /** Hand a file back to the page. */
 export async function GET({ url, cookies }) {
@@ -52,7 +54,9 @@ export async function GET({ url, cookies }) {
       headers: {
         'Content-Type': typeOf(path),
         // Its name never changes once shelved, so it may be kept a good while.
-        'Cache-Control': 'private, max-age=86400',
+        'Cache-Control': path.startsWith('faces/')
+          ? 'private, max-age=30'
+          : 'private, max-age=86400',
       },
     });
   } catch (err) {
@@ -82,7 +86,10 @@ export async function POST({ request, cookies }) {
     return json({ error: 'That file is too big for the room. Keep it under 24 MB.' }, 413);
   }
 
-  const path = shelveAs(body.name);
+  // A face replaces the one before it; everything else lands under a new name.
+  const face = String(body.face ?? '');
+  const path = face ? FACES[face] : shelveAs(body.name);
+  if (face && !path) return json({ error: 'There is no such member of the Council.' }, 400);
   try {
     await shelve(token, path, data);
     return json({ path: path });

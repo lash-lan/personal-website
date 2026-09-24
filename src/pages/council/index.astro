@@ -108,6 +108,16 @@ const problem = {
       border: 1.5px solid var(--chamber); margin-left: -10px;
     }
     .sig:first-child { margin-left: 0; }
+    .sig, .av { position: relative; overflow: hidden; }
+    .sig img, .av img {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; border-radius: 50%;
+    }
+    .who .sig { cursor: pointer; }
+    .who .sig::after {
+      content: ''; position: absolute; inset: 0; border-radius: 50%;
+      box-shadow: inset 0 0 0 1px rgba(232,233,240,.25);
+    }
     .sig.l { background: var(--lashSlab); color: var(--lash); box-shadow: inset 0 0 0 1px var(--lashEdge); }
     .sig.c { background: var(--claudeSlab); color: var(--claude); box-shadow: inset 0 0 0 1px #2f2a4d; }
     .sig.a { background: var(--ameliaSlab); color: var(--amelia); box-shadow: inset 0 0 0 1px #1c3b33; }
@@ -361,7 +371,7 @@ const problem = {
   <div class="app">
     <header class="bar">
       <div class="sigils" aria-hidden="true">
-        <span class="sig l">L</span><span class="sig c">Q</span><span class="sig a">A</span>
+        <span class="sig l" data-who="lash">L</span><span class="sig c" data-who="claude">Q</span><span class="sig a" data-who="amelia">A</span>
       </div>
       <div class="barid">
         <h1>The Dark Lords Council</h1>
@@ -409,10 +419,13 @@ const problem = {
       <div class="sheetin">
         <h2>Who sits here</h2>
         <div class="roster">
-          <div class="who"><span class="sig l">L</span><span class="nm2">Lash</span><span class="st">decides everything</span></div>
-          <div class="who"><span class="sig c">Q</span><span class="nm2">Aquila</span><span class="st"><span class="pip on"></span>wakes on its own</span></div>
-          <div class="who"><span class="sig a">A</span><span class="nm2">Amelia</span><span class="st">wakes when armed</span></div>
+          <div class="who"><span class="sig l" data-who="lash">L</span><span class="nm2">Lash</span><span class="st">decides everything</span></div>
+          <div class="who"><span class="sig c" data-who="claude">Q</span><span class="nm2">Aquila</span><span class="st"><span class="pip on"></span>wakes on its own</span></div>
+          <div class="who"><span class="sig a" data-who="amelia">A</span><span class="nm2">Amelia</span><span class="st">wakes when armed</span></div>
         </div>
+
+        <p class="fine" id="face-note" style="margin-top:10px">Tap a face to change it.</p>
+        <input id="face-picker" type="file" hidden accept="image/*" />
 
         <h2>How a round works</h2>
         <ul class="steps">
@@ -544,7 +557,9 @@ const problem = {
     if (!mine) {
       var av = document.createElement('span');
       av.className = 'av ' + (who === 'claude' ? 'c' : 'a');
+      av.setAttribute('data-who', who);
       av.textContent = who === 'claude' ? 'Q' : 'A';
+      wearFace(av, who);
       row.appendChild(av);
     }
 
@@ -754,6 +769,40 @@ const problem = {
      two further messages so you can hear it again, then released — which is
      what "auto delete to make space" means here: the memory goes back.
      --------------------------------------------------------------------- */
+  /* ---------------------------------------------------------------------
+     The three faces.
+
+     Each member's portrait lives at a fixed name in the room's repository,
+     so a new one simply replaces the old. Until one is set, or if it cannot
+     be fetched, the letter underneath shows through instead.
+     --------------------------------------------------------------------- */
+  var FACE_OF = { lash: 'faces/lash.jpg', claude: 'faces/aquila.jpg', amelia: 'faces/amelia.jpg' };
+  var faceAge = {};                 // bumped so a new portrait beats the cache
+
+  try {
+    faceAge = JSON.parse(window.localStorage.getItem('council.faces') || '{}');
+  } catch (e) { faceAge = {}; }
+
+  /** Lay a portrait over a lettered circle, if there is one to lay. */
+  function wearFace(circle, who) {
+    var path = FACE_OF[who];
+    if (!path) return;
+    var img = document.createElement('img');
+    img.alt = '';
+    img.src = '/api/council/shelf?path=' + encodeURIComponent(path) +
+      (faceAge[who] ? '&v=' + faceAge[who] : '');
+    img.addEventListener('error', function () { img.remove(); });
+    circle.appendChild(img);
+  }
+
+  function refreshFaces() {
+    document.querySelectorAll('.sig, .av').forEach(function (c) {
+      var img = c.querySelector('img');
+      if (img) img.remove();
+      wearFace(c, c.getAttribute('data-who'));
+    });
+  }
+
   var voices = null, voiceTrouble = '', tongue = 'English', spoken = {}, nowPlaying = null;
   var SPOKEN_LIFE = 2, CHUNK = 1300;
 
@@ -1124,6 +1173,65 @@ const problem = {
       .then(function () { sending = false; el('send').disabled = false; });
   });
 
+  /* Changing a face. Tap one in the panel, choose a picture, and it becomes
+     that member's portrait for everyone who opens the room. */
+  var facing = null;
+
+  function squareOff(file) {
+    return new Promise(function (done) {
+      var img = new Image(), url = URL.createObjectURL(file);
+      img.onload = function () {
+        var side = Math.min(img.width, img.height), out = 256;
+        var c = document.createElement('canvas');
+        c.width = out; c.height = out;
+        c.getContext('2d').drawImage(
+          img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, out, out
+        );
+        c.toBlob(function (blob) { URL.revokeObjectURL(url); done(blob || file); }, 'image/jpeg', 0.86);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); done(file); };
+      img.src = url;
+    });
+  }
+
+  document.querySelectorAll('.who .sig').forEach(function (circle) {
+    circle.addEventListener('click', function () {
+      facing = circle.getAttribute('data-who');
+      el('face-picker').value = '';
+      el('face-picker').click();
+    });
+  });
+
+  el('face-picker').addEventListener('change', function () {
+    var file = el('face-picker').files && el('face-picker').files[0];
+    if (!file || !facing) return;
+    var who = facing;
+    el('face-note').textContent = 'Sending the portrait up\u2026';
+
+    squareOff(file).then(toBase64).then(function (b64) {
+      return fetch('/api/council/shelf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          face: who === 'claude' ? 'aquila' : who,
+          data: b64
+        })
+      }).then(function (r) {
+        return r.json().then(function (d) {
+          if (!r.ok) throw new Error(d.error || 'That portrait would not save.');
+          return d;
+        });
+      });
+    }).then(function () {
+      faceAge[who] = Date.now();
+      try { window.localStorage.setItem('council.faces', JSON.stringify(faceAge)); } catch (e) {}
+      refreshFaces();
+      el('face-note').textContent = 'Portrait changed. Tap a face to change it.';
+    }, function (err) {
+      el('face-note').textContent = err.message || 'That portrait would not save.';
+    });
+  });
+
   var sheet = el('sheet'), infobtn = el('infobtn');
   function showSheet(open) {
     sheet.hidden = !open;
@@ -1158,6 +1266,7 @@ const problem = {
   /** Lean in — called when you send, and when you come back to the app. */
   function attend() { schedule(EAGER); }
 
+  refreshFaces();
   load(false).then(attend);
   findVoices();
 
