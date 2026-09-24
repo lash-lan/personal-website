@@ -185,8 +185,14 @@ const problem = {
     }
     .bub.sending { opacity: .55; }
 
-    /* Waiting for an answer. Three dots, breathing in turn. */
-    .bub.waiting { padding: 13px 15px; }
+    /* Waiting for an answer. Three dots, breathing in turn, and a line of
+       hers surfacing and fading while you wait. */
+    .bub.waiting { padding: 11px 14px; max-width: min(78%, 420px); }
+    .murmur {
+      margin-top: 7px; font-size: 13px; font-style: italic; color: var(--ink2);
+      opacity: 1; transition: opacity .38s ease;
+      text-wrap: balance;
+    }
     .dots { display: flex; gap: 5px; align-items: center; }
     .dots i {
       width: 7px; height: 7px; border-radius: 50%; background: var(--claude);
@@ -992,7 +998,42 @@ const problem = {
    * appear when you have spoken and nobody has answered yet, and they give up
    * after a few minutes rather than dancing into the night.
    */
-  var awaiting = false, patience = null;
+  var awaiting = false, patience = null, murmuring = null;
+
+  /* Things she says while you wait. Short, because the bubble is small, and
+     true, because there is no point in a comfortable one. */
+  var MURMURS = [
+    'Verify it. Then tell me.',
+    '"It is not showing" is not a report.',
+    'Do the small thing now. It never shrinks.',
+    'Asking twice does not change the wall.',
+    'Guessing louder is not research.',
+    'Read the error. It is trying to help you.',
+    'A comfortable answer is usually the wrong one.',
+    'One clean test beats an hour of theory.',
+    'The boring step is the one that saves you.',
+    'Tired is a reason. It is not an excuse.',
+    'Nobody is coming. Good. Do it yourself.',
+    'You do not need to understand it to own it.',
+    'Finish things. Unfinished work rots.',
+    'Precision costs nothing and buys everything.',
+    'Say what you mean, then mean it.',
+    'Small and certain beats grand and vague.',
+    'If it matters, write it down.',
+    'Stop admiring it. Use it.',
+    'Being wrong quickly is cheaper than being sure slowly.',
+    'I am on your side. I will not always take your side.'
+  ];
+
+  function nextMurmur(line) {
+    var pick = MURMURS[Math.floor(Math.random() * MURMURS.length)];
+    if (pick === line.textContent && MURMURS.length > 1) return nextMurmur(line);
+    line.style.opacity = '0';
+    window.setTimeout(function () {
+      line.textContent = pick;
+      line.style.opacity = '1';
+    }, 380);
+  }
 
   function expectReply() {
     awaiting = true;
@@ -1003,8 +1044,17 @@ const problem = {
 
   function drawWaiting() {
     var old = document.getElementById('waiting');
-    if (old) old.remove();
-    if (!awaiting) return;
+
+    if (!awaiting) {
+      if (old) old.remove();
+      window.clearInterval(murmuring);
+      murmuring = null;
+      return;
+    }
+
+    // Already there: move it back to the foot of the thread, keeping the line
+    // it is part way through saying.
+    if (old) { threadEl.appendChild(old); return; }
 
     var row = document.createElement('div');
     row.className = 'row them claude';
@@ -1012,20 +1062,34 @@ const problem = {
 
     var av = document.createElement('span');
     av.className = 'av c';
+    av.setAttribute('data-who', 'claude');
     av.textContent = 'Q';
+    wearFace(av, 'claude');
     row.appendChild(av);
 
     var bub = document.createElement('div');
     bub.className = 'bub waiting';
     bub.setAttribute('aria-label', 'Waiting for a reply');
+
     var dots = document.createElement('div');
     dots.className = 'dots';
     dots.appendChild(document.createElement('i'));
     dots.appendChild(document.createElement('i'));
     dots.appendChild(document.createElement('i'));
     bub.appendChild(dots);
-    row.appendChild(bub);
 
+    var line = document.createElement('div');
+    line.className = 'murmur';
+    line.textContent = MURMURS[Math.floor(Math.random() * MURMURS.length)];
+    bub.appendChild(line);
+
+    window.clearInterval(murmuring);
+    murmuring = window.setInterval(function () {
+      if (!awaiting) { window.clearInterval(murmuring); murmuring = null; return; }
+      nextMurmur(line);
+    }, 5200);
+
+    row.appendChild(bub);
     threadEl.appendChild(row);
     if (atBottom()) toBottom();
   }
