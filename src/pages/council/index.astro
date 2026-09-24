@@ -298,7 +298,8 @@ const problem = {
       display: inline-flex; align-items: center; gap: 7px;
     }
     .lbtn:hover { border-color: var(--ink3); }
-    .pinrow { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pinrow { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .vlabel { flex: none; width: 58px; font-size: 12.5px; font-weight: 600; color: var(--ink2); }
     .pinrow select {
       flex: 1 1 200px; min-width: 0;
       border: 1px solid var(--edge); border-radius: 10px; padding: 9px 12px;
@@ -387,9 +388,14 @@ const problem = {
           <a class="lbtn" href="https://chatgpt.com/" target="_blank" rel="noopener">Wake Amelia</a>
         </div>
 
-        <h2>Her voice</h2>
+        <h2>Their voices</h2>
         <div class="pinrow">
-          <select id="voice" aria-label="Which voice reads replies aloud"></select>
+          <label class="vlabel" for="voice-aquila">Aquila</label>
+          <select id="voice-aquila" aria-label="The voice that reads Aquila aloud"></select>
+        </div>
+        <div class="pinrow" style="margin-top:8px">
+          <label class="vlabel" for="voice-amelia">Amelia</label>
+          <select id="voice-amelia" aria-label="The voice that reads Amelia aloud"></select>
         </div>
         <p class="fine" id="voice-state">Asking your PC whether it is awake&hellip;</p>
 
@@ -523,7 +529,7 @@ const problem = {
       speak.setAttribute('aria-label', 'Read this aloud');
       speak.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
         '<path d="M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z"/></svg>';
-      speak.addEventListener('click', function () { readAloud(m.id, m.body, speak); });
+      speak.addEventListener('click', function () { readAloud(m.id, m.body, speak, who); });
       meta.appendChild(speak);
     }
 
@@ -582,8 +588,19 @@ const problem = {
   var voices = null, tongue = 'English', spoken = {}, nowPlaying = null;
   var SPOKEN_LIFE = 2, CHUNK = 1300;
 
-  function chosenVoice() {
-    var sel = el('voice');
+  // Each of them has her own voice. These are the ones Lash asked for; if the
+  // PC doesn't carry them, the first voice it does have stands in.
+  var WANTED = { claude: 'Serious_female_Voice', amelia: 'British_Female_voice_seductive' };
+  var PICKER = { claude: 'voice-aquila', amelia: 'voice-amelia' };
+
+  /** Match a name the loose way — case, spaces and underscores forgiven. */
+  function sameName(a, b) {
+    var flat = function (s) { return String(s).toLowerCase().replace(/[\s_\-]+/g, ''); };
+    return flat(a) === flat(b);
+  }
+
+  function chosenVoice(who) {
+    var sel = el(PICKER[who] || PICKER.claude);
     return sel && sel.value ? sel.value : (voices && voices[0]) || '';
   }
 
@@ -622,11 +639,11 @@ const problem = {
     });
   }
 
-  function fetchVoice(text) {
+  function fetchVoice(text, who) {
     return fetch('/api/forge/speak', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ voice: chosenVoice(), text: text, language: tongue, format: 'mp3' })
+      body: JSON.stringify({ voice: chosenVoice(who), text: text, language: tongue, format: 'mp3' })
     }).then(function (r) {
       if (!r.ok) {
         return r.json().catch(function () { return {}; }).then(function (d) {
@@ -654,7 +671,7 @@ const problem = {
     next();
   }
 
-  function readAloud(id, text, btn) {
+  function readAloud(id, text, btn, who) {
     if (nowPlaying && nowPlaying.id === id) { hush(); return; }
     hush();
 
@@ -669,7 +686,7 @@ const problem = {
     breaths.reduce(function (chain, piece) {
       return chain.then(function () {
         if (session.stopped) return null;
-        return fetchVoice(piece).then(function (u) { urls.push(u); });
+        return fetchVoice(piece, who).then(function (u) { urls.push(u); });
       });
     }, Promise.resolve()).then(function () {
       if (session.stopped || !urls.length) return;
@@ -687,36 +704,52 @@ const problem = {
     fetch('/api/forge/voices', { headers: { Accept: 'application/json' } })
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
       .then(function (res) {
-        var sel = el('voice');
+        var both = [el(PICKER.claude), el(PICKER.amelia)];
         if (!res.ok || !res.d.voices || !res.d.voices.length) {
           el('voice-state').textContent = res.d.error || 'Your PC is not answering, so replies stay silent.';
-          sel.disabled = true;
+          both.forEach(function (s) { s.disabled = true; });
           return;
         }
         voices = res.d.voices;
         if (res.d.languages && res.d.languages.length) tongue = res.d.languages[0];
 
-        var keep = '';
-        try { keep = window.localStorage.getItem('council.voice') || ''; } catch (e) {}
-        sel.innerHTML = '';
-        voices.forEach(function (name) {
-          var o = document.createElement('option');
-          o.value = name;
-          o.textContent = name;
-          if (name === keep) o.selected = true;
-          sel.appendChild(o);
-        });
-        sel.disabled = false;
-        sel.addEventListener('change', function () {
-          try { window.localStorage.setItem('council.voice', sel.value); } catch (e) {}
-          // A different voice means the old recordings are the wrong voice.
-          Object.keys(spoken).forEach(function (id) {
-            spoken[id].urls.forEach(function (u) { URL.revokeObjectURL(u); });
-            delete spoken[id];
+        var missing = [];
+        ['claude', 'amelia'].forEach(function (who) {
+          var sel = el(PICKER[who]);
+          var kept = '';
+          try { kept = window.localStorage.getItem('council.voice.' + who) || ''; } catch (e) {}
+
+          // Your saved choice wins; then the voice you asked for; then whatever
+          // the PC offers first.
+          var want = voices.filter(function (n) { return sameName(n, kept); })[0]
+            || voices.filter(function (n) { return sameName(n, WANTED[who]); })[0];
+          if (!want && !kept) missing.push(WANTED[who]);
+          if (!want) want = voices[0];
+
+          sel.innerHTML = '';
+          voices.forEach(function (name) {
+            var o = document.createElement('option');
+            o.value = name;
+            o.textContent = name;
+            if (name === want) o.selected = true;
+            sel.appendChild(o);
+          });
+          sel.disabled = false;
+          sel.addEventListener('change', function () {
+            try { window.localStorage.setItem('council.voice.' + who, sel.value); } catch (e) {}
+            // Old recordings are in the wrong voice now. Let them go.
+            Object.keys(spoken).forEach(function (id) {
+              spoken[id].urls.forEach(function (u) { URL.revokeObjectURL(u); });
+              delete spoken[id];
+            });
           });
         });
-        el('voice-state').textContent =
-          'Your PC is awake with ' + voices.length + ' voices. Tap the speaker on any reply.';
+
+        el('voice-state').textContent = missing.length
+          ? 'Your PC is awake, but it has no voice called ' + missing.join(' or ') +
+            '. Pick from what it does have — ' + voices.length + ' in all.'
+          : 'Your PC is awake with ' + voices.length + ' voices. Tap the speaker on any reply.';
+
         first = true;          // redraw so the speaker buttons appear
         load(true);
       })
