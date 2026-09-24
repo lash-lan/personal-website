@@ -33,13 +33,45 @@ async function refusal(res) {
   }
   if (res.status === 401) return new Error('The key was rejected. It may have expired.');
   if (res.status === 403 || res.status === 404) {
-    return new Error(
-      'The key cannot see the room. In GitHub, the token needs this one ' +
-      'repository selected, and both Issues and Pull requests set to read ' +
-      `and write. (GitHub said ${res.status}${detail ? ': ' + detail : ''}.)`
-    );
+    return new Error(`__blind__${res.status}${detail ? ': ' + detail : ''}`);
   }
   return new Error(`GitHub answered ${res.status}${detail ? ': ' + detail : ''}.`);
+}
+
+/**
+ * When GitHub says it cannot find the room, ask two narrower questions to find
+ * out where the key actually stops: at the account, at the repository, or at
+ * the room itself. GitHub answers "not found" rather than "not allowed" for
+ * anything a token may not see, so each layer has to be tried in turn.
+ */
+export async function diagnose(token, said) {
+  const ask = async (path) => {
+    try {
+      const r = await fetch(`https://api.github.com${path}`, { headers: headers(token) });
+      return r.status;
+    } catch {
+      return 0;
+    }
+  };
+
+  const who = await ask('/user');
+  if (who === 401) return 'The key was rejected outright. Check it was pasted whole, with no spaces.';
+  if (who !== 200) return `GitHub would not even confirm the key (${who}). It may be malformed.`;
+
+  const repo = await ask(`/repos/${OWNER}/${REPO}`);
+  if (repo !== 200) {
+    return (
+      'The key is valid, but it cannot see the repository. In GitHub, open the ' +
+      'token and set Repository access to "Only select repositories", then add ' +
+      `${REPO}. A new token only covers public repositories until you do.`
+    );
+  }
+
+  return (
+    'The key can see the repository but not the room. Under Repository ' +
+    'permissions, set both Issues and Pull requests to "Read and write". ' +
+    `(GitHub said ${said}.)`
+  );
 }
 
 function headers(token) {

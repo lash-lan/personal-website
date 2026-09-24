@@ -1,6 +1,6 @@
 import { env } from 'cloudflare:workers';
 import { ticketHolds, ticketFrom } from '../../../lib/session.js';
-import { readRoom, speak, MAX_MESSAGE } from '../../../lib/council.js';
+import { readRoom, speak, diagnose, MAX_MESSAGE } from '../../../lib/council.js';
 
 export const prerender = false;
 
@@ -17,8 +17,12 @@ async function locked(cookies) {
 
 // Say what actually went wrong. This page is behind the password, so there is
 // nobody to keep the detail from, and a vague message costs an hour of guessing.
-function trouble(err) {
+// A "cannot see it" answer is chased down to the layer that refused.
+async function trouble(err, token) {
   const said = err && err.message ? String(err.message) : '';
+  if (said.startsWith('__blind__')) {
+    return json({ error: await diagnose(token, said.slice(9)) }, 502);
+  }
   return json({ error: said || 'GitHub would not answer. Try again in a moment.' }, 502);
 }
 
@@ -32,7 +36,7 @@ export async function GET({ cookies }) {
   try {
     return json({ messages: await readRoom(token) });
   } catch (err) {
-    return trouble(err);
+    return await trouble(err, token);
   }
 }
 
@@ -57,6 +61,6 @@ export async function POST({ request, cookies }) {
   try {
     return json({ message: await speak(token, text) });
   } catch (err) {
-    return trouble(err);
+    return await trouble(err, token);
   }
 }
