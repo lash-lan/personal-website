@@ -175,6 +175,22 @@ const problem = {
     }
     .bub.sending { opacity: .55; }
 
+    /* Waiting for an answer. Three dots, breathing in turn. */
+    .bub.waiting { padding: 13px 15px; }
+    .dots { display: flex; gap: 5px; align-items: center; }
+    .dots i {
+      width: 7px; height: 7px; border-radius: 50%; background: var(--claude);
+      opacity: .35; animation: breathe 1.25s ease-in-out infinite;
+    }
+    .dots i:nth-child(2) { animation-delay: .18s; }
+    .dots i:nth-child(3) { animation-delay: .36s; }
+    @keyframes breathe {
+      0%, 60%, 100% { opacity: .3; transform: translateY(0); }
+      30% { opacity: 1; transform: translateY(-3px); }
+    }
+    /* Stillness for anyone who asked for it: the dots stay, the dance stops. */
+    @media (prefers-reduced-motion: reduce) { .dots i { opacity: .75; } }
+
     .nameline { display: flex; align-items: center; gap: 7px; margin-bottom: 2px; flex-wrap: wrap; }
     .nameline .nm { font-size: 12.5px; font-weight: 700; }
     .them.claude .nm { color: var(--claude); }
@@ -514,10 +530,61 @@ const problem = {
     return n;
   }
 
+  /**
+   * The dancing dots. They mean "an answer is expected", not "someone is
+   * typing this second" — nothing here can see Aquila or Amelia at work. They
+   * appear when you have spoken and nobody has answered yet, and they give up
+   * after a few minutes rather than dancing into the night.
+   */
+  var awaiting = false, patience = null;
+
+  function expectReply() {
+    awaiting = true;
+    window.clearTimeout(patience);
+    patience = window.setTimeout(function () { awaiting = false; drawWaiting(); }, 240000);
+    drawWaiting();
+  }
+
+  function drawWaiting() {
+    var old = document.getElementById('waiting');
+    if (old) old.remove();
+    if (!awaiting) return;
+
+    var row = document.createElement('div');
+    row.className = 'row them claude';
+    row.id = 'waiting';
+
+    var av = document.createElement('span');
+    av.className = 'av c';
+    av.textContent = 'Q';
+    row.appendChild(av);
+
+    var bub = document.createElement('div');
+    bub.className = 'bub waiting';
+    bub.setAttribute('aria-label', 'Waiting for a reply');
+    var dots = document.createElement('div');
+    dots.className = 'dots';
+    dots.appendChild(document.createElement('i'));
+    dots.appendChild(document.createElement('i'));
+    dots.appendChild(document.createElement('i'));
+    bub.appendChild(dots);
+    row.appendChild(bub);
+
+    threadEl.appendChild(row);
+    if (atBottom()) toBottom();
+  }
+
   /** Redraw, and say whether this was actually news. */
   function render(messages) {
     var fresh = messages.some(function (m) { return !seen[m.id]; });
-    if (!fresh && !first) return false;
+
+    // Somebody answered. Stop waiting.
+    if (fresh && messages.some(function (m) { return !seen[m.id] && m.speaker !== 'lash'; })) {
+      awaiting = false;
+      window.clearTimeout(patience);
+    }
+
+    if (!fresh && !first) { drawWaiting(); return false; }
 
     var stick = first || atBottom();
     threadEl.textContent = '';
@@ -527,6 +594,7 @@ const problem = {
     } else {
       messages.forEach(function (m) { seen[m.id] = true; threadEl.appendChild(bubble(m, false)); });
     }
+    drawWaiting();
     if (stick) { toBottom(); first = false; }
     return true;
   }
@@ -590,7 +658,8 @@ const problem = {
         grow();
         try { window.localStorage.setItem('council.draft', ''); } catch (e) {}
         say('Sent to the room.');
-        // A reply is coming. Watch closely until it does.
+        // A reply is coming. Show the dots and watch closely until it lands.
+        expectReply();
         return load(true).then(attend);
       })
       .catch(function () {
