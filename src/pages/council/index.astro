@@ -247,6 +247,33 @@ const problem = {
       border-radius: 999px; padding: 5px 12px;
     }
     .chip:hover { color: var(--ink); border-color: var(--ink3); }
+    /* Something shown to the Council, inside the bubble that carries it. */
+    .shown {
+      display: block; margin: 6px 0 2px; border-radius: 10px;
+      border: 1px solid var(--edge); max-width: 100%; cursor: zoom-in;
+    }
+    .shownfile {
+      display: inline-flex; align-items: center; gap: 8px; margin: 6px 0 2px;
+      border: 1px solid var(--edge); border-radius: 10px; padding: 8px 11px;
+      background: var(--slab2); color: var(--ink); text-decoration: none; font-size: 13px;
+    }
+    .shownfile:hover { border-color: var(--ink3); }
+
+    /* Waiting to be shown, above the composer. */
+    .tray {
+      display: flex; align-items: center; gap: 9px; margin-bottom: 8px;
+      border: 1px solid var(--edge); border-radius: 12px; padding: 7px 9px;
+      background: var(--slab2);
+    }
+    .tray img { width: 38px; height: 38px; object-fit: cover; border-radius: 8px; flex: none; }
+    .tray .nm3 { flex: 1 1 auto; min-width: 0; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tray .sz { font-size: 11px; color: var(--ink3); flex: none; }
+    .tray button {
+      flex: none; width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
+      border: 1px solid var(--edge); background: var(--slab); color: var(--ink2);
+      font: inherit; font-size: 14px; line-height: 1;
+    }
+
     .inputrow { display: flex; align-items: flex-end; gap: 8px; }
     textarea {
       flex: 1 1 auto; min-width: 0; min-height: 42px; max-height: 38dvh; resize: none;
@@ -357,7 +384,19 @@ const problem = {
         <button class="chip" type="button" data-fill="approve">Approved</button>
         <button class="chip" type="button" data-fill="clear">Clear</button>
       </div>
+      <div id="tray" class="tray" hidden>
+        <img id="tray-thumb" alt="" hidden />
+        <span class="nm3" id="tray-name"></span>
+        <span class="sz" id="tray-size"></span>
+        <button type="button" id="tray-drop" aria-label="Take it back">&times;</button>
+      </div>
       <div class="inputrow">
+        <button class="round" id="clip" type="button" aria-label="Show the Council something"
+                style="background:var(--slab2);border-color:var(--edge);color:var(--ink2)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5 12.5 20a5 5 0 0 1-7-7l8-8a3.5 3.5 0 1 1 5 5l-8 8a2 2 0 0 1-3-3l7.5-7.5"></path></svg>
+        </button>
+        <input id="picker" type="file" hidden
+               accept="image/*,application/pdf,text/plain,text/csv,text/markdown,application/json" />
         <textarea id="draft" rows="1" placeholder="Summon the Council&hellip;" aria-label="Your message to the Council"></textarea>
         <button class="round" id="send" type="button" aria-label="Send to the room">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12 20 4l-8 16-2-6z"></path></svg>
@@ -534,9 +573,31 @@ const problem = {
       bub.appendChild(nl);
     }
 
+    var parcel = unpack(m.body);
+
     var body = document.createElement('div');
     body.className = 'body';
-    paragraphs(body, m.body);
+    if (parcel.text) paragraphs(body, parcel.text);
+    parcel.shown.forEach(function (item) {
+      var src = '/api/council/shelf?path=' + encodeURIComponent(item.path);
+      if (/\.(jpe?g|png|gif|webp|svg|heic)$/i.test(item.path)) {
+        var img = document.createElement('img');
+        img.className = 'shown';
+        img.loading = 'lazy';
+        img.alt = item.name;
+        img.src = src;
+        img.addEventListener('click', function () { window.open(src, '_blank', 'noopener'); });
+        body.appendChild(img);
+      } else {
+        var a = document.createElement('a');
+        a.className = 'shownfile';
+        a.href = src;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.textContent = item.name;
+        body.appendChild(a);
+      }
+    });
     bub.appendChild(body);
 
     var meta = document.createElement('div');
@@ -597,6 +658,89 @@ const problem = {
       n.appendChild(b);
     }
     return n;
+  }
+
+  /* ---------------------------------------------------------------------
+     Showing the Council something.
+
+     GitHub's own attachment upload belongs to its website, so a picture
+     cannot ride along with a comment. It is committed into the room's
+     repository instead, and the comment names it. Amelia reads the same
+     repository, so she sees whatever you show me.
+
+     Photographs are shrunk here on the phone before they travel: a modern
+     camera produces far more detail than a conversation needs, and the room
+     would grow fat on it.
+     --------------------------------------------------------------------- */
+  var held = null;                 // what is waiting in the tray
+  var LONGEST = 1600, QUALITY = 0.82;
+
+  function weigh(bytes) {
+    return bytes > 1048576 ? (bytes / 1048576).toFixed(1) + ' MB'
+      : Math.max(1, Math.round(bytes / 1024)) + ' KB';
+  }
+
+  /** Shrink a photograph. Anything else is passed through untouched. */
+  function shrink(file) {
+    if (!/^image\//.test(file.type) || /svg|gif/.test(file.type)) return Promise.resolve(file);
+    return new Promise(function (done) {
+      var img = new Image(), url = URL.createObjectURL(file);
+      img.onload = function () {
+        var scale = Math.min(1, LONGEST / Math.max(img.width, img.height));
+        if (scale === 1 && file.size < 900000) { URL.revokeObjectURL(url); done(file); return; }
+        var c = document.createElement('canvas');
+        c.width = Math.round(img.width * scale);
+        c.height = Math.round(img.height * scale);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        c.toBlob(function (blob) {
+          URL.revokeObjectURL(url);
+          done(blob && blob.size < file.size ? new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' }) : file);
+        }, 'image/jpeg', QUALITY);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); done(file); };
+      img.src = url;
+    });
+  }
+
+  function toBase64(file) {
+    return new Promise(function (done, fail) {
+      var r = new FileReader();
+      r.onload = function () { done(String(r.result).split(',')[1] || ''); };
+      r.onerror = fail;
+      r.readAsDataURL(file);
+    });
+  }
+
+  function showTray() {
+    var tray = el('tray');
+    if (!held) {
+      tray.hidden = true;
+      var t = el('tray-thumb');
+      if (t.src && t.src.indexOf('blob:') === 0) URL.revokeObjectURL(t.src);
+      t.hidden = true;
+      t.removeAttribute('src');
+      return;
+    }
+    tray.hidden = false;
+    el('tray-name').textContent = held.name;
+    el('tray-size').textContent = weigh(held.size);
+    var thumb = el('tray-thumb');
+    if (/^image\//.test(held.type)) {
+      if (thumb.src && thumb.src.indexOf('blob:') === 0) URL.revokeObjectURL(thumb.src);
+      thumb.src = URL.createObjectURL(held);
+      thumb.hidden = false;
+    } else {
+      thumb.hidden = true;
+    }
+  }
+
+  /** Split a message body into its words and the things attached to it. */
+  function unpack(body) {
+    var shown = [], text = String(body || '').replace(
+      /\[attached:\s*(uploads\/[A-Za-z0-9._-]+)\]\([^)]*\)(?:\s*"([^"]*)")?/g,
+      function (_all, path, name) { shown.push({ path: path, name: name || path.split('-').pop() }); return ''; }
+    );
+    return { text: text.trim(), shown: shown };
   }
 
   /* ---------------------------------------------------------------------
@@ -890,20 +1034,64 @@ const problem = {
     });
   });
 
+  el('clip').addEventListener('click', function () { el('picker').click(); });
+  el('tray-drop').addEventListener('click', function () {
+    held = null;
+    el('picker').value = '';
+    showTray();
+  });
+  el('picker').addEventListener('change', function () {
+    var file = el('picker').files && el('picker').files[0];
+    if (!file) return;
+    say('Preparing it…');
+    shrink(file).then(function (ready) {
+      if (ready.size > 24 * 1024 * 1024) {
+        say('That is too big for the room. Keep it under 24 MB.', true);
+        el('picker').value = '';
+        return;
+      }
+      held = ready;
+      showTray();
+      say(ready.size < file.size ? 'Ready, shrunk to ' + weigh(ready.size) + '.' : 'Ready.');
+    });
+  });
+
   el('send').addEventListener('click', function () {
     var text = draftEl.value.trim();
-    if (!text || sending) { if (!text) say('Write something first.'); return; }
+    if ((!text && !held) || sending) { if (!text && !held) say('Write something first.'); return; }
     sending = true;
     el('send').disabled = true;
 
-    var ghost = bubble({ speaker: 'lash', body: text, at: '' }, true);
+    var ghost = bubble({ speaker: 'lash', body: text || (held ? held.name : ''), at: '' }, true);
     threadEl.appendChild(ghost);
     toBottom();
 
-    fetch('/api/council/room', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: text })
+    // If something is waiting in the tray, shelve it first and let the
+    // message carry its name.
+    var carried = held;
+    var prepare = carried
+      ? (say('Sending it up…'), toBase64(carried).then(function (b64) {
+          return fetch('/api/council/shelf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: carried.name, data: b64 })
+          }).then(function (r) {
+            return r.json().then(function (d) {
+              if (!r.ok) throw new Error(d.error || 'That would not upload.');
+              return (text ? text + '\n\n' : '') +
+                '[attached: ' + d.path + '](https://github.com/lash-lan/the-dark-lords-council/blob/main/' +
+                d.path + ') "' + carried.name.replace(/"/g, '') + '"';
+            });
+          });
+        }))
+      : Promise.resolve(text);
+
+    prepare.then(function (whole) {
+      return fetch('/api/council/room', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: whole })
+      });
     })
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
       .then(function (res) {
@@ -914,15 +1102,18 @@ const problem = {
         }
         draftEl.value = '';
         grow();
+        held = null;
+        el('picker').value = '';
+        showTray();
         try { window.localStorage.setItem('council.draft', ''); } catch (e) {}
         say('Sent to the room.');
         // A reply is coming. Show the dots and watch closely until it lands.
         expectReply();
         return load(true).then(attend);
       })
-      .catch(function () {
+      .catch(function (err) {
         ghost.remove();
-        say('That did not send. Check your connection.', true);
+        say((err && err.message) || 'That did not send. Check your connection.', true);
       })
       .then(function () { sending = false; el('send').disabled = false; });
   });

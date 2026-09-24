@@ -143,6 +143,72 @@ export async function readRoom(token) {
   return out;
 }
 
+/* -------------------------------------------------------------------------
+   Things Lash shows the Council.
+
+   GitHub's own attachment upload belongs to its website and has no public
+   door, so a picture cannot simply be posted with a comment. Instead each
+   one is committed into the repository beside the conversation, and the
+   comment carries a line naming it. The room holds its own evidence, which
+   means Amelia can read it too, through the same repository she already has.
+   ------------------------------------------------------------------------- */
+
+const SHELF = 'uploads';
+
+/** 24 MB. Comfortably above a phone photograph, well below anything silly. */
+export const MAX_UPLOAD = 24 * 1024 * 1024;
+
+const TYPES = {
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
+  webp: 'image/webp', svg: 'image/svg+xml', heic: 'image/heic',
+  pdf: 'application/pdf', txt: 'text/plain; charset=utf-8',
+  md: 'text/markdown; charset=utf-8', json: 'application/json',
+  csv: 'text/csv; charset=utf-8', zip: 'application/zip',
+};
+
+export function typeOf(path) {
+  const ext = String(path).split('.').pop().toLowerCase();
+  return TYPES[ext] || 'application/octet-stream';
+}
+
+/** A safe, unique name. Whatever the phone called it, this is what lands. */
+export function shelveAs(name) {
+  const clean = String(name || 'file')
+    .replace(/[^A-Za-z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(-60) || 'file';
+  const when = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
+  const salt = Math.random().toString(36).slice(2, 8);
+  return `${SHELF}/${when}-${salt}-${clean}`;
+}
+
+/** Commit one file into the room's repository. */
+export async function shelve(token, path, base64) {
+  const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`, {
+    method: 'PUT',
+    headers: { ...headers(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: `Lash shows the Council ${path}`, content: base64 }),
+  });
+  if (!res.ok) throw await refusal(res);
+  return path;
+}
+
+/** Fetch one back out again, as bytes. */
+export async function unshelve(token, path) {
+  const res = await fetch(
+    `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodeURI(path)}`,
+    { headers: { ...headers(token), Accept: 'application/vnd.github.raw' } }
+  );
+  if (!res.ok) throw await refusal(res);
+  return res;
+}
+
+/** The marker a comment carries so every reader knows what is attached. */
+export function attachmentLine(path, name) {
+  const blob = `https://github.com/${OWNER}/${REPO}/blob/main/${path}`;
+  return `[attached: ${path}](${blob})${name ? ` "${name}"` : ''}`;
+}
+
 /** Say something in the room, as Lash. */
 export async function speak(token, text) {
   const res = await fetch(API, {
