@@ -296,7 +296,7 @@ const problem = {
   <div class="app">
     <header class="bar">
       <div class="sigils" aria-hidden="true">
-        <span class="sig l">L</span><span class="sig c">C</span><span class="sig a">A</span>
+        <span class="sig l">L</span><span class="sig c">Q</span><span class="sig a">A</span>
       </div>
       <div class="barid">
         <h1>The Dark Lords Council</h1>
@@ -333,7 +333,7 @@ const problem = {
         <h2>Who sits here</h2>
         <div class="roster">
           <div class="who"><span class="sig l">L</span><span class="nm2">Lash</span><span class="st">decides everything</span></div>
-          <div class="who"><span class="sig c">C</span><span class="nm2">Claude</span><span class="st"><span class="pip on"></span>wakes on its own</span></div>
+          <div class="who"><span class="sig c">Q</span><span class="nm2">Aquila</span><span class="st"><span class="pip on"></span>wakes on its own</span></div>
           <div class="who"><span class="sig a">A</span><span class="nm2">Amelia</span><span class="st">wakes when armed</span></div>
         </div>
 
@@ -437,7 +437,7 @@ const problem = {
     if (!mine) {
       var av = document.createElement('span');
       av.className = 'av ' + (who === 'claude' ? 'c' : 'a');
-      av.textContent = who === 'claude' ? 'C' : 'A';
+      av.textContent = who === 'claude' ? 'Q' : 'A';
       row.appendChild(av);
     }
 
@@ -449,7 +449,7 @@ const problem = {
       nl.className = 'nameline';
       var nm = document.createElement('span');
       nm.className = 'nm';
-      nm.textContent = who === 'claude' ? 'Claude' : 'Amelia';
+      nm.textContent = who === 'claude' ? 'Aquila' : 'Amelia';
       nl.appendChild(nm);
       if (m.speaker === 'amelia-auto') {
         var a = document.createElement('span');
@@ -514,7 +514,11 @@ const problem = {
     return n;
   }
 
+  /** Redraw, and say whether this was actually news. */
   function render(messages) {
+    var fresh = messages.some(function (m) { return !seen[m.id]; });
+    if (!fresh && !first) return false;
+
     var stick = first || atBottom();
     threadEl.textContent = '';
     seen = {};
@@ -524,6 +528,7 @@ const problem = {
       messages.forEach(function (m) { seen[m.id] = true; threadEl.appendChild(bubble(m, false)); });
     }
     if (stick) { toBottom(); first = false; }
+    return true;
   }
 
   function load(quiet) {
@@ -537,14 +542,15 @@ const problem = {
             threadEl.appendChild(note(res.d.error || 'The room would not open.'));
             first = false;
           }
-          return;
+          return false;
         }
-        status('Lash, Claude, Amelia', 'on');
-        render(res.d.messages || []);
+        status('Lash, Aquila, Amelia', 'on');
+        return render(res.d.messages || []);
       })
       .catch(function () {
         status('offline', 'bad');
         if (!quiet) say('No connection.', true);
+        return false;
       });
   }
 
@@ -584,7 +590,8 @@ const problem = {
         grow();
         try { window.localStorage.setItem('council.draft', ''); } catch (e) {}
         say('Sent to the room.');
-        return load(true);
+        // A reply is coming. Watch closely until it does.
+        return load(true).then(attend);
       })
       .catch(function () {
         ghost.remove();
@@ -603,17 +610,38 @@ const problem = {
   sheet.addEventListener('click', function (e) { if (e.target === sheet) showSheet(false); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !sheet.hidden) showSheet(false); });
 
-  load(false);
+  // How often to look for a reply. Right after you speak, someone is almost
+  // certainly about to answer, so look every few seconds; as the silence grows
+  // the gap widens, down to a slow heartbeat. A phone in your pocket is never
+  // polled at all.
+  var EAGER = 3000, CALM = 45000, WARMTH = 1.35;
+  var gap = CALM, timer = null;
 
-  // Look again when the app comes back to the front, and quietly every half
-  // minute while it is open. Often enough to feel live, rare enough to be idle.
+  function schedule(next) {
+    gap = Math.min(CALM, Math.max(EAGER, next));
+    window.clearTimeout(timer);
+    timer = window.setTimeout(tick, gap);
+  }
+
+  function tick() {
+    if (document.visibilityState !== 'visible') { schedule(CALM); return; }
+    load(true).then(function (changed) {
+      // Something arrived: stay close. Nothing did: back off a little.
+      schedule(changed ? EAGER : gap * WARMTH);
+    });
+  }
+
+  /** Lean in — called when you send, and when you come back to the app. */
+  function attend() { schedule(EAGER); }
+
+  load(false).then(attend);
+
   document.addEventListener('visibilitychange', function () {
-    if (document.visibilityState === 'visible') load(true);
+    if (document.visibilityState === 'visible') attend();
   });
-  window.setInterval(function () { if (document.visibilityState === 'visible') load(true); }, 30000);
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/council/sw.js', { scope: '/council' }).catch(function () {});
+    navigator.serviceWorker.register('/council/sw.js', { scope: '/council/' }).catch(function () {});
   }
 })();
 </script>
