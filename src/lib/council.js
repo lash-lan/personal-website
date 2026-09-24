@@ -18,6 +18,30 @@ const API = `https://api.github.com/repos/${OWNER}/${REPO}/issues/${ROOM}/commen
  *  guard against a stuck loop filling the room. */
 export const MAX_MESSAGE = 20000;
 
+/**
+ * Turn GitHub's refusal into something that says what to do about it. A
+ * fine-grained token that cannot see a private repository is answered with
+ * "not found" rather than "not allowed", so the two are named together.
+ */
+async function refusal(res) {
+  let detail = '';
+  try {
+    const body = await res.json();
+    detail = String(body.message ?? '');
+  } catch {
+    // An empty or non-JSON body tells us nothing extra; the status is enough.
+  }
+  if (res.status === 401) return new Error('The key was rejected. It may have expired.');
+  if (res.status === 403 || res.status === 404) {
+    return new Error(
+      'The key cannot see the room. In GitHub, the token needs this one ' +
+      'repository selected, and both Issues and Pull requests set to read ' +
+      `and write. (GitHub said ${res.status}${detail ? ': ' + detail : ''}.)`
+    );
+  }
+  return new Error(`GitHub answered ${res.status}${detail ? ': ' + detail : ''}.`);
+}
+
 function headers(token) {
   return {
     Authorization: `Bearer ${token}`,
@@ -66,9 +90,7 @@ export async function readRoom(token) {
   const out = [];
   for (let page = 1; page <= 5; page += 1) {
     const res = await fetch(`${API}?per_page=100&page=${page}`, { headers: headers(token) });
-    if (!res.ok) {
-      throw new Error(res.status === 401 || res.status === 403 ? 'key' : 'github');
-    }
+    if (!res.ok) throw await refusal(res);
     const batch = await res.json();
     if (!Array.isArray(batch) || batch.length === 0) break;
     for (const c of batch) {
@@ -93,9 +115,7 @@ export async function speak(token, text) {
     headers: { ...headers(token), 'Content-Type': 'application/json' },
     body: JSON.stringify({ body: text.slice(0, MAX_MESSAGE) }),
   });
-  if (!res.ok) {
-    throw new Error(res.status === 401 || res.status === 403 ? 'key' : 'github');
-  }
+  if (!res.ok) throw await refusal(res);
   const c = await res.json();
   return {
     id: String(c.id),

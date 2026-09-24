@@ -15,11 +15,11 @@ async function locked(cookies) {
   return !(await ticketHolds(env.ATELIER_SESSION_SECRET, ticketFrom(cookies)));
 }
 
+// Say what actually went wrong. This page is behind the password, so there is
+// nobody to keep the detail from, and a vague message costs an hour of guessing.
 function trouble(err) {
-  if (err && err.message === 'key') {
-    return json({ error: 'The key to the room is missing or no longer works.' }, 503);
-  }
-  return json({ error: 'GitHub would not answer. Try again in a moment.' }, 502);
+  const said = err && err.message ? String(err.message) : '';
+  return json({ error: said || 'GitHub would not answer. Try again in a moment.' }, 502);
 }
 
 /** Read the room. */
