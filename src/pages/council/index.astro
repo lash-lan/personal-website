@@ -762,9 +762,15 @@ const problem = {
   var WANTED = { claude: 'Serious_female_Voice', amelia: 'British_Female_voice_seductive' };
   var PICKER = { claude: 'voice-aquila', amelia: 'voice-amelia' };
 
-  /** Match a name the loose way — case, spaces and underscores forgiven. */
+  /**
+   * Match a voice name the loose way. Case, spaces and underscores are
+   * forgiven, and so is the "Cast: " prefix the voice library puts on the
+   * recordings Lash's friends gave him.
+   */
   function sameName(a, b) {
-    var flat = function (s) { return String(s).toLowerCase().replace(/[\s_\-]+/g, ''); };
+    var flat = function (s) {
+      return String(s).toLowerCase().replace(/^cast:\s*/, '').replace(/[\s_\-:]+/g, '');
+    };
     return flat(a) === flat(b);
   }
 
