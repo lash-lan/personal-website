@@ -1,0 +1,621 @@
+---
+// The Dark Lords Council: a chat room for three, installable to a phone.
+//
+// Like the atelier, this page carries its own markup rather than the shared
+// layout, so nothing here can leak into the pages visitors see, and so it can
+// ask search engines to look away. It shares the atelier's door: one password,
+// one ticket, no second thing to remember.
+import { env } from 'cloudflare:workers';
+import { ticketHolds, ticketFrom } from '../../lib/session.js';
+
+export const prerender = false;
+
+const unlocked = await ticketHolds(env.ATELIER_SESSION_SECRET, ticketFrom(Astro.cookies));
+
+const problem = {
+  wrong: 'That is not the password.',
+  unconfigured: 'The password has not been set on the server yet.',
+}[Astro.url.searchParams.get('e') ?? ''] ?? '';
+---
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Council</title>
+  <link rel="icon" href="/favicon.ico" />
+
+  <link rel="manifest" href="/council.webmanifest" />
+  <meta name="theme-color" content="#0d0f15" />
+  <link rel="apple-touch-icon" href="/council-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Council" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Cinzel for names alone, where a little character costs nothing. Manrope
+       for everything that is read at length or tapped at arm's length. -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style is:global>
+    /* A chamber is always dark. One committed palette, every colour explicit. */
+    :root {
+      color-scheme: dark;
+      --void: #08090d; --chamber: #0d0f15; --slab: #171a23; --slab2: #1e222d;
+      --edge: #272c38; --edgeSoft: #1d212b;
+      --ink: #e8e9f0; --ink2: #a2a6b8; --ink3: #6e7386;
+      --lash: #e8b64c; --lashSlab: #2e2412; --lashEdge: #4a3a17;
+      --claude: #a98cf5; --claudeSlab: #1c1a2c;
+      --amelia: #4fc9a6; --ameliaSlab: #11241f;
+      --ember: #d4563b; --live: #4fc9a6;
+      --lift: 0 1px 1px rgba(0,0,0,.5), 0 6px 18px rgba(0,0,0,.35);
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    /* Panels below set their own display, which would otherwise beat `hidden`
+       and leave an invisible sheet swallowing every tap. */
+    [hidden] { display: none !important; }
+    html, body { height: 100%; }
+    body {
+      background: var(--void); color: var(--ink);
+      font-family: Manrope, system-ui, -apple-system, 'Segoe UI', sans-serif;
+      font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+    :focus-visible { outline: 2px solid var(--claude); outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+    .app {
+      height: 100dvh; max-width: 780px; margin: 0 auto;
+      display: flex; flex-direction: column;
+      background: var(--chamber); border-inline: 1px solid var(--edgeSoft);
+      position: relative;
+    }
+
+    /* ---- the door ---- */
+    .door { display: grid; place-items: center; height: 100%; padding: 24px; }
+    .door form {
+      width: 100%; max-width: 320px; display: grid; gap: 12px;
+      background: var(--slab); border: 1px solid var(--edge);
+      border-radius: 16px; padding: 22px; box-shadow: var(--lift);
+    }
+    .door h1 {
+      font-family: Cinzel, Georgia, serif; font-size: 19px; font-weight: 600;
+      letter-spacing: .04em; text-align: center; text-wrap: balance;
+    }
+    .door p { font-size: 12.5px; color: var(--ink3); text-align: center; }
+    .door input {
+      border: 1px solid var(--edge); border-radius: 10px; padding: 11px 13px;
+      background: var(--slab2); color: var(--ink); font: inherit; font-size: 16px;
+    }
+    .door button {
+      border: 1px solid var(--ember); background: var(--ember); color: #fff;
+      border-radius: 10px; padding: 11px; font: inherit; font-weight: 700;
+      cursor: pointer; font-size: 15px;
+    }
+    .door .wrong { color: var(--ember); }
+
+    /* ---- top bar ---- */
+    .bar {
+      flex: none; display: flex; align-items: center; gap: 12px;
+      padding: 10px 16px; padding-top: calc(10px + env(safe-area-inset-top, 0px));
+      background: var(--slab); border-bottom: 1px solid var(--edge); z-index: 30;
+    }
+    .sigils { display: flex; flex: none; }
+    .sig {
+      width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+      font-family: Cinzel, Georgia, serif; font-size: 12px; font-weight: 600;
+      border: 1.5px solid var(--chamber); margin-left: -10px;
+    }
+    .sig:first-child { margin-left: 0; }
+    .sig.l { background: var(--lashSlab); color: var(--lash); box-shadow: inset 0 0 0 1px var(--lashEdge); }
+    .sig.c { background: var(--claudeSlab); color: var(--claude); box-shadow: inset 0 0 0 1px #2f2a4d; }
+    .sig.a { background: var(--ameliaSlab); color: var(--amelia); box-shadow: inset 0 0 0 1px #1c3b33; }
+
+    .barid { flex: 1 1 auto; min-width: 0; }
+    .barid h1 {
+      font-family: Cinzel, Georgia, serif; font-size: 16px; font-weight: 600;
+      letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .barsub {
+      font-size: 11.5px; color: var(--ink3); display: flex; align-items: center; gap: 6px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .pip { width: 6px; height: 6px; border-radius: 50%; flex: none; background: var(--ink3); }
+    .pip.on { background: var(--live); box-shadow: 0 0 0 3px rgba(79,201,166,.16); }
+    .pip.bad { background: var(--ember); }
+
+    .iconbtn {
+      flex: none; width: 34px; height: 34px; border-radius: 50%;
+      border: 1px solid var(--edge); background: var(--slab2); color: var(--ink2);
+      cursor: pointer; display: grid; place-items: center;
+      font-family: Cinzel, serif; font-size: 14px; font-weight: 600;
+    }
+    .iconbtn:hover { color: var(--ink); border-color: var(--ink3); }
+    .iconbtn[aria-expanded='true'] { background: var(--ember); border-color: var(--ember); color: #fff; }
+
+    /* ---- the conversation ---- */
+    .scroll {
+      flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain;
+      padding: 16px 14px 8px;
+      background-color: var(--chamber);
+      background-image:
+        radial-gradient(circle at 50% -8%, rgba(212,86,59,.10), transparent 58%),
+        radial-gradient(circle at 1px 1px, rgba(232,233,240,.045) 1px, transparent 0);
+      background-size: auto, 20px 20px;
+    }
+    .datepill {
+      display: table; margin: 2px auto 18px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink3);
+      background: var(--slab); border: 1px solid var(--edge);
+      border-radius: 999px; padding: 4px 12px;
+    }
+    .thread { display: flex; flex-direction: column; gap: 8px; }
+
+    .row { display: flex; gap: 8px; align-items: flex-end; }
+    .row.them { justify-content: flex-start; }
+    .row.you { justify-content: flex-end; }
+    .av {
+      flex: none; width: 26px; height: 26px; border-radius: 50%; margin-bottom: 2px;
+      display: grid; place-items: center; font-family: Cinzel, serif; font-size: 11px; font-weight: 600;
+    }
+    .av.c { background: var(--claudeSlab); color: var(--claude); box-shadow: inset 0 0 0 1px #2f2a4d; }
+    .av.a { background: var(--ameliaSlab); color: var(--amelia); box-shadow: inset 0 0 0 1px #1c3b33; }
+
+    .bub {
+      position: relative; max-width: min(78%, 520px);
+      border-radius: 14px; padding: 8px 12px 6px;
+      background: var(--slab); border: 1px solid var(--edge); box-shadow: var(--lift);
+    }
+    .row.them .bub { border-bottom-left-radius: 4px; }
+    .row.you .bub {
+      border-bottom-right-radius: 4px;
+      background: var(--lashSlab); border-color: var(--lashEdge);
+    }
+    .bub.sending { opacity: .55; }
+
+    .nameline { display: flex; align-items: center; gap: 7px; margin-bottom: 2px; flex-wrap: wrap; }
+    .nameline .nm { font-size: 12.5px; font-weight: 700; }
+    .them.claude .nm { color: var(--claude); }
+    .them.amelia .nm { color: var(--amelia); }
+    .tagg {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink3);
+      border: 1px solid var(--edge); border-radius: 4px; padding: 0 4px;
+    }
+    .tagg.auto { color: var(--ember); border-color: rgba(212,86,59,.45); }
+
+    .body { font-size: 14.5px; overflow-wrap: anywhere; }
+    .body p { margin: 0 0 .55em; }
+    .body p:last-child { margin-bottom: 0; }
+
+    .meta {
+      display: flex; align-items: center; justify-content: flex-end; gap: 5px; margin-top: 3px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9.5px; color: var(--ink3);
+    }
+    .meta a { color: var(--ink3); text-decoration: none; border-bottom: 1px solid var(--edge); }
+    .ticks { color: var(--amelia); letter-spacing: -2px; font-size: 11px; }
+
+    .sysnote {
+      margin: 16px auto; max-width: 460px; text-align: center; font-size: 12.5px;
+      color: var(--ink3); background: var(--slab); border: 1px dashed var(--edge);
+      border-radius: 12px; padding: 12px 14px;
+    }
+    .sysnote b { color: var(--ink2); }
+
+    /* ---- composer ---- */
+    .composer {
+      flex: none; background: var(--slab); border-top: 1px solid var(--edge);
+      padding: 9px 12px; padding-bottom: calc(9px + env(safe-area-inset-bottom, 0px)); z-index: 20;
+    }
+    .chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
+    .chips::-webkit-scrollbar { display: none; }
+    .chip {
+      flex: none; cursor: pointer; font-family: inherit; font-size: 11.5px; font-weight: 600;
+      color: var(--ink2); background: var(--slab2); border: 1px solid var(--edge);
+      border-radius: 999px; padding: 5px 12px;
+    }
+    .chip:hover { color: var(--ink); border-color: var(--ink3); }
+    .inputrow { display: flex; align-items: flex-end; gap: 8px; }
+    textarea {
+      flex: 1 1 auto; min-width: 0; min-height: 42px; max-height: 38dvh; resize: none;
+      border: 1px solid var(--edge); border-radius: 21px; padding: 10px 15px;
+      background: var(--slab2); color: var(--ink); font: inherit; font-size: 16px; line-height: 1.45;
+    }
+    textarea::placeholder { color: var(--ink3); }
+    .round {
+      flex: none; width: 42px; height: 42px; border-radius: 50%;
+      border: 1px solid var(--ember); background: var(--ember); color: #fff;
+      cursor: pointer; display: grid; place-items: center;
+    }
+    .round svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    .round:disabled { opacity: .45; cursor: not-allowed; }
+    .said { min-height: 15px; margin-top: 6px; padding-inline: 4px; font-size: 11.5px; color: var(--ink3); }
+    .said.bad { color: var(--ember); }
+
+    /* ---- the details sheet ---- */
+    .sheet {
+      position: absolute; inset: 0; z-index: 40; background: rgba(8,9,13,.72);
+      display: flex; flex-direction: column;
+      padding-top: calc(54px + env(safe-area-inset-top, 0px));
+    }
+    .sheetin {
+      margin: 0 12px; overflow-y: auto; background: var(--slab);
+      border: 1px solid var(--edge); border-radius: 16px; padding: 16px; box-shadow: var(--lift);
+    }
+    .sheetin h2 {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--ink3); font-weight: 500; margin-bottom: 10px;
+    }
+    .sheetin h2 + h2, .links + h2, .fine + h2, .steps + h2, .roster + h2 { margin-top: 20px; }
+    .roster { display: grid; gap: 8px; }
+    .who {
+      display: flex; align-items: center; gap: 10px; background: var(--slab2);
+      border: 1px solid var(--edge); border-radius: 12px; padding: 9px 11px;
+    }
+    .who .nm2 { font-weight: 600; font-size: 13.5px; }
+    .who .st { margin-left: auto; font-size: 11.5px; color: var(--ink3); display: flex; align-items: center; gap: 6px; }
+    .steps { list-style: none; display: grid; gap: 8px; }
+    .steps li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; font-size: 13px; color: var(--ink2); }
+    .steps .n { font-family: ui-monospace, monospace; font-size: 10px; color: var(--ember); padding-top: 2px; }
+    .steps b, .fine b { color: var(--ink); font-weight: 600; }
+    .links { display: flex; gap: 8px; flex-wrap: wrap; }
+    .lbtn {
+      font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+      border: 1px solid var(--edge); background: var(--slab2); color: var(--ink);
+      border-radius: 10px; padding: 9px 14px; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 7px;
+    }
+    .lbtn:hover { border-color: var(--ink3); }
+    .fine { font-size: 12px; color: var(--ink3); margin-top: 9px; }
+
+    @media (max-width: 460px) { .bub { max-width: 86%; } }
+  </style>
+</head>
+<body>
+
+{ !unlocked && (
+  <div class="app">
+    <div class="door">
+      <form method="POST" action="/api/login">
+        <input type="hidden" name="next" value="/council" />
+        <h1>The Dark Lords Council</h1>
+        <p>Three voices, one record.</p>
+        <input type="password" name="password" placeholder="Password" autocomplete="current-password"
+               aria-label="Password" required autofocus />
+        <button type="submit">Enter</button>
+        { problem && <p class="wrong">{problem}</p> }
+      </form>
+    </div>
+  </div>
+) }
+
+{ unlocked && (
+  <div class="app">
+    <header class="bar">
+      <div class="sigils" aria-hidden="true">
+        <span class="sig l">L</span><span class="sig c">C</span><span class="sig a">A</span>
+      </div>
+      <div class="barid">
+        <h1>The Dark Lords Council</h1>
+        <div class="barsub"><span class="pip" id="pip"></span><span id="sub">connecting to the room</span></div>
+      </div>
+      <button class="iconbtn" id="infobtn" type="button" aria-expanded="false" aria-controls="sheet" aria-label="Council details">i</button>
+    </header>
+
+    <div class="scroll" id="scroll">
+      <div class="datepill">The record</div>
+      <div class="thread" id="thread">
+        <div class="sysnote">Summoning the record&hellip;</div>
+      </div>
+    </div>
+
+    <div class="composer">
+      <div class="chips">
+        <button class="chip" type="button" data-fill="brief">New brief</button>
+        <button class="chip" type="button" data-fill="both">Ask them both</button>
+        <button class="chip" type="button" data-fill="approve">Approved</button>
+        <button class="chip" type="button" data-fill="clear">Clear</button>
+      </div>
+      <div class="inputrow">
+        <textarea id="draft" rows="1" placeholder="Summon the Council&hellip;" aria-label="Your message to the Council"></textarea>
+        <button class="round" id="send" type="button" aria-label="Send to the room">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12 20 4l-8 16-2-6z"></path></svg>
+        </button>
+      </div>
+      <div class="said" id="said" role="status" aria-live="polite"></div>
+    </div>
+
+    <div class="sheet" id="sheet" hidden>
+      <div class="sheetin">
+        <h2>Who sits here</h2>
+        <div class="roster">
+          <div class="who"><span class="sig l">L</span><span class="nm2">Lash</span><span class="st">decides everything</span></div>
+          <div class="who"><span class="sig c">C</span><span class="nm2">Claude</span><span class="st"><span class="pip on"></span>wakes on its own</span></div>
+          <div class="who"><span class="sig a">A</span><span class="nm2">Amelia</span><span class="st">wakes when armed</span></div>
+        </div>
+
+        <h2>How a round works</h2>
+        <ul class="steps">
+          <li><span class="n">01</span><span>Write your brief and <b>send</b>. It goes straight into the room.</span></li>
+          <li><span class="n">02</span><span>Claude wakes on its own. Amelia wakes too when her trigger is armed.</span></li>
+          <li><span class="n">03</span><span>Both answer once, then stop. Neither replies to the other unprompted.</span></li>
+          <li><span class="n">04</span><span>Nothing is built until you say <b>Approved</b>.</span></li>
+        </ul>
+
+        <h2>Doors</h2>
+        <div class="links">
+          <a class="lbtn" href="https://github.com/lash-lan/the-dark-lords-council/pull/1" target="_blank" rel="noopener">The room on GitHub</a>
+          <a class="lbtn" href="https://chatgpt.com/" target="_blank" rel="noopener">Wake Amelia</a>
+        </div>
+
+        <h2>Installing this</h2>
+        <p class="fine">In Chrome, tap the three dots and <b>Add to Home screen</b>. It then opens like any other app, without the browser's bars.</p>
+
+        <div class="links" style="margin-top:16px">
+          <button class="lbtn" id="closesheet" type="button">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+) }
+
+<script is:inline>
+(function () {
+  'use strict';
+  if (!document.getElementById('thread')) return;
+
+  var el = function (id) { return document.getElementById(id); };
+  var threadEl = el('thread'), scrollEl = el('scroll'), draftEl = el('draft'), saidEl = el('said');
+  var seen = {}, first = true, sending = false;
+
+  var TEMPLATES = {
+    brief: 'Brief for the Council\n\nWhat I want:\n\nWhat matters most:\n\nWhat I’m unsure about:\n\nBoth of you answer once, then stop.',
+    both: 'Question for the Council\n\n\n\nClaude and Amelia, answer once each. Say plainly where you’re guessing. Don’t reply to each other until I ask.',
+    approve: 'Approved. Go ahead and record it.',
+    clear: ''
+  };
+
+  function say(msg, bad) {
+    saidEl.textContent = msg || '';
+    saidEl.className = bad ? 'said bad' : 'said';
+    if (msg && !bad) {
+      window.setTimeout(function () { if (saidEl.textContent === msg) saidEl.textContent = ''; }, 4200);
+    }
+  }
+
+  function status(text, state) {
+    el('sub').textContent = text;
+    el('pip').className = 'pip' + (state ? ' ' + state : '');
+  }
+
+  function grow() {
+    draftEl.style.height = 'auto';
+    draftEl.style.height = Math.min(draftEl.scrollHeight, window.innerHeight * 0.38) + 'px';
+  }
+
+  try {
+    var kept = window.localStorage.getItem('council.draft');
+    if (kept) { draftEl.value = kept; grow(); }
+  } catch (e) {}
+
+  draftEl.addEventListener('input', function () {
+    grow();
+    try { window.localStorage.setItem('council.draft', draftEl.value); } catch (e) {}
+  });
+
+  function clock(iso) {
+    var d = new Date(iso);
+    return isNaN(d.getTime()) ? '' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function paragraphs(into, body) {
+    var blocks = String(body || '').split(/\n{2,}/), wrote = false;
+    for (var i = 0; i < blocks.length; i++) {
+      var t = blocks[i].replace(/\s*\n\s*/g, ' ').trim();
+      if (!t) continue;
+      var p = document.createElement('p');
+      p.textContent = t;
+      into.appendChild(p);
+      wrote = true;
+    }
+    if (!wrote) {
+      var q = document.createElement('p');
+      q.textContent = String(body || '');
+      into.appendChild(q);
+    }
+  }
+
+  function bubble(m, pending) {
+    var who = m.speaker === 'amelia-auto' ? 'amelia' : m.speaker;
+    var mine = who === 'lash';
+    var row = document.createElement('div');
+    row.className = 'row ' + (mine ? 'you' : 'them ' + who);
+
+    if (!mine) {
+      var av = document.createElement('span');
+      av.className = 'av ' + (who === 'claude' ? 'c' : 'a');
+      av.textContent = who === 'claude' ? 'C' : 'A';
+      row.appendChild(av);
+    }
+
+    var bub = document.createElement('div');
+    bub.className = 'bub' + (pending ? ' sending' : '');
+
+    if (!mine) {
+      var nl = document.createElement('div');
+      nl.className = 'nameline';
+      var nm = document.createElement('span');
+      nm.className = 'nm';
+      nm.textContent = who === 'claude' ? 'Claude' : 'Amelia';
+      nl.appendChild(nm);
+      if (m.speaker === 'amelia-auto') {
+        var a = document.createElement('span');
+        a.className = 'tagg auto';
+        a.textContent = 'auto';
+        nl.appendChild(a);
+      }
+      if (m.round) {
+        var r = document.createElement('span');
+        r.className = 'tagg';
+        r.textContent = m.round;
+        nl.appendChild(r);
+      }
+      bub.appendChild(nl);
+    }
+
+    var body = document.createElement('div');
+    body.className = 'body';
+    paragraphs(body, m.body);
+    bub.appendChild(body);
+
+    var meta = document.createElement('div');
+    meta.className = 'meta';
+    if (m.url) {
+      var link = document.createElement('a');
+      link.href = m.url; link.target = '_blank'; link.rel = 'noopener';
+      link.textContent = 'in the room';
+      meta.appendChild(link);
+    }
+    var t = document.createElement('span');
+    t.textContent = pending ? 'sending' : clock(m.at);
+    meta.appendChild(t);
+    if (!pending) {
+      var tick = document.createElement('span');
+      tick.className = 'ticks';
+      tick.textContent = '✓✓';
+      tick.title = 'In the room';
+      meta.appendChild(tick);
+    }
+    bub.appendChild(meta);
+
+    row.appendChild(bub);
+    return row;
+  }
+
+  function atBottom() {
+    return scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight < 90;
+  }
+  function toBottom() {
+    window.requestAnimationFrame(function () { scrollEl.scrollTop = scrollEl.scrollHeight; });
+  }
+
+  function note(text, strongBit) {
+    var n = document.createElement('div');
+    n.className = 'sysnote';
+    n.textContent = text;
+    if (strongBit) {
+      var b = document.createElement('b');
+      b.textContent = ' ' + strongBit;
+      n.appendChild(b);
+    }
+    return n;
+  }
+
+  function render(messages) {
+    var stick = first || atBottom();
+    threadEl.textContent = '';
+    seen = {};
+    if (!messages.length) {
+      threadEl.appendChild(note('The chamber is empty. Say something and both of them will answer.'));
+    } else {
+      messages.forEach(function (m) { seen[m.id] = true; threadEl.appendChild(bubble(m, false)); });
+    }
+    if (stick) { toBottom(); first = false; }
+  }
+
+  function load(quiet) {
+    return fetch('/api/council/room', { headers: { Accept: 'application/json' } })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        if (!res.ok) {
+          status('cannot reach the room', 'bad');
+          if (first) {
+            threadEl.textContent = '';
+            threadEl.appendChild(note(res.d.error || 'The room would not open.'));
+            first = false;
+          }
+          return;
+        }
+        status('Lash, Claude, Amelia', 'on');
+        render(res.d.messages || []);
+      })
+      .catch(function () {
+        status('offline', 'bad');
+        if (!quiet) say('No connection.', true);
+      });
+  }
+
+  document.querySelectorAll('.chip').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var k = b.getAttribute('data-fill');
+      draftEl.value = TEMPLATES[k] !== undefined ? TEMPLATES[k] : '';
+      try { window.localStorage.setItem('council.draft', draftEl.value); } catch (e) {}
+      grow();
+      draftEl.focus();
+    });
+  });
+
+  el('send').addEventListener('click', function () {
+    var text = draftEl.value.trim();
+    if (!text || sending) { if (!text) say('Write something first.'); return; }
+    sending = true;
+    el('send').disabled = true;
+
+    var ghost = bubble({ speaker: 'lash', body: text, at: '' }, true);
+    threadEl.appendChild(ghost);
+    toBottom();
+
+    fetch('/api/council/room', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text })
+    })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        if (!res.ok) {
+          ghost.remove();
+          say(res.d.error || 'That did not send.', true);
+          return;
+        }
+        draftEl.value = '';
+        grow();
+        try { window.localStorage.setItem('council.draft', ''); } catch (e) {}
+        say('Sent to the room.');
+        return load(true);
+      })
+      .catch(function () {
+        ghost.remove();
+        say('That did not send. Check your connection.', true);
+      })
+      .then(function () { sending = false; el('send').disabled = false; });
+  });
+
+  var sheet = el('sheet'), infobtn = el('infobtn');
+  function showSheet(open) {
+    sheet.hidden = !open;
+    infobtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  infobtn.addEventListener('click', function () { showSheet(sheet.hidden); });
+  el('closesheet').addEventListener('click', function () { showSheet(false); });
+  sheet.addEventListener('click', function (e) { if (e.target === sheet) showSheet(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !sheet.hidden) showSheet(false); });
+
+  load(false);
+
+  // Look again when the app comes back to the front, and quietly every half
+  // minute while it is open. Often enough to feel live, rare enough to be idle.
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') load(true);
+  });
+  window.setInterval(function () { if (document.visibilityState === 'visible') load(true); }, 30000);
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/council/sw.js', { scope: '/council' }).catch(function () {});
+  }
+})();
+</script>
+</body>
+</html>
