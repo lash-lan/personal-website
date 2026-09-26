@@ -1,372 +1,312 @@
 ---
-// Blood of Icetear: Citadel Wars — a playable prototype of the battlefield,
-// for two players at one screen. Every rule lives in src/lib/battle.js; this
-// file only draws the board and turns clicks into calls.
+// Blood of Icetear: Citadel Wars.
+//
+// The painting is the world. This file draws nothing of the battlefield
+// itself: it places the game's pieces on top of one image at coordinates
+// that live in src/data/battlefield-map.js, and turns taps into calls to
+// src/lib/battle.js, which knows nothing about pictures at all.
+//
+//   engine        src/lib/battle.js        the rules
+//   opponent      src/lib/battle-ai.js     the Keep
+//   geography     src/data/battlefield-map.js   where the rules sit on art
+//   this file     presentation only
+//
+// Changing the artwork therefore means writing another map beside that one.
 import { GUARDIAN_BUDGET } from '../../lib/battle.js';
+import { MAPS, DEFAULT_MAP } from '../../data/battlefield-map.js';
+const map = MAPS[DEFAULT_MAP];
 ---
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Citadel Wars | LASH</title>
-  <meta name="description" content="Blood of Icetear: Citadel Wars. Two players, three lanes, one citadel each." />
+  <meta name="description" content="Blood of Icetear: Citadel Wars. Two hosts, three roads, one citadel each." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+SC:wght@300;400;500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" />
-  <!-- is:global is required, not cosmetic: the whole board is built by
-       script at run time, and Astro's scoped styles only reach elements that
-       exist at build time. Scoped, every lane, space and unit renders with
-       no border, no stone and the browser's default font. -->
+  <link rel="preload" as="image" href={map.image} />
+  <!-- is:global is required, not cosmetic: every piece on this board is
+       built by script after the page loads, and Astro's scoped styles only
+       reach elements that exist at build time. -->
   <style is:global>
     :root{
-      --bg:#05080b; --plate:#0d1319; --plate2:#111a22;
-      --text:#c5ced5; --dim:#74818b; --bright:#e1e7ea;
-      --blood:#8b191c; --blood-lt:#b8484b; --gold:#c89b3c; --frost:#8fa8bb;
+      --bg:#05080b; --ink:#0b1219;
+      --text:#c5ced5; --dim:#8a97a3; --bright:#e8eef3;
+      --blood:#8b191c; --blood-lt:#c65a52; --gold:#c9a24a; --frost:#9fc0d8;
       --ember:#d68a33;
-      --line:rgba(197,206,213,.14); --line2:rgba(197,206,213,.07);
-      --p0:#8fa8bb; --p1:#b8484b;
+      --line:rgba(200,214,226,.18);
+      --p0:#7fb3dd; --p1:#c65a52;
     }
     *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);
-      font-family:'EB Garamond',Georgia,serif;font-size:16px;line-height:1.55;
-      -webkit-font-smoothing:antialiased}
+    html,body{margin:0;background:#04070a;color:var(--text);
+      font-family:'EB Garamond',Georgia,serif;font-size:16px;line-height:1.5;
+      -webkit-font-smoothing:antialiased;overscroll-behavior:none}
     h1,h2,h3{font-family:'Cinzel',serif;font-weight:600;color:var(--bright);margin:0}
-    .lbl{font-family:'Cormorant SC',serif;font-size:.62rem;letter-spacing:.24em;
+    .lbl{font-family:'Cormorant SC',serif;font-size:.6rem;letter-spacing:.24em;
       text-transform:uppercase;color:var(--dim)}
     button{font:inherit;color:inherit;background:none;border:1px solid var(--line);
-      padding:.4rem .8rem;cursor:pointer;transition:border-color .15s,color .15s,background .15s}
+      padding:.38rem .7rem;cursor:pointer;
+      transition:border-color .15s,color .15s,background .15s,transform .12s}
     button:hover:not(:disabled){border-color:var(--gold);color:var(--bright)}
-    button:disabled{opacity:.35;cursor:not-allowed}
+    button:disabled{opacity:.32;cursor:not-allowed}
     button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-    .primary{border-color:rgba(200,155,60,.5);color:var(--bright);background:rgba(200,155,60,.08)}
+    .primary{border-color:rgba(201,162,74,.55);color:var(--bright);
+      background:linear-gradient(180deg,rgba(201,162,74,.16),rgba(201,162,74,.05))}
+    [hidden]{display:none!important}
 
-    .wrap{max-width:1180px;margin:0 auto;padding:1.2rem 1rem 3rem}
+    /* ── the muster screen, before a battle ── */
+    .wrap{max-width:1180px;margin:0 auto;padding:1.1rem 1rem 3rem}
     header.top{display:flex;align-items:baseline;gap:1rem;flex-wrap:wrap;
       border-bottom:1px solid var(--line);padding-bottom:.7rem;margin-bottom:1rem}
-    header.top h1{font-size:clamp(1.2rem,3.4vw,1.7rem);letter-spacing:.04em}
+    header.top h1{font-size:clamp(1.1rem,3.4vw,1.6rem);letter-spacing:.05em}
     header.top a{color:var(--dim);text-decoration:none;font-size:.85rem;margin-left:auto}
-    header.top a:hover{color:var(--bright)}
-
-    /* ── setup ── */
     .setup{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:1.4rem}
     .col h2{font-size:1rem;margin-bottom:.2rem}
     .budget{display:flex;align-items:center;gap:.6rem;margin:.5rem 0 .9rem}
     .meter{flex:1;height:8px;background:rgba(255,255,255,.07);overflow:hidden}
     .meter i{display:block;height:100%;background:var(--gold)}
     .meter.over i{background:var(--blood-lt)}
-    .spend{font-variant-numeric:tabular-nums;font-size:.85rem;color:var(--dim);white-space:nowrap}
+    .spend{font-variant-numeric:tabular-nums;font-size:.85rem;color:var(--dim)}
     .spend.over{color:var(--blood-lt)}
-    .post{display:flex;align-items:center;gap:.6rem;padding:.5rem 0;border-bottom:1px solid var(--line2)}
-    .post .who{flex:1;min-width:0}
-    .post .nm{display:block;color:var(--bright);font-size:.95rem}
-    .post .rr{font-size:.76rem;color:var(--dim)}
-    .post select{flex:1;min-width:0;background:var(--plate);color:var(--text);
+    .post{display:flex;align-items:center;gap:.6rem;padding:.45rem 0;
+      border-bottom:1px solid rgba(200,214,226,.08)}
+    .post select{flex:1;min-width:0;background:var(--ink);color:var(--text);
       border:1px solid var(--line);padding:.35rem;font:inherit;font-size:.86rem}
+    .hint{font-size:.85rem;color:var(--dim);min-height:1.2rem}
 
-    /* ── board ── */
-    .hud{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.8rem;
-      padding:.5rem .7rem;border:1px solid var(--line);background:var(--plate)}
-    .phases{display:flex;gap:.3rem;flex-wrap:wrap}
-    .ph{font-family:'Cormorant SC',serif;font-size:.62rem;letter-spacing:.18em;
-      text-transform:uppercase;color:var(--dim);border:1px solid transparent;padding:.2rem .45rem}
-    .ph.on{color:var(--bg);background:var(--gold);border-color:var(--gold)}
-    .turnwho{font-family:'Cinzel',serif;color:var(--bright);font-size:.95rem}
-    .turnwho.p1{color:var(--p1)}
-    .turnwho.p0{color:var(--p0)}
-    .muster{font-variant-numeric:tabular-nums;color:var(--gold);font-size:.9rem}
+    /* ── the battle: the painting fills the screen ── */
+    .battle{position:fixed;inset:0;display:flex;flex-direction:column;
+      background:#04070a}
+    .viewport{position:relative;flex:1;min-height:0;overflow:hidden;
+      touch-action:pan-x pan-y}
+    /* the stage is exactly the painting's own shape, never stretched */
+    .stage{position:absolute;left:50%;top:50%;transform-origin:center center;
+      aspect-ratio:1536/1024;background-size:cover;background-position:center;
+      will-change:transform}
+    .stage img{width:100%;height:100%;display:block;object-fit:contain;
+      pointer-events:none;user-select:none}
 
-    /* ── the keep: high gates at the corners, the great gate and the
-          commander down the middle, exactly as the board is drawn ── */
-    .keep{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.7fr) minmax(0,1fr);
-      gap:.45rem;align-items:stretch;margin:.35rem 0}
-    .keep.foe{margin-bottom:.7rem}
-    .mid-stack{display:flex;flex-direction:column;gap:.45rem}
-    .struct{position:relative;border:1px solid rgba(143,168,187,.22);padding:.42rem .6rem;
-      background:linear-gradient(175deg,#16202a 0%,#0e1720 55%,#0a121a 100%);
-      box-shadow:inset 0 1px 0 rgba(197,206,213,.07)}
-    /* the torches burning at the corners of every wall in the reference */
-    .struct::before,.struct::after{content:'';position:absolute;top:.42rem;width:5px;height:5px;
-      border-radius:50%;background:var(--ember);
-      box-shadow:0 0 7px 2px rgba(214,138,51,.55)}
-    .struct::before{left:.42rem} .struct::after{right:.42rem}
-    .struct .nm{display:flex;justify-content:center;gap:.5rem;align-items:baseline;
-      font-family:'Cinzel',serif;font-size:.63rem;letter-spacing:.2em;text-transform:uppercase;
-      color:#cfd9e2;text-align:center}
-    .struct .nm b{font-weight:400;color:var(--gold);font-variant-numeric:tabular-nums;
-      letter-spacing:.04em}
-    .struct .hp{height:5px;background:rgba(0,0,0,.5);margin-top:.34rem;overflow:hidden;
-      border:1px solid rgba(143,168,187,.14)}
-    .struct .hp i{display:block;height:100%;
-      background:linear-gradient(90deg,#6d8fa8,var(--frost))}
-    .struct.down{opacity:.45;border-style:dashed}
-    .struct.down::before,.struct.down::after{background:#3a2a1a;box-shadow:none}
-    .struct.down .hp i{background:var(--blood)}
-    .struct.great{border-color:rgba(200,155,60,.3)}
-    .struct.great .nm{font-size:.7rem;color:var(--bright)}
-    .struct.cmd .hp i{background:linear-gradient(90deg,#8d6a2f,var(--gold))}
-    .citadel{border-color:rgba(200,155,60,.42);
-      background:linear-gradient(175deg,#1d1810,#0f0d0a)}
-    .citadel .hp i{background:linear-gradient(90deg,#8d6a2f,var(--gold))}
+    /* ── nodes: invisible until they have something to say ── */
+    .node{position:absolute;transform:translate(-50%,-50%);
+      display:flex;flex-direction:column;align-items:center;gap:2px;
+      pointer-events:none}
+    .node .crew{display:flex;gap:3px;align-items:flex-end;justify-content:center;
+      pointer-events:auto}
+    /* the ground ring that appears only when a move or a blow is offered */
+    .spot{position:absolute;left:50%;top:50%;width:clamp(30px,4.2cqw,52px);
+      height:clamp(16px,2.2cqw,28px);transform:translate(-50%,-50%);
+      border-radius:50%;pointer-events:none;opacity:0;transition:opacity .18s}
+    .node.open .spot{opacity:1;pointer-events:auto;cursor:pointer;
+      border:1px solid rgba(201,162,74,.85);
+      background:radial-gradient(ellipse at center,rgba(201,162,74,.3),transparent 70%);
+      box-shadow:0 0 16px rgba(201,162,74,.4)}
+    .node.hostile .spot{opacity:1;
+      border:1px solid rgba(198,90,82,.85);
+      background:radial-gradient(ellipse at center,rgba(198,90,82,.3),transparent 70%)}
 
-    /* ── the field: three lanes on one slab of stone ── */
-    .field{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.7fr) minmax(0,1fr);
-      gap:.45rem;align-items:start;
-      background:radial-gradient(120% 80% at 50% 50%,#16212c 0%,#0b1219 70%,#070d13 100%);
-      border:1px solid rgba(143,168,187,.18);padding:.5rem}
-    .lane{min-width:0}
-    .lane h3{font-family:'Cormorant SC',serif;font-size:.6rem;letter-spacing:.24em;
-      text-transform:uppercase;color:#8d9aa6;text-align:center;margin-bottom:.35rem;font-weight:400}
-    .lane h3 b{color:var(--gold);font-weight:400}
-    .space{position:relative;min-height:4.6rem;padding:.3rem .24rem;margin-bottom:.3rem;
-      display:flex;flex-wrap:wrap;gap:.24rem;align-content:center;justify-content:center;
-      border:1px solid rgba(143,168,187,.16);
-      background:linear-gradient(170deg,rgba(40,56,70,.5),rgba(12,20,28,.6));
-      box-shadow:inset 0 1px 0 rgba(197,206,213,.05)}
-    /* the row of swords: your own deployment line */
-    .space.row{border-color:rgba(143,168,187,.3);
-      background:linear-gradient(170deg,rgba(52,70,86,.55),rgba(16,26,36,.7))}
-    .space.row:empty::after{content:'';position:absolute;inset:0;opacity:.3;
-      background:repeating-linear-gradient(90deg,transparent 0 12px,
-        rgba(197,206,213,.5) 12px 13px,transparent 13px 26px)}
-    /* the monster ground, ringed in red on the reference board */
-    .space.mid{border-color:rgba(184,72,75,.45);
-      background:linear-gradient(170deg,rgba(72,26,28,.4),rgba(24,10,12,.6));
-      box-shadow:inset 0 0 14px rgba(184,72,75,.18)}
-    .space.drop{border-color:var(--gold);
-      background:linear-gradient(170deg,rgba(200,155,60,.22),rgba(80,58,20,.3));
-      cursor:pointer}
-    .space.drop::after{content:'Place here';position:absolute;inset:0;display:grid;
-      place-items:center;font-family:'Cormorant SC',serif;font-size:.58rem;
-      letter-spacing:.18em;text-transform:uppercase;color:var(--gold);pointer-events:none}
+    /* a character standing on the ground */
+    .pawn{position:relative;width:clamp(26px,3.4cqw,44px);padding:0;border:0;
+      background:none;cursor:pointer;display:block;line-height:0;
+      filter:drop-shadow(0 4px 5px rgba(0,0,0,.75))}
+    .pawn .face{display:block;width:100%;aspect-ratio:1;border-radius:50%;
+      background-size:cover;background-position:center top;background-color:#16202a;
+      border:2px solid var(--ring,#9fc0d8);
+      box-shadow:0 0 0 1px rgba(0,0,0,.8),inset 0 0 12px rgba(0,0,0,.5)}
+    .pawn.o0{--ring:#7fb3dd} .pawn.o1{--ring:#c65a52} .pawn.mon{--ring:#a8703c}
+    .pawn.r-legendary,.pawn.r-mythical{--ring:#c9a24a}
+    .pawn .atk,.pawn .hp{position:absolute;bottom:-3px;min-width:15px;height:15px;
+      border-radius:50%;display:grid;place-items:center;line-height:1;
+      font-family:'Cinzel',serif;font-size:9px;border:1px solid rgba(0,0,0,.75)}
+    .pawn .atk{left:-4px;background:linear-gradient(180deg,#eef3f7,#93a3b0);color:#080e14}
+    .pawn .hp{right:-4px;background:linear-gradient(180deg,#d9564f,#7c1417);color:#fff}
+    .pawn.sel .face{border-color:var(--gold);
+      box-shadow:0 0 0 2px var(--gold),0 0 20px rgba(201,162,74,.6)}
+    .pawn.tgt .face{border-color:var(--blood-lt);
+      box-shadow:0 0 0 2px var(--blood-lt),0 0 20px rgba(198,90,82,.6)}
+    .pawn.spent{opacity:.5}
 
-    /* ── a character on the field: portrait, blow, life ── */
-    .tok{position:relative;width:58px;padding:0;border:0;background:none;cursor:pointer;
-      display:flex;flex-direction:column;align-items:center;gap:0}
-    .tok-art{width:46px;height:46px;border-radius:50%;background-size:cover;
-      background-position:center top;border:2px solid var(--ring,#8fa8bb);
-      box-shadow:0 0 0 1px rgba(0,0,0,.7),0 2px 8px rgba(0,0,0,.6);
-      display:grid;place-items:center;color:#cfd9e2;
-      font-family:'Cinzel',serif;font-size:1.05rem;
-      background-color:#16202a;transition:transform .12s,box-shadow .12s}
-    .tok-art.none{background-image:linear-gradient(160deg,#243441,#0e1720)}
-    .tok:hover .tok-art{transform:translateY(-2px)}
-    .tok.o0{--ring:#8fa8bb}
-    .tok.o1{--ring:#b8484b}
-    .tok.mon{--ring:#7d3c2a}
-    .tok.r-legendary{--ring:#c89b3c}
-    .tok.r-mythical{--ring:#e0c070}
-    .tok.o1.r-legendary,.tok.o1.r-mythical{--ring:#d4763a}
-    .tok-atk,.tok-hp{position:absolute;top:30px;min-width:17px;height:17px;border-radius:50%;
-      display:grid;place-items:center;font-family:'Cinzel',serif;font-size:.6rem;
-      color:#0b0f14;font-variant-numeric:tabular-nums;border:1px solid rgba(0,0,0,.65)}
-    .tok-atk{left:2px;background:linear-gradient(180deg,#e2e8ee,#93a3b0)}
-    .tok-hp{right:2px;background:linear-gradient(180deg,#d9564f,#8b191c);color:#fff}
-    .tok-name{margin-top:2px;font-family:'Cormorant SC',serif;font-size:.52rem;
-      letter-spacing:.06em;text-transform:uppercase;color:#9fb0bd;text-align:center;
-      max-width:58px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3}
-    .tok.sel .tok-art{box-shadow:0 0 0 2px var(--gold),0 0 16px rgba(200,155,60,.55)}
-    .tok.tgt .tok-art{box-shadow:0 0 0 2px var(--blood-lt),0 0 16px rgba(184,72,75,.6);
-      cursor:crosshair}
-    .tok.tgt::after{content:'';position:absolute;inset:-3px 0 auto;height:52px;
-      border-radius:50%;pointer-events:none}
-    .tok.spent{opacity:.45}
-    .tok.spent .tok-name{color:#6b7783}
+    /* ── keeps: a plaque under the painted gate, not a box over it ── */
+    .work{position:absolute;transform:translate(-50%,-50%);text-align:center;
+      pointer-events:none;width:max-content}
+    .work .wn{font-family:'Cormorant SC',serif;font-size:clamp(7px,.85cqw,11px);
+      letter-spacing:.18em;text-transform:uppercase;color:#dbe5ed;
+      text-shadow:0 1px 3px #000,0 0 8px rgba(0,0,0,.9);white-space:nowrap}
+    .work .wv{font-family:'Cinzel',serif;font-size:clamp(9px,1.1cqw,14px);
+      color:var(--gold);text-shadow:0 1px 3px #000;font-variant-numeric:tabular-nums}
+    .work .wbar{height:3px;width:clamp(40px,5.5cqw,78px);margin:1px auto 0;
+      background:rgba(0,0,0,.65);border:1px solid rgba(0,0,0,.8)}
+    .work .wbar i{display:block;height:100%;background:var(--frost)}
+    .work.theirs .wbar i{background:var(--blood-lt)}
+    .work.fallen{opacity:.45}
+    .work.fallen .wv{color:var(--blood-lt)}
+    .work.aim{pointer-events:auto;cursor:crosshair}
+    .work.aim .wn{color:#ffd9b0}
+    .work.aim::after{content:'';position:absolute;inset:-8px -12px;
+      border:1px solid rgba(198,90,82,.8);border-radius:4px;
+      box-shadow:0 0 18px rgba(198,90,82,.45)}
 
-    .unit{border:1px solid rgba(143,168,187,.3);padding:.2rem .36rem;font-size:.7rem;
-      background:linear-gradient(170deg,#101a24,#070d13);cursor:pointer;max-width:100%;
-      line-height:1.25;text-align:left}
-    .unit{display:flex;gap:.3rem;align-items:center}
-    .unit .pip{width:26px;height:26px;object-fit:cover;flex:0 0 26px;
-      border:1px solid rgba(143,168,187,.3)}
-    .unit-text{min-width:0}
-    .unit .n{display:block;color:var(--bright);white-space:nowrap;overflow:hidden;
-      text-overflow:ellipsis;max-width:7.5rem;font-family:'Cinzel',serif;font-size:.66rem}
-    .unit .s{color:#8d9aa6;font-variant-numeric:tabular-nums;font-size:.66rem}
-    .unit.o0{border-left:3px solid var(--p0);box-shadow:-4px 0 10px -6px var(--p0)}
-    .unit.o1{border-left:3px solid var(--p1);box-shadow:-4px 0 10px -6px var(--p1)}
-    .unit.mon{border-left:3px solid #7d3c2a;background:linear-gradient(170deg,#241310,#120806)}
-    .unit.mon .n{color:#e0b4a2}
-    .unit.sel{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 0 12px rgba(200,155,60,.35)}
-    .unit.tgt{border-color:var(--blood-lt);
-      box-shadow:0 0 0 1px var(--blood-lt),0 0 12px rgba(184,72,75,.4);cursor:crosshair}
-    .unit.spent{opacity:.4}
+    /* a small standard where a middle has been taken */
+    .flag{position:absolute;transform:translate(-50%,-50%);width:14px;height:18px;
+      pointer-events:none;transition:opacity .3s}
+    .flag::before{content:'';position:absolute;left:5px;top:0;width:1.5px;height:18px;
+      background:linear-gradient(180deg,#d8e2ea,#5a6873)}
+    .flag::after{content:'';position:absolute;left:6px;top:1px;width:9px;height:7px;
+      background:var(--fc,#7fb3dd);clip-path:polygon(0 0,100% 0,100% 100%,0 100%,25% 50%)}
+    .flag.o1{--fc:#c65a52}
 
-    .hand{margin-top:1rem;border-top:1px solid var(--line);padding-top:.7rem}
-    /* ── the hand: cards you are holding ── */
-    .cards{display:flex;gap:.4rem;margin-top:.45rem;overflow-x:auto;padding:.3rem .1rem .5rem;
-      scrollbar-width:thin}
-    .card{position:relative;flex:0 0 86px;width:86px;height:124px;padding:0;text-align:center;
-      background:linear-gradient(170deg,#1b2733,#0b1219);
-      border:1px solid var(--edge,rgba(143,168,187,.35));
-      box-shadow:0 3px 10px rgba(0,0,0,.55);transition:transform .12s,box-shadow .12s;
-      display:block;cursor:pointer}
-    .card:hover:not(.cant){transform:translateY(-5px);
-      box-shadow:0 8px 18px rgba(0,0,0,.6)}
-    .card.r-uncommon{--edge:rgba(143,168,187,.5)}
-    .card.r-rare{--edge:rgba(96,140,180,.75)}
-    .card.r-epic{--edge:rgba(150,110,190,.75)}
-    .card.r-legendary{--edge:rgba(200,155,60,.85)}
-    .card.r-mythical{--edge:rgba(224,192,112,.95)}
-    .card .cost{position:absolute;top:-7px;left:-7px;width:24px;height:24px;border-radius:50%;
-      display:grid;place-items:center;z-index:2;font-family:'Cinzel',serif;font-size:.74rem;
-      color:#06111c;background:linear-gradient(180deg,#9fd0ec,#3b7ea8);
-      border:1px solid rgba(0,0,0,.6);box-shadow:0 1px 5px rgba(0,0,0,.6)}
-    .card .cost.isfree{background:linear-gradient(180deg,#e9d190,#c89b3c)}
-    .hart{display:block;height:64px;background-size:cover;background-position:center top;
+    /* ── developer markers, for checking the geography ── */
+    .mark{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;
+      cursor:grab;z-index:40;display:flex;flex-direction:column;align-items:center}
+    .mark.drag{cursor:grabbing;z-index:60}
+    .mark i{display:block;width:12px;height:12px;border-radius:50%;
+      background:rgba(201,162,74,.9);border:1.5px solid #05080b;
+      box-shadow:0 0 0 1px rgba(201,162,74,.6),0 0 10px rgba(201,162,74,.5)}
+    .mark.keep i{background:rgba(127,179,221,.95)}
+    .mark.foe i{background:rgba(198,90,82,.95)}
+    .mark span{font-family:'Cormorant SC',serif;font-size:9px;letter-spacing:.12em;
+      color:#fff;background:rgba(4,7,10,.82);padding:1px 4px;margin-top:2px;
+      white-space:nowrap;border:1px solid rgba(201,162,74,.35)}
+
+    /* ── the HUD: around the painting, never over its middle ── */
+    .hud{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;
+      padding:.4rem .6rem;background:linear-gradient(180deg,#080d13,#05080b);
+      border-bottom:1px solid var(--line);flex:0 0 auto;
+      padding-top:calc(.4rem + env(safe-area-inset-top,0px))}
+    .who{font-family:'Cinzel',serif;font-size:.85rem;color:var(--bright)}
+    .who.p1{color:var(--p1)} .who.p0{color:var(--p0)}
+    .phases{display:flex;gap:2px}
+    .ph{font-family:'Cormorant SC',serif;font-size:.54rem;letter-spacing:.14em;
+      text-transform:uppercase;color:var(--dim);padding:.16rem .34rem;
+      border:1px solid transparent}
+    .ph.on{color:#080e14;background:var(--gold);border-color:var(--gold)}
+    .muster{display:flex;align-items:center;gap:3px;font-variant-numeric:tabular-nums;
+      color:var(--gold);font-size:.78rem}
+    .pip{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.14);
+      border:1px solid rgba(201,162,74,.4)}
+    .pip.on{background:var(--gold);box-shadow:0 0 6px rgba(201,162,74,.7)}
+    .hud .right{margin-left:auto;display:flex;gap:.4rem;align-items:center}
+
+    .cam{display:flex;gap:2px;padding:.3rem .6rem;background:#05080b;
+      border-top:1px solid var(--line);overflow-x:auto;flex:0 0 auto}
+    .cam button{font-family:'Cormorant SC',serif;font-size:.54rem;letter-spacing:.14em;
+      text-transform:uppercase;padding:.28rem .5rem;white-space:nowrap;flex:1}
+    .cam button.on{border-color:var(--gold);color:var(--bright)}
+
+    /* ── the hand, held at the bottom edge ── */
+    .tray{flex:0 0 auto;background:linear-gradient(180deg,#05080b,#080d13);
+      border-top:1px solid var(--line);padding:.3rem .5rem;
+      padding-bottom:calc(.4rem + env(safe-area-inset-bottom,0px))}
+    .trayhead{display:flex;align-items:baseline;gap:.5rem;margin-bottom:.2rem}
+    .cards{display:flex;gap:.3rem;overflow-x:auto;padding:.35rem .1rem .2rem;
+      scrollbar-width:thin;align-items:flex-end}
+    .card{position:relative;flex:0 0 72px;width:72px;height:104px;padding:0;
+      text-align:center;display:block;cursor:pointer;
+      background:linear-gradient(170deg,#1b2733,#0a1017);
+      border:1px solid var(--edge,rgba(160,182,200,.4));
+      box-shadow:0 3px 9px rgba(0,0,0,.6)}
+    .card.r-rare{--edge:rgba(96,140,180,.8)}
+    .card.r-epic{--edge:rgba(150,110,190,.8)}
+    .card.r-legendary{--edge:rgba(201,162,74,.9)}
+    .card.r-mythical{--edge:rgba(228,199,124,1)}
+    .card .cost{position:absolute;top:-6px;left:-6px;width:21px;height:21px;
+      border-radius:50%;display:grid;place-items:center;z-index:2;
+      font-family:'Cinzel',serif;font-size:.66rem;color:#04101a;
+      background:linear-gradient(180deg,#a8d6ef,#3b7ea8);border:1px solid rgba(0,0,0,.7)}
+    .card .cost.isfree{background:linear-gradient(180deg,#ecd79c,#c9a24a)}
+    .hart{display:block;height:54px;background-size:cover;background-position:center top;
       background-color:#16202a;border-bottom:1px solid rgba(0,0,0,.6);
-      font-family:'Cinzel',serif;font-size:1.5rem;color:#8d9aa6;line-height:64px}
+      font-family:'Cinzel',serif;font-size:1.3rem;color:#8d9aa6;line-height:54px}
     .hart.none{background-image:linear-gradient(160deg,#243441,#0e1720)}
-    .hname{display:block;padding:.22rem .2rem 0;font-family:'Cinzel',serif;font-size:.56rem;
-      line-height:1.22;color:var(--bright);max-height:2.5em;overflow:hidden}
-    .hrar{display:block;font-family:'Cormorant SC',serif;font-size:.48rem;letter-spacing:.14em;
-      text-transform:uppercase;color:#7d8b97;margin-top:.1rem}
-    .hatk,.hhp{position:absolute;bottom:-6px;width:22px;height:22px;border-radius:50%;
-      display:grid;place-items:center;font-family:'Cinzel',serif;font-size:.68rem;
-      border:1px solid rgba(0,0,0,.65)}
-    .hatk{left:-6px;background:linear-gradient(180deg,#e2e8ee,#93a3b0);color:#0b0f14}
-    .hhp{right:-6px;background:linear-gradient(180deg,#d9564f,#8b191c);color:#fff}
+    .hname{display:block;padding:.2rem .15rem 0;font-family:'Cinzel',serif;
+      font-size:.5rem;line-height:1.2;color:var(--bright);max-height:2.4em;overflow:hidden}
+    .hst{display:block;font-family:'Cinzel',serif;font-size:.54rem;color:var(--dim);
+      margin-top:.1rem;font-variant-numeric:tabular-nums}
     .card.sel{transform:translateY(-8px);border-color:var(--gold);
-      box-shadow:0 0 0 1px var(--gold),0 10px 20px rgba(0,0,0,.6)}
-    .card .m{display:block;color:var(--dim);font-size:.72rem;margin-top:.2rem;
-      font-variant-numeric:tabular-nums}
-    .card.cant{opacity:.35;cursor:not-allowed;filter:grayscale(.5)}
-    .card.free{--edge:rgba(200,155,60,.7)}
+      box-shadow:0 0 0 1px var(--gold),0 10px 18px rgba(0,0,0,.7)}
+    .card.cant{opacity:.34;cursor:not-allowed;filter:grayscale(.55)}
 
-    .log{margin-top:1rem;border-top:1px solid var(--line);padding-top:.6rem;
-      max-height:9rem;overflow-y:auto;font-size:.84rem;color:var(--dim)}
-    .log p{margin:.14rem 0}
-    .log p b{color:var(--text);font-weight:400}
+    .toast{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);
+      background:rgba(4,7,10,.9);border:1px solid var(--line);padding:.3rem .7rem;
+      font-size:.78rem;color:var(--bright);pointer-events:none;z-index:50;
+      max-width:92%;text-align:center}
+    .verdict{position:absolute;inset:0;display:grid;place-items:center;z-index:70;
+      background:rgba(4,7,10,.82);text-align:center;padding:1rem}
+    .verdict h2{font-size:clamp(1.3rem,5vw,2rem);margin-bottom:.4rem}
 
-    .banner{text-align:center;padding:1.6rem;border:1px solid rgba(200,155,60,.4);
-      background:rgba(200,155,60,.07);margin-bottom:1rem}
-    .banner h2{font-size:1.5rem;margin-bottom:.3rem}
-    .hint{font-size:.85rem;color:var(--dim);min-height:1.3rem;margin-top:.4rem}
-    .rules{margin-top:1.6rem;border-top:1px solid var(--line);padding-top:.8rem;
-      font-size:.9rem;color:var(--dim)}
-    .rules summary{cursor:pointer;font-family:'Cormorant SC',serif;letter-spacing:.2em;
-      text-transform:uppercase;font-size:.66rem;color:var(--gold)}
-    .rules ul{margin:.6rem 0 0 1rem}
-    .rules li{margin-bottom:.3rem}
-    [hidden]{display:none !important}
-
-    /* ── phones: one lane at a time, chosen by tab ── */
-    .lane-tabs{display:none;gap:.3rem;margin-bottom:.5rem}
-    .lane-tabs button{flex:1;padding:.45rem .3rem;font-family:'Cormorant SC',serif;
-      font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
-    .lane-tabs button.on{color:var(--bg);background:var(--gold);border-color:var(--gold)}
-    .lane-tabs button .dot{color:var(--blood-lt)}
-
-    @media (max-width:900px){
-      .wrap{padding:.9rem .7rem 2.5rem}
-      .unit .n{max-width:6rem;font-size:.62rem}
-      .unit .s{font-size:.6rem}
-      .struct .nm{font-size:.56rem;letter-spacing:.12em}
-      .space{min-height:4.4rem}
-    }
-    @media (max-width:680px){
-      .lane-tabs{display:flex}
-      .field{grid-template-columns:1fr}
-      .lane{display:none}
-      .lane.active{display:block}
-      .lane h3{font-size:.66rem}
-      .keep{grid-template-columns:1fr 1.4fr 1fr;gap:.3rem}
-      .struct{padding:.36rem .4rem}
-      .struct::before,.struct::after{display:none}
-      .unit{padding:.3rem .45rem}
-      .unit .n{max-width:100%;font-size:.72rem}
-      .unit .s{font-size:.68rem}
-      .space{min-height:4.8rem}
-      .card{flex:0 0 78px;width:78px;height:114px}
-      .hart{height:58px;line-height:58px}
-      .hud{gap:.4rem;padding:.4rem .5rem}
-      .hud .primary{flex:1 1 100%;order:9}
-      .log{max-height:7rem}
-    }
-    @media (max-width:380px){
-      .keep{grid-template-columns:1fr;gap:.25rem}
-      .mid-stack{gap:.25rem}
+    @media (max-width:700px){
+      .card{flex:0 0 64px;width:64px;height:94px}
+      .hart{height:48px;line-height:48px}
     }
   </style>
 </head>
 <body>
-<div class="wrap">
+
+<!-- ── mustering ────────────────────────────────────────────────────── -->
+<div class="wrap" id="setupScreen">
   <header class="top">
     <h1>Blood of Icetear: Citadel Wars</h1>
-    <span class="lbl">Prototype &middot; two players, one screen</span>
+    <span class="lbl">Prototype</span>
     <a href="/">Back to the site</a>
   </header>
+  <p style="max-width:58ch;margin-bottom:1rem">
+    Post your Guardians before a shot is fired. You have
+    <b style="color:var(--gold)">{GUARDIAN_BUDGET} points</b> across all three gates, and a
+    Guardian costs whatever their rarity is worth in hit points. Whoever stands
+    on the wall is not in your deck.
+  </p>
+  <div class="setup" id="setupCols"></div>
+  <div style="margin-top:1.2rem;display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
+    <button type="button" id="btnSkirmish" class="primary">Skirmish &mdash; play the Keep</button>
+    <button type="button" id="btnQuick">Muster both sides for me</button>
+    <button type="button" id="btnStart">Two players</button>
+    <span class="hint" id="setupHint"></span>
+  </div>
+</div>
 
-  <!-- ── drafting ── -->
-  <section id="setupScreen">
-    <p style="max-width:58ch;margin-bottom:1rem">
-      Before a shot is fired, each side posts its Guardians. You have
-      <b style="color:var(--gold)">{GUARDIAN_BUDGET} points</b> to spend across all three gates, and a
-      Guardian costs whatever their rarity is worth in hit points. Whoever you
-      put on the wall is not in your deck, so a strong gate is paid for with a
-      thinner hand.
-    </p>
-    <div class="setup" id="setupCols"></div>
-    <div style="margin-top:1.2rem;display:flex;gap:.6rem;flex-wrap:wrap;align-items:center">
-      <button type="button" id="btnSkirmish" class="primary">Skirmish &mdash; play the Keep</button>
-      <button type="button" id="btnQuick">Muster both sides for me</button>
-      <button type="button" id="btnStart">Open the gates &mdash; two players</button>
-      <span class="hint" id="setupHint"></span>
+<!-- ── the battlefield ──────────────────────────────────────────────── -->
+<div class="battle" id="battleScreen" hidden>
+  <div class="hud">
+    <span class="who" id="who"></span>
+    <div class="phases" id="phaseBar"></div>
+    <span class="muster" id="musterNow"></span>
+    <div class="right">
+      <button type="button" id="btnNodes" title="Show the gameplay positions">Nodes</button>
+      <button type="button" id="btnLeave">Leave</button>
+      <button type="button" id="btnNext" class="primary">Next</button>
     </div>
-  </section>
+  </div>
 
-  <!-- ── the battlefield ── -->
-  <section id="boardScreen" hidden>
-    <div class="banner" id="banner" hidden><h2 id="bannerName"></h2><p id="bannerNote"></p></div>
-
-    <div class="hud">
-      <span class="turnwho" id="whoseTurn"></span>
-      <div class="phases" id="phaseBar"></div>
-      <span class="muster" id="musterNow"></span>
-      <button type="button" id="btnNext" class="primary" style="margin-left:auto">Next phase</button>
-      <button type="button" id="btnRestart">New game</button>
+  <div class="viewport" id="viewport">
+    <div class="stage" id="stage">
+      <img id="plate" src={map.image} alt="The battlefield before the Great Gate" />
+      <div id="layer"></div>
     </div>
+    <div class="toast" id="toast" hidden></div>
+    <div class="verdict" id="verdict" hidden><div><h2 id="verdictName"></h2><p id="verdictNote"></p>
+      <button type="button" id="btnAgain" class="primary" style="margin-top:.8rem">Again</button></div></div>
+  </div>
 
-    <span class="lbl" id="foeLabel"></span>
-    <div class="keep foe" id="foeKeep"></div>
+  <div class="cam" id="cam"></div>
 
-    <div class="lane-tabs" id="laneTabs" role="tablist" aria-label="Choose a lane"></div>
-    <div class="field" id="field"></div>
-
-    <span class="lbl" style="display:block;margin-top:.9rem" id="myLabel"></span>
-    <div class="keep" id="myKeep"></div>
-
-    <div class="hand">
-      <span class="lbl" id="handLabel">Your hand</span>
-      <div class="cards" id="handCards"></div>
-      <p class="hint" id="hint"></p>
-    </div>
-
-    <div class="log" id="log"></div>
-  </section>
-
-  <details class="rules">
-    <summary>How it plays</summary>
-    <ul>
-      <li><b>Five phases a turn.</b> Draw, Main, Movement, Action, End. One move and one attack per character per turn.</li>
-      <li><b>Three lanes.</b> The centre takes five a side across three spaces. Each side path takes three a side across five, with three monsters spawned across the middle.</li>
-      <li><b>The middle of a side path is the prize.</b> Break the monster standing on it and the enemy in that lane is driven back a space, and two Reinforcements come up behind you at no cost.</li>
-      <li><b>Lose a lane entirely</b> and the position is open again: the other side can walk their own characters up to it.</li>
-      <li><b>Gates are made of Guardians.</b> The Great Gate is its three added together; a High Gate has one Guardian and counts them twice.</li>
-      <li><b>To win</b>, put the enemy Citadel to nought. The gate in a lane must fall first, and the Commander stands behind it.</li>
-      <li>Monsters never take a turn, so they strike back whenever they are struck.</li>
-    </ul>
-  </details>
+  <div class="tray">
+    <div class="trayhead"><span class="lbl" id="handLabel"></span></div>
+    <div class="cards" id="handCards"></div>
+  </div>
 </div>
 
 <script>
   import {
-    newGame, quickArmy, rngFrom, LANES, laneOf, middleOf, homeOf, stepOf,
-    deploy, canDeploy, move, canMove, attack, targetsFor, advance, trackOf,
-    wallFor, guardianSpend, validateArmy, guardianCost, GUARDIAN_BUDGET,
-    cardOf, PHASES, PHASE_NAME,
+    newGame, quickArmy, rngFrom, LANES, laneOf, trackOf, middleOf, homeOf,
+    deploy, canDeploy, move, canMove, attack, targetsFor, advance, wallFor,
+    guardianSpend, validateArmy, guardianCost, GUARDIAN_BUDGET,
+    cardOf, PHASES, PHASE_NAME, MUSTER_MAX,
   } from '../../lib/battle.js';
-  import { CARDS, RARITY, byId, statsOf, artOf } from '../../data/battle-cards.js';
+  import { playPhase } from '../../lib/battle-ai.js';
+  import { CARDS, RARITY, statsOf, artOf } from '../../data/battle-cards.js';
+  import { MAPS, DEFAULT_MAP, nodeId, markerLabel } from '../../data/battlefield-map.js';
 
+  const MAP = MAPS[DEFAULT_MAP];
   const $ = (id) => document.getElementById(id);
   const el = (tag, cls, text) => {
     const n = document.createElement(tag);
@@ -374,33 +314,35 @@ import { GUARDIAN_BUDGET } from '../../lib/battle.js';
     if (text != null) n.textContent = text;
     return n;
   };
+  const pause = (ms) => new Promise((r) => setTimeout(r, ms));
 
-  const NAMES = ['The Silver Host', 'The Crimson Host'];
+  const NAMES = ['Your Host', 'The Keep'];
   let armies = [null, null];
   let game = null;
-  let picked = null;        // a card chosen in hand, waiting for a lane
-  let pickedFree = false;
-  let selected = null;      // { lane, uid } a unit chosen on the board
-  let aiSide = null;        // the side the Keep plays, or null for hotseat
-  let aiBusy = false;
-  // In a skirmish the board never turns round: you always look at it from
-  // your own end, even while the Keep is taking its turn.
-  const viewSide = () => (aiSide === null ? game.current : 0);
-  const yourTurn = () => game.winner === null && !aiBusy && game.current === viewSide();
-  let activeLane = 'centre'; // which lane a phone is looking at
+  let aiSide = null, aiBusy = false;
+  let picked = null, pickedFree = false;
+  let selected = null;
+  let showNodes = false;
+  // the near army is always the bottom of the painting: the picture does not
+  // turn round, so a second player fights from the far end
+  const viewSide = () => 0;
+  const yourTurn = () => game && game.winner === null && !aiBusy &&
+    (aiSide === null || game.current === viewSide());
 
-  // ── drafting ──────────────────────────────────────────────────────────
+  const say = (text) => {
+    const t = $('toast');
+    t.textContent = text || '';
+    t.hidden = !text;
+  };
+
+  // ── mustering ─────────────────────────────────────────────────────
   const POSTS = [
     { key: 'commander', label: 'Commander', count: 1, only: (c) => c.commander },
-    { key: 'great', label: 'Great Gate Guardians', count: 3 },
-    { key: 'high', label: 'High Gate Guardians', count: 2 },
-    { key: 'reinforcements', label: 'Reinforcements', count: 4 },
+    { key: 'great', label: 'Great Gate', count: 3 },
+    { key: 'high', label: 'High Gate', count: 2 },
+    { key: 'reinforcements', label: 'Reinforcement', count: 4 },
   ];
-
-  function blankArmy() {
-    const rng = rngFrom(Math.floor(Math.random() * 1e9) || 1);
-    return quickArmy(rng);
-  }
+  const blankArmy = () => quickArmy(rngFrom(Math.floor(Math.random() * 1e9) || 1));
 
   function drawSetup() {
     const root = $('setupCols');
@@ -410,7 +352,6 @@ import { GUARDIAN_BUDGET } from '../../lib/battle.js';
       const army = armies[side];
       const col = el('div', 'col');
       col.appendChild(el('h2', null, NAMES[side]));
-
       const spend = guardianSpend(army);
       const bar = el('div', 'budget');
       const meter = el('div', 'meter' + (spend.legal ? '' : ' over'));
@@ -421,15 +362,13 @@ import { GUARDIAN_BUDGET } from '../../lib/battle.js';
       bar.appendChild(el('span', 'spend' + (spend.legal ? '' : ' over'),
         `${spend.spent} / ${GUARDIAN_BUDGET}`));
       col.appendChild(bar);
-
       for (const post of POSTS) {
         for (let i = 0; i < post.count; i++) {
           const row = el('div', 'post');
           row.appendChild(el('span', 'lbl', post.count > 1 ? `${post.label} ${i + 1}` : post.label));
           const sel = document.createElement('select');
           const chosen = post.count === 1 ? army[post.key] : army[post.key][i];
-          const usable = CARDS.filter((c) => !post.only || post.only(c));
-          for (const c of usable) {
+          for (const c of CARDS.filter((c) => !post.only || post.only(c))) {
             const o = document.createElement('option');
             o.value = c.id;
             const costs = post.key === 'great' || post.key === 'high';
@@ -452,254 +391,402 @@ import { GUARDIAN_BUDGET } from '../../lib/battle.js';
       .filter(Boolean);
     $('setupHint').textContent = problems.join('  ');
     $('btnStart').disabled = problems.length > 0;
+    $('btnSkirmish').disabled = problems.length > 0;
   }
 
-  // ── the board ─────────────────────────────────────────────────────────
-  function structure(label, hp, maxHp, extra) {
-    const box = el('div', 'struct' + (hp <= 0 ? ' down' : '') + (extra ? ' ' + extra : ''));
-    const nm = el('div', 'nm');
-    nm.appendChild(el('span', null, label));
-    nm.appendChild(el('b', null, `${Math.max(0, hp)}`));
-    box.appendChild(nm);
-    const hpBar = el('div', 'hp');
-    const i = el('i');
-    i.style.width = Math.max(0, Math.min(100, (hp / maxHp) * 100)) + '%';
-    hpBar.appendChild(i);
-    box.appendChild(hpBar);
-    return box;
+  // ── the camera ────────────────────────────────────────────────────
+  // The painting never re-renders and is never stretched. The camera is a
+  // transform on the stage, so moving about costs nothing.
+  let cam = { scale: 1, x: 0, y: 0 };
+  const VIEWS = [
+    { id: 'all', label: 'Whole field', to: { fx: 0.5, fy: 0.5, z: null } },
+    { id: 'mine', label: 'My keep', to: { fx: 0.5, fy: 0.80, z: 1.9 } },
+    { id: 'left', label: 'Left road', to: { fx: 0.20, fy: 0.42, z: 1.8 } },
+    { id: 'centre', label: 'Centre', to: { fx: 0.49, fy: 0.42, z: 1.7 } },
+    { id: 'right', label: 'Right road', to: { fx: 0.83, fy: 0.42, z: 1.8 } },
+    { id: 'theirs', label: 'Their keep', to: { fx: 0.5, fy: 0.13, z: 1.9 } },
+  ];
+  let view = 'all';
+
+  /** Fit the painting inside the viewport without ever distorting it. */
+  function layoutStage() {
+    const vp = $('viewport');
+    const stage = $('stage');
+    const w = vp.clientWidth, h = vp.clientHeight;
+    if (!w || !h) return;
+    const ar = MAP.width / MAP.height;
+    let sw = w, sh = w / ar;
+    if (sh > h) { sh = h; sw = h * ar; }
+    stage.style.width = sw + 'px';
+    stage.style.height = sh + 'px';
+    stage.style.containerType = 'inline-size';
+    applyCam();
+  }
+
+  function applyCam() {
+    const { scale, x, y } = cam;
+    $('stage').style.transform =
+      `translate(-50%,-50%) translate(${x}px,${y}px) scale(${scale})`;
   }
 
   /**
-   * A keep as the board draws it: a High Gate at each corner, and down the
-   * middle the Great Gate, the Commander behind it and the Citadel behind
-   * them both. The enemy's keep is stacked in the other order, so on screen
-   * the two citadels sit at the far edges and the gates face each other.
+   * The zoom at which the painting fills the viewport in both directions.
+   * On a wide screen that is 1, and the whole battlefield is visible. On a
+   * phone the painting is far wider than it is tall, so at 1 it would sit in
+   * a thin band with dead space above and below; this fills the screen and
+   * leaves the player to pan across, which is the point of a battlefield.
    */
-  function drawKeep(rootId, side, foe) {
-    const p = game.players[side];
-    const root = $(rootId);
+  function fitZoom() {
+    const vp = $('viewport'), stage = $('stage');
+    if (!stage.clientHeight) return 1;
+    // Height only, never width. A wide screen already shows the whole field
+    // once the painting is fitted, and filling the width there would zoom in
+    // and cut off both keeps. A phone is the opposite case: the painting
+    // sits in a thin band, so it is grown until it fills and panned across.
+    return Math.max(1, Math.min(2.6, vp.clientHeight / stage.clientHeight));
+  }
+
+  /** Put a fraction of the painting in the middle of the viewport. */
+  function lookAt(fx, fy, z) {
+    const stage = $('stage');
+    const sw = stage.clientWidth, sh = stage.clientHeight;
+    cam.scale = z;
+    cam.x = (0.5 - fx) * sw * z;
+    cam.y = (0.5 - fy) * sh * z;
+    clampCam();
+    $('stage').style.transition = 'transform .45s cubic-bezier(.4,0,.2,1)';
+    applyCam();
+    setTimeout(() => { $('stage').style.transition = ''; }, 460);
+  }
+
+  function clampCam() {
+    const vp = $('viewport'), stage = $('stage');
+    const sw = stage.clientWidth * cam.scale, sh = stage.clientHeight * cam.scale;
+    const maxX = Math.max(0, (sw - vp.clientWidth) / 2);
+    const maxY = Math.max(0, (sh - vp.clientHeight) / 2);
+    cam.x = Math.max(-maxX, Math.min(maxX, cam.x));
+    cam.y = Math.max(-maxY, Math.min(maxY, cam.y));
+  }
+
+  function drawCam() {
+    const root = $('cam');
     root.innerHTML = '';
-    root.appendChild(structure('High Gate', p.highGates[0].hp, p.highGates[0].maxHp));
-
-    const stack = el('div', 'mid-stack');
-    const citadel = structure('The Citadel', p.citadel, 100, 'citadel');
-    const commander = structure(cardOf(p.commander.cardId).name,
-      p.commander.hp, p.commander.maxHp, 'cmd');
-    const great = structure('The Great Gate', p.greatGate.hp, p.greatGate.maxHp, 'great');
-    // deepest first for the far side, nearest first for your own
-    for (const part of foe ? [citadel, commander, great] : [great, commander, citadel]) {
-      stack.appendChild(part);
-    }
-    root.appendChild(stack);
-    root.appendChild(structure('High Gate', p.highGates[1].hp, p.highGates[1].maxHp));
-  }
-
-  /** The first letter, for anyone who has no portrait drawn yet. */
-  const initialOf = (name) => String(name || '?').replace(/^The /, '').charAt(0);
-
-  /**
-   * A character standing in a lane: a round portrait with its blow on one
-   * side and its remaining life on the other, ringed in its owner's colour.
-   * The ring is the only thing telling you whose it is, so it is never
-   * subtle.
-   */
-  function unitChip(lane, u) {
-    const card = cardOf(u.cardId);
-    const done = u.owner === game.current && u.acted && u.moved;
-    const chip = el('button', 'tok o' + u.owner + ' r-' + card.rarity.toLowerCase() +
-      (selected && selected.uid === u.uid ? ' sel' : '') + (done ? ' spent' : ''));
-    chip.type = 'button';
-    chip.dataset.uid = u.uid;
-    const art = el('span', 'tok-art');
-    const face = artOf(u.cardId);
-    if (face) art.style.backgroundImage = `url(${face})`;
-    else { art.classList.add('none'); art.textContent = initialOf(card.name); }
-    chip.appendChild(art);
-    chip.appendChild(el('span', 'tok-atk', String(u.atk)));
-    chip.appendChild(el('span', 'tok-hp', String(u.hp)));
-    chip.appendChild(el('span', 'tok-name', card.name.replace(/^(Lord|King|The) /, '')));
-    chip.title = `${card.name} — ${card.rarity}. ${u.atk} attack, ${u.hp} of ${u.maxHp} life. ${card.note}`;
-    chip.setAttribute('aria-label', chip.title);
-    chip.addEventListener('click', () => onUnit(lane, u));
-    return chip;
-  }
-
-  function monsterChip(lane, m) {
-    const chip = el('button', 'tok mon');
-    chip.type = 'button';
-    chip.dataset.uid = m.uid;
-    const art = el('span', 'tok-art none', initialOf(m.name));
-    chip.appendChild(art);
-    chip.appendChild(el('span', 'tok-atk', String(m.atk)));
-    chip.appendChild(el('span', 'tok-hp', String(m.hp)));
-    chip.appendChild(el('span', 'tok-name', m.name));
-    chip.title = `${m.name} — ${m.atk} attack, ${m.hp} of ${m.maxHp} life. It answers whenever it is struck.`;
-    chip.setAttribute('aria-label', chip.title);
-    chip.addEventListener('click', () => onTargetPick(lane, m.uid));
-    return chip;
-  }
-
-  /**
-   * A phone cannot show three lanes at once and stay legible, so it shows
-   * one and these choose it. The dot marks a lane holding something worth
-   * looking at: your own units waiting, or a middle you hold.
-   */
-  function drawLaneTabs() {
-    const root = $('laneTabs');
-    root.innerHTML = '';
-    for (const lane of LANES) {
-      const l = game.lanes[lane.key];
-      const b = el('button', lane.key === activeLane ? 'on' : '');
+    for (const v of VIEWS) {
+      const b = el('button', view === v.id ? 'on' : '', v.label);
       b.type = 'button';
-      b.setAttribute('role', 'tab');
-      b.setAttribute('aria-selected', String(lane.key === activeLane));
-      b.append(lane.name.replace('The ', ''));
-      const mine = l.units.filter((u) => u.owner === viewSide()).length;
-      if (mine || l.holder === viewSide()) {
-        b.appendChild(el('span', 'dot', ` ·${mine || ''}`));
-      }
-      b.addEventListener('click', () => { activeLane = lane.key; render(true); });
+      b.addEventListener('click', () => {
+        view = v.id;
+        lookAt(v.to.fx, v.to.fy, v.to.z === null ? fitZoom() : v.to.z);
+        drawCam();
+      });
       root.appendChild(b);
     }
   }
 
-  function drawField() {
-    const root = $('field');
-    root.innerHTML = '';
-    // the enemy's end is at the top of every lane, so the board reads the way
-    // it is drawn: their half above, yours below
-    const flip = viewSide() === 1;
+  // dragging the field about
+  let drag = null;
+  function wireDrag() {
+    const vp = $('viewport');
+    vp.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.pawn,.spot,.work,.mark')) return;
+      drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y };
+      vp.setPointerCapture(e.pointerId);
+    });
+    vp.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      cam.x = drag.cx + (e.clientX - drag.x);
+      cam.y = drag.cy + (e.clientY - drag.y);
+      clampCam(); applyCam();
+    });
+    const stop = () => { drag = null; };
+    vp.addEventListener('pointerup', stop);
+    vp.addEventListener('pointercancel', stop);
+  }
+
+  // ── placing things on the painting ────────────────────────────────
+  const put = (node, x, y) => {
+    node.style.left = (x * 100) + '%';
+    node.style.top = (y * 100) + '%';
+  };
+
+  /**
+   * A small formation, so several characters on one piece of ground look
+   * like an army holding it rather than cards stacked in a div.
+   */
+  function spread(n, i) {
+    if (n <= 1) return { dx: 0, dy: 0 };
+    const perRow = n <= 3 ? n : Math.ceil(n / 2);
+    const row = Math.floor(i / perRow);
+    const col = i % perRow;
+    const inRow = Math.min(perRow, n - row * perRow);
+    return { dx: (col - (inRow - 1) / 2) * 0.62, dy: row * 0.42 };
+  }
+
+  function pawnFor(laneKey, u) {
+    const card = cardOf(u.cardId);
+    const done = u.owner === game.current && u.acted && u.moved;
+    const b = el('button', 'pawn o' + u.owner + ' r-' + card.rarity.toLowerCase() +
+      (selected && selected.uid === u.uid ? ' sel' : '') + (done ? ' spent' : ''));
+    b.type = 'button';
+    b.dataset.uid = u.uid;
+    const face = el('span', 'face');
+    const art = artOf(u.cardId);
+    if (art) face.style.backgroundImage = `url(${art})`;
+    b.appendChild(face);
+    b.appendChild(el('span', 'atk', String(u.atk)));
+    b.appendChild(el('span', 'hp', String(u.hp)));
+    b.title = `${card.name} — ${card.rarity}. ${u.atk} attack, ${u.hp} of ${u.maxHp}. ${card.note}`;
+    b.setAttribute('aria-label', b.title);
+    b.addEventListener('click', (e) => { e.stopPropagation(); onPawn(laneKey, u); });
+    return b;
+  }
+
+  function monsterPawn(laneKey, m) {
+    const b = el('button', 'pawn mon');
+    b.type = 'button';
+    b.dataset.uid = m.uid;
+    const face = el('span', 'face');
+    face.style.backgroundImage = 'linear-gradient(160deg,#3a2118,#160b07)';
+    b.appendChild(face);
+    b.appendChild(el('span', 'atk', String(m.atk)));
+    b.appendChild(el('span', 'hp', String(m.hp)));
+    b.title = `${m.name} — ${m.atk} attack, ${m.hp} of ${m.maxHp}. It answers whenever struck.`;
+    b.setAttribute('aria-label', b.title);
+    b.addEventListener('click', (e) => { e.stopPropagation(); onTarget(m.uid); });
+    return b;
+  }
+
+  /** The gates, commanders and citadels, as plaques under the painted stone. */
+  function workFor(id, side, label, hp, maxHp, aimable) {
+    const w = el('div', 'work' + (side === 1 ? ' theirs' : '') +
+      (hp <= 0 ? ' fallen' : '') + (aimable ? ' aim' : ''));
+    w.appendChild(el('span', 'wn', label));
+    w.appendChild(el('span', 'wv', String(Math.max(0, Math.round(hp)))));
+    const bar = el('div', 'wbar');
+    const i = el('i');
+    i.style.width = Math.max(0, Math.min(100, (hp / maxHp) * 100)) + '%';
+    bar.appendChild(i);
+    w.appendChild(bar);
+    return w;
+  }
+
+  function drawBoard() {
+    const layer = $('layer');
+    layer.innerHTML = '';
+    const targets = selected && game.phase === 'action'
+      ? targetsFor(game, selected.lane, selected.uid) : [];
+    const canHit = (uid) => targets.some((t) => t.uid === uid);
+    const wallTarget = targets.find((t) => ['gate', 'commander', 'citadel'].includes(t.kind));
+
+    // the keeps
+    for (let side = 0; side < 2; side++) {
+      const p = game.players[side];
+      const nGreat = MAP.nodes[nodeId('centre', side === 0 ? 0 : trackOf(laneOf('centre')) - 1)];
+      const great = workFor('great', side, 'The Great Gate', p.greatGate.hp, p.greatGate.maxHp,
+        wallTarget && selected && selected.lane === 'centre' && side !== viewSide() && p.greatGate.hp > 0);
+      put(great, nGreat.x, nGreat.y);
+      if (great.classList.contains('aim')) great.addEventListener('click', () => onTarget('gate'));
+      layer.appendChild(great);
+
+      for (const [i, laneKey] of ['left', 'right'].entries()) {
+        const g = p.highGates[i];
+        const n = MAP.nodes[nodeId(laneKey, side === 0 ? 0 : trackOf(laneOf(laneKey)) - 1)];
+        const aim = wallTarget && selected && selected.lane === laneKey && side !== viewSide() && g.hp > 0;
+        const w = workFor('high', side, 'High Gate', g.hp, g.maxHp, aim);
+        put(w, n.x, n.y);
+        if (aim) w.addEventListener('click', () => onTarget('gate'));
+        layer.appendChild(w);
+      }
+
+      const nc = MAP.nodes[`commander:${side}`];
+      const cmdAim = wallTarget && wallTarget.kind === 'commander' && side !== viewSide();
+      const cw = workFor('cmd', side, cardOf(p.commander.cardId).name,
+        p.commander.hp, p.commander.maxHp, cmdAim);
+      put(cw, nc.x, nc.y);
+      if (cmdAim) cw.addEventListener('click', () => onTarget('commander'));
+      layer.appendChild(cw);
+
+      const ncit = MAP.nodes[`citadel:${side}`];
+      const citAim = wallTarget && wallTarget.kind === 'citadel' && side !== viewSide();
+      const cit = workFor('cit', side, side === viewSide() ? 'Your Citadel' : 'Their Citadel',
+        p.citadel, 100, citAim);
+      put(cit, ncit.x, ncit.y);
+      if (citAim) cit.addEventListener('click', () => onTarget('citadel'));
+      layer.appendChild(cit);
+    }
+
+    // the roads
     for (const lane of LANES) {
+      const track = trackOf(laneOf(lane.key));
       const l = game.lanes[lane.key];
-      const col = el('div', 'lane' + (lane.key === activeLane ? ' active' : ''));
-      const head = el('h3');
-      head.appendChild(document.createTextNode(lane.name));
-      if (lane.monsters && l.holder !== null) {
-        head.appendChild(document.createTextNode(' · '));
-        head.appendChild(el('b', null, l.holder === game.current ? 'yours' : 'theirs'));
-      }
-      col.appendChild(head);
+      const mid = middleOf(laneOf(lane.key));
+      for (let pos = 0; pos < track; pos++) {
+        const n = MAP.nodes[nodeId(lane.key, pos)];
+        if (!n) continue;
+        const here = l.units.filter((u) => u.pos === pos);
+        const mons = l.monsters.filter((m) => m.pos === pos && m.hp > 0);
+        const crewSize = here.length + mons.length;
 
-      const order = [];
-      for (let p = 0; p < trackOf(lane); p++) order.push(p);
-      if (!flip) order.reverse();          // player 0 sits at the bottom
+        const open = picked && yourTurn() && game.phase === 'main' &&
+          pos === homeOf(laneOf(lane.key), game.current) &&
+          !canDeploy(game, lane.key, picked, { free: pickedFree });
+        const stepHere = selected && game.phase === 'move' &&
+          selected.lane === lane.key && !canMove(game, lane.key, selected.uid) &&
+          pos === (l.units.find((u) => u.uid === selected.uid) || {}).pos +
+            (game.current === 0 ? 1 : -1);
 
-      for (const pos of order) {
-        const isRow = pos === homeOf(lane, 0) || pos === homeOf(lane, 1);
-        const space = el('div', 'space' + (isRow ? ' row' : '') +
-          (middleOf(lane) === pos ? ' mid' : ''));
-        space.dataset.lane = lane.key;
-        space.dataset.pos = String(pos);
-        for (const m of l.monsters) if (m.pos === pos) space.appendChild(monsterChip(lane.key, m));
-        for (const u of l.units) if (u.pos === pos) space.appendChild(unitChip(lane.key, u));
-        // deploying: your own edge is the only way in
-        if (picked && yourTurn() && game.phase === 'main' && pos === homeOf(lane, game.current)) {
-          if (!canDeploy(game, lane.key, picked, { free: pickedFree })) {
-            space.classList.add('drop');
-            space.addEventListener('click', () => {
-              const why = deploy(game, lane.key, picked, { free: pickedFree });
-              if (why) { $('hint').textContent = why; return; }
-              picked = null; pickedFree = false;
-              render();
-            });
+        const node = el('div', 'node' + (open || stepHere ? ' open' : ''));
+        put(node, n.x, n.y);
+        const spot = el('div', 'spot');
+        if (open) spot.addEventListener('click', () => {
+          const why = deploy(game, lane.key, picked, { free: pickedFree });
+          if (why) { say(why); return; }
+          picked = null; pickedFree = false; say('');
+          render();
+        });
+        if (stepHere) spot.addEventListener('click', () => {
+          move(game, lane.key, selected.uid);
+          selected = null; render();
+        });
+        node.appendChild(spot);
+
+        if (crewSize) {
+          const crew = el('div', 'crew');
+          let i = 0;
+          for (const m of mons) {
+            const pw = monsterPawn(lane.key, m);
+            if (canHit(m.uid)) pw.classList.add('tgt');
+            crew.appendChild(pw); i++;
           }
+          for (const u of here) {
+            const pw = pawnFor(lane.key, u);
+            if (canHit(u.uid)) pw.classList.add('tgt');
+            crew.appendChild(pw); i++;
+          }
+          node.appendChild(crew);
         }
-        col.appendChild(space);
+        layer.appendChild(node);
+
+        // a standard where a middle has been taken
+        if (pos === mid && l.holder !== null) {
+          const f = el('div', 'flag' + (l.holder === 1 ? ' o1' : ''));
+          put(f, n.x + 0.022, n.y - 0.022);
+          layer.appendChild(f);
+        }
       }
-      root.appendChild(col);
     }
-    markTargets();
+
+    if (showNodes) drawMarkers(layer);
   }
 
-  /** Ring everything the chosen character can reach. Matched by id: two
-      characters can share a name, and matching on the printed text lit up
-      the wrong one. */
-  function markTargets() {
-    if (!selected || game.phase !== 'action') return;
-    for (const t of targetsFor(game, selected.lane, selected.uid)) {
-      if (t.kind !== 'unit' && t.kind !== 'monster') continue;
-      const chip = document.querySelector(`.tok[data-uid="${t.uid}"]`);
-      if (chip) chip.classList.add('tgt');
+  // ── developer markers ─────────────────────────────────────────────
+  // Only for checking that the geography sits where it should. Drag one and
+  // the new coordinates are kept, so the map can be corrected by eye and
+  // copied straight back into battlefield-map.js.
+  function drawMarkers(layer) {
+    for (const [id, n] of Object.entries(MAP.nodes)) {
+      const m = el('div', 'mark' + (n.side === 0 ? ' keep' : n.side === 1 ? ' foe' : ''));
+      put(m, n.x, n.y);
+      m.appendChild(el('i'));
+      m.appendChild(el('span', null, markerLabel(id)));
+      m.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        m.classList.add('drag');
+        m.setPointerCapture(e.pointerId);
+        const stage = $('stage');
+        const box = stage.getBoundingClientRect();
+        const moveIt = (ev) => {
+          n.x = Math.max(0, Math.min(1, (ev.clientX - box.left) / box.width));
+          n.y = Math.max(0, Math.min(1, (ev.clientY - box.top) / box.height));
+          put(m, n.x, n.y);
+        };
+        const done = () => {
+          m.classList.remove('drag');
+          m.removeEventListener('pointermove', moveIt);
+          say(`${markerLabel(id)} → x ${n.x.toFixed(3)}, y ${n.y.toFixed(3)}`);
+          render(true);
+        };
+        m.addEventListener('pointermove', moveIt);
+        m.addEventListener('pointerup', done, { once: true });
+      });
+      layer.appendChild(m);
     }
   }
 
-  function onUnit(laneKey, u) {
+  /** The whole map as it now stands, for pasting back into the source. */
+  window.citadelMap = () => {
+    const out = {};
+    for (const [id, n] of Object.entries(MAP.nodes)) {
+      out[id] = { x: Number(n.x.toFixed(3)), y: Number(n.y.toFixed(3)) };
+    }
+    console.log(JSON.stringify(out, null, 2));
+    return out;
+  };
+
+  // ── choosing things ───────────────────────────────────────────────
+  function onPawn(laneKey, u) {
     if (!yourTurn()) return;
-    if (u.owner !== game.current) { onTargetPick(laneKey, u.uid); return; }
+    if (u.owner !== viewSide()) { onTarget(u.uid); return; }
     if (game.phase === 'move') {
       const why = canMove(game, laneKey, u.uid);
-      if (why) { $('hint').textContent = why; return; }
-      move(game, laneKey, u.uid);
-      render();
+      if (why) { say(why); return; }
+      selected = { lane: laneKey, uid: u.uid };
+      say(`${cardOf(u.cardId).name} may advance. Touch the lit ground.`);
+      render(true);
       return;
     }
     if (game.phase === 'action') {
       selected = { lane: laneKey, uid: u.uid };
       const list = targetsFor(game, laneKey, u.uid);
-      $('hint').textContent = list.length
-        ? `${cardOf(u.cardId).name} may strike: ${list.map((t) => t.label).join(', ')}. Choose one.`
-        : `${cardOf(u.cardId).name} has nothing in reach.`;
+      say(list.length
+        ? `${cardOf(u.cardId).name} may strike ${list.map((t) => t.label).join(', ')}.`
+        : `${cardOf(u.cardId).name} has nothing in reach.`);
       render(true);
-      // the wall is not a chip on the board, so offer it as a button
-      const wallT = list.find((t) => ['gate', 'commander', 'citadel'].includes(t.kind));
-      if (wallT) {
-        const b = el('button', 'primary', `Strike ${wallT.label}`);
-        b.type = 'button';
-        b.style.marginLeft = '.5rem';
-        b.addEventListener('click', () => onTargetPick(laneKey, wallT.uid));
-        $('hint').appendChild(b);
-      }
       return;
     }
-    $('hint').textContent = 'Units move in the Movement phase and strike in the Action phase.';
+    say('Characters advance in the Movement layer and strike in the Action layer.');
   }
 
-  function onTargetPick(laneKey, targetUid) {
+  function onTarget(uid) {
     if (!selected || game.phase !== 'action') return;
-    const why = attack(game, selected.lane, selected.uid, { uid: targetUid });
-    if (why) { $('hint').textContent = why; return; }
-    selected = null;
+    const why = attack(game, selected.lane, selected.uid, { uid });
+    if (why) { say(why); return; }
+    selected = null; say('');
     render();
   }
 
+  // ── the hand ──────────────────────────────────────────────────────
   function drawHand() {
     const p = game.players[viewSide()];
     const root = $('handCards');
     root.innerHTML = '';
-    $('handLabel').textContent =
-      `${p.name} — hand (${p.hand.length}), deck ${p.deck.length}` +
-      (p.freeDeploys ? `, ${p.freeDeploys} free Reinforcement${p.freeDeploys > 1 ? 's' : ''}` : '');
-
+    $('handLabel').textContent = `${p.name} — ${p.hand.length} in hand, ${p.deck.length} in deck` +
+      (p.freeDeploys ? ` · ${p.freeDeploys} free` : '');
     const add = (id, free) => {
       const card = cardOf(id);
       const st = statsOf(card);
-      const why = !yourTurn() ||
+      const blocked = !yourTurn() ||
         (canDeploy(game, 'centre', id, { free }) && canDeploy(game, 'left', id, { free }));
-      const b = el('button', 'card' + (picked === id && pickedFree === free ? ' sel' : '') +
-        (why ? ' cant' : '') + (free ? ' free' : ''));
+      const b = el('button', 'card r-' + card.rarity.toLowerCase() +
+        (picked === id && pickedFree === free ? ' sel' : '') + (blocked ? ' cant' : ''));
       b.type = 'button';
-      b.classList.add('r-' + card.rarity.toLowerCase());
       const cost = el('span', 'cost', free ? '0' : String(st.cost));
       if (free) cost.classList.add('isfree');
       b.appendChild(cost);
       const art = el('span', 'hart');
       const face = artOf(id);
       if (face) art.style.backgroundImage = `url(${face})`;
-      else { art.classList.add('none'); art.textContent = initialOf(card.name); }
+      else { art.classList.add('none'); art.textContent = card.name.replace(/^The /, '').charAt(0); }
       b.appendChild(art);
       b.appendChild(el('span', 'hname', card.name));
-      b.appendChild(el('span', 'hrar', free ? 'Reinforcement' : card.rarity));
-      b.appendChild(el('span', 'hatk', String(st.atk)));
-      b.appendChild(el('span', 'hhp', String(st.hp)));
-      b.title = `${card.name} — ${card.rarity}. ${st.atk} attack, ${st.hp} life, ` +
-        `${free ? 'free' : st.cost + ' muster'}. ${card.note}`;
-      b.title = card.note;
+      b.appendChild(el('span', 'hst', `${st.atk} / ${st.hp}`));
+      b.title = `${card.name} — ${card.rarity}. ${card.note}`;
       b.addEventListener('click', () => {
+        if (blocked) return;
         picked = (picked === id && pickedFree === free) ? null : id;
         pickedFree = picked ? free : false;
-        $('hint').textContent = picked
-          ? 'Now choose a highlighted space at your own edge.' : '';
-        render();
+        say(picked ? 'Touch the lit ground at your own edge.' : '');
+        render(true);
       });
       root.appendChild(b);
     };
@@ -707,184 +794,92 @@ import { GUARDIAN_BUDGET } from '../../lib/battle.js';
     if (p.freeDeploys > 0) for (const id of p.reinforcements) add(id, true);
   }
 
-  function drawLog() {
-    const root = $('log');
-    root.innerHTML = '';
-    for (const line of game.log.slice(-14)) {
-      const p = el('p');
-      p.appendChild(el('b', null, `Turn ${line.turn}. `));
-      p.append(line.text);
-      root.appendChild(p);
-    }
-    root.scrollTop = root.scrollHeight;
-  }
-
-  function render(keepHint) {
-    const cur = viewSide();
+  // ── the frame ─────────────────────────────────────────────────────
+  function render(keepToast) {
     const mover = game.current;
-    $('whoseTurn').textContent = `${game.players[mover].name}, turn ${game.turn}` +
-      (aiBusy && game.winner === null ? ' — thinking' : '');
-    $('whoseTurn').className = 'turnwho p' + mover;
+    $('who').textContent = `${game.players[mover].name} · turn ${game.turn}` +
+      (aiBusy && game.winner === null ? ' · moving' : '');
+    $('who').className = 'who p' + mover;
     const bar = $('phaseBar');
     bar.innerHTML = '';
-    for (const ph of PHASES) {
-      bar.appendChild(el('span', 'ph' + (game.phase === ph ? ' on' : ''), PHASE_NAME[ph]));
+    for (const ph of PHASES) bar.appendChild(el('span', 'ph' + (game.phase === ph ? ' on' : ''), PHASE_NAME[ph]));
+    const m = $('musterNow');
+    m.innerHTML = '';
+    const have = game.players[mover].muster;
+    for (let i = 0; i < Math.min(MUSTER_MAX, 10); i++) {
+      m.appendChild(el('span', 'pip' + (i < have ? ' on' : '')));
     }
-    $('musterNow').textContent = `${game.players[mover].muster} muster`;
-    $('foeLabel').textContent = `${game.players[cur === 0 ? 1 : 0].name} — their keep`;
-    $('myLabel').textContent = `${game.players[cur].name} — your keep`;
-    drawKeep('foeKeep', cur === 0 ? 1 : 0, true);
-    drawKeep('myKeep', cur, false);
-    drawLaneTabs();
-    drawField();
+    m.appendChild(el('span', null, ` ${have}`));
+    $('btnNext').textContent = game.phase === 'end' ? 'End turn' : 'Next';
+    $('btnNext').disabled = !yourTurn();
+    $('btnNodes').classList.toggle('on', showNodes);
+    drawBoard();
     drawHand();
-    drawLog();
-    if (!keepHint) {
-      const tips = {
-        main: 'Choose a character, then a highlighted space at your own edge.',
-        move: 'Click any of your characters to advance them one space.',
-        action: 'Click one of your characters to see what it can strike.',
-        end: 'Nothing left but to pass.',
-        draw: '',
-      };
-      $('hint').textContent = tips[game.phase] || '';
+    if (!keepToast && !aiBusy) {
+      const tips = { main: 'Choose a card, then the lit ground.',
+        move: 'Touch a character to advance it.',
+        action: 'Touch a character to see what it can strike.',
+        end: 'Nothing left but to pass.', draw: '' };
+      say(tips[game.phase] || '');
     }
-    $('btnNext').textContent = game.phase === 'end' ? 'End turn' : 'Next phase';
-    $('btnNext').disabled = game.winner !== null || !yourTurn();
     if (game.winner !== null) {
-      $('banner').hidden = false;
-      $('bannerName').textContent = `${game.players[game.winner].name} has taken the Citadel`;
-      $('bannerNote').textContent = `It fell on turn ${game.turn}.`;
+      $('verdict').hidden = false;
+      $('verdictName').textContent = `${game.players[game.winner].name} has taken the Citadel`;
+      $('verdictNote').textContent = `It fell on turn ${game.turn}.`;
     }
   }
 
-
-  // ── the Keep: an opponent to practise against ────────────────────────
-  //
-  // Not clever, and not meant to be. It presses one flank, kills what it can
-  // finish, clears the monster on a middle when that is worth doing, and
-  // swings at the wall whenever it is standing in front of one. That is
-  // enough to punish leaving a lane empty, which is the thing worth learning.
-  const pause = (ms) => new Promise((r) => setTimeout(r, ms));
-
-  /** The lane the Keep is pressing hardest, so it concentrates rather than
-      dribbling one character into each path and losing everywhere. */
-  function aiFavourite() {
-    let best = null;
-    for (const lane of LANES) {
-      const l = game.lanes[lane.key];
-      const mine = l.units.filter((u) => u.owner === aiSide).length;
-      const theirs = l.units.filter((u) => u.owner !== aiSide).length;
-      const room = laneOf(lane.key).slots - mine;
-      if (room <= 0) continue;
-      // press where we already have a foothold and they do not
-      const score = mine * 2 - theirs + (lane.key === 'centre' ? 1 : 0);
-      if (!best || score > best.score) best = { key: lane.key, score };
-    }
-    return best ? best.key : 'centre';
-  }
-
-  function aiMain() {
-    const p = game.players[aiSide];
-    // free Reinforcements first: they cost nothing and expire with the turn
-    for (const id of [...p.reinforcements]) {
-      if (p.freeDeploys <= 0) break;
-      for (const lane of LANES.filter((l) => l.monsters)) {
-        if (!canDeploy(game, lane.key, id, { free: true })) {
-          deploy(game, lane.key, id, { free: true });
-          break;
-        }
-      }
-    }
-    // then the strongest hand card that can be paid for, into one lane
-    let guard = 0;
-    while (guard++ < 8) {
-      const affordable = p.hand
-        .filter((id) => statsOf(cardOf(id)).cost <= p.muster)
-        .sort((a, b) => statsOf(cardOf(b)).cost - statsOf(cardOf(a)).cost);
-      if (!affordable.length) break;
-      const lane = aiFavourite();
-      const id = affordable.find((x) => !canDeploy(game, lane, x));
-      if (!id) break;
-      deploy(game, lane, id);
-    }
-  }
-
-  function aiMove() {
-    for (const lane of LANES) {
-      for (const u of [...game.lanes[lane.key].units]) {
-        if (u.owner !== aiSide) continue;
-        move(game, lane.key, u.uid);      // refused moves are simply skipped
-      }
-    }
-  }
-
-  function aiAction() {
-    for (const lane of LANES) {
-      for (const u of [...game.lanes[lane.key].units]) {
-        if (u.owner !== aiSide || u.acted) continue;
-        const list = targetsFor(game, lane.key, u.uid);
-        if (!list.length) continue;
-        const mid = middleOf(laneOf(lane.key));
-        const monsterAt = (t) => (game.lanes[lane.key].monsters.find((m) => m.uid === t.uid) || {});
-        const pickers = [
-          // finish an enemy this turn
-          (t) => t.kind === 'unit' && t.hp <= u.atk,
-          // break the monster holding a middle, if we can take it now
-          (t) => t.kind === 'monster' && monsterAt(t).pos === mid && t.hp <= u.atk,
-          // batter the wall: this is how the game is actually won
-          (t) => t.kind === 'gate' || t.kind === 'commander' || t.kind === 'citadel',
-          // clear a monster, but not by walking into a killing answer
-          (t) => t.kind === 'monster' && (t.hp <= u.atk || monsterAt(t).atk < u.hp),
-          () => true,
-        ];
-        let chosen = null;
-        for (const wants of pickers) {
-          chosen = list.find(wants);
-          if (chosen) break;
-        }
-        if (chosen) attack(game, lane.key, u.uid, { uid: chosen.uid });
-      }
-    }
-  }
-
-  /** Play the Keep's whole turn, slowly enough to be read. */
   async function aiTurn() {
     if (aiSide === null || game.current !== aiSide || game.winner !== null) return;
-    aiBusy = true;
-    render(true);
-    $('hint').textContent = 'The Keep is moving.';
+    aiBusy = true; render(true); say('The Keep is moving.');
     while (game.current === aiSide && game.winner === null) {
-      await pause(420);
-      if (game.phase === 'main') aiMain();
-      else if (game.phase === 'move') aiMove();
-      else if (game.phase === 'action') aiAction();
+      await pause(430);
+      playPhase(game, aiSide);
       advance(game);
       aiBusy = game.current === aiSide;
       render(true);
     }
-    aiBusy = false;
-    render();
+    aiBusy = false; render();
   }
 
-  // ── wiring ────────────────────────────────────────────────────────────
   function begin(against) {
     aiSide = against;
     game = newGame({ seed: Math.floor(Math.random() * 1e9) || 1, armies,
-      names: against === null ? NAMES : ['Your Host', 'The Keep'] });
-    picked = null; selected = null; aiBusy = false;
+      names: against === null ? ['Near Host', 'Far Host'] : NAMES });
+    picked = null; selected = null; aiBusy = false; showNodes = false;
     $('setupScreen').hidden = true;
-    $('boardScreen').hidden = false;
+    $('battleScreen').hidden = false;
+    $('verdict').hidden = true;
+    // Laid out straight away rather than inside an animation frame: a tab in
+    // the background never gets a frame, and the board would stay empty.
+    // The camera bar and the hand are drawn first, because they take height
+    // from the viewport. Fitting the painting before they exist measures a
+    // taller screen than the one the player ends up with, and the top and
+    // bottom of the battlefield fall off the edge.
+    drawCam();
     render();
+    layoutStage();
+    const z = fitZoom();
+    // a phone opens on your own end, where you deploy; a wide screen already
+    // sees the whole field at once
+    if (z > 1.15) { view = 'mine'; lookAt(0.5, 0.72, z); }
+    else { view = 'all'; lookAt(0.5, 0.5, z); }
+    drawCam();
   }
 
-  $('btnSkirmish').addEventListener('click', () => {
-    // both sides are mustered for you, and the Keep takes the far end
-    armies = [blankArmy(), blankArmy()];
-    begin(1);
-  });
+  $('btnSkirmish').addEventListener('click', () => { armies = [blankArmy(), blankArmy()]; begin(1); });
   $('btnQuick').addEventListener('click', () => { armies = [blankArmy(), blankArmy()]; drawSetup(); });
   $('btnStart').addEventListener('click', () => begin(null));
+  $('btnNodes').addEventListener('click', () => { showNodes = !showNodes; render(true); });
+  $('btnLeave').addEventListener('click', () => {
+    $('battleScreen').hidden = true; $('setupScreen').hidden = false;
+    aiSide = null; aiBusy = false; armies = [null, null]; drawSetup();
+  });
+  $('btnAgain').addEventListener('click', () => {
+    $('verdict').hidden = true;
+    armies = [blankArmy(), blankArmy()];
+    begin(aiSide);
+  });
   $('btnNext').addEventListener('click', () => {
     if (!yourTurn()) return;
     picked = null; selected = null;
@@ -892,15 +887,24 @@ import { GUARDIAN_BUDGET } from '../../lib/battle.js';
     render();
     if (aiSide !== null && game.current === aiSide) aiTurn();
   });
-  $('btnRestart').addEventListener('click', () => {
-    aiSide = null; aiBusy = false;
-    $('banner').hidden = true;
-    $('boardScreen').hidden = true;
-    $('setupScreen').hidden = false;
-    armies = [null, null];
-    drawSetup();
-  });
 
+  window.addEventListener('resize', () => { if (game) { layoutStage(); render(true); } });
+  // The tray and the camera bar are built after the battle screen appears,
+  // so the viewport is shorter than it was a moment earlier. Watching it is
+  // more reliable than measuring once and hoping.
+  if (window.ResizeObserver) {
+    let last = '';
+    new ResizeObserver(() => {
+      const vp = $('viewport');
+      const size = `${vp.clientWidth}x${vp.clientHeight}`;
+      if (!game || size === last || !vp.clientHeight) return;
+      last = size;
+      layoutStage();
+      const v = VIEWS.find((x) => x.id === view) || VIEWS[0];
+      lookAt(v.to.fx, v.to.fy, v.to.z === null ? fitZoom() : v.to.z);
+    }).observe($('viewport'));
+  }
+  wireDrag();
   drawSetup();
 </script>
 </body>
