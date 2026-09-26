@@ -8,7 +8,7 @@
 //
 // The page architecture is the guide's, section by section.
 
-import { CALLINGS, ORDER } from '../data/fivefold.js';
+import { CALLINGS, ORDER, TIERS, TIER_CAVEAT } from '../data/fivefold.js';
 import { GUIDE } from './fivefold-deep.js';
 
 const cname = (k) => CALLINGS[k].name;
@@ -46,7 +46,7 @@ export function secondPerson(text) {
   return 'You ' + words.join(' ');
 }
 
-// "Oath: principle -> Watch: vigilance" and its unlabelled siblings
+// "Virtue: principle -> Vigilance: risk" and its unlabelled siblings
 const stageTerms = (t) => String(t || '').split(/\s*->\s*/)
   .map((s) => s.trim().replace(/\.$/, '')).filter(Boolean);
 const splitLabel = (p) => {
@@ -126,6 +126,30 @@ export function buildFivefold(r, opts = {}) {
     insideParas.push(`**Your central tension.** ${A.contradiction}`);
   }
   insideParas.push(`The drive underneath it is simple to state and harder to live. ${A.drive}`);
+
+  // A four-drive result is defined as much by the Calling it lacks as by the
+  // four it has, and that absence is the single most misread part of the
+  // report. It is stated with the score attached, and immediately followed by
+  // what it does not mean, because "missing Virtue" invites a conclusion the
+  // measurement does not support.
+  if (A.missing) {
+    const k = A.missing;
+    insideParas.push(
+      `**The Calling you do not lead with.** Four of the five count toward this title. ` +
+      `${cname(k)} came in at ${r.display[k]}, below the line that would have made it ` +
+      `archetype-defining. ${A.tension} ${A.notThis}`);
+  }
+  // And the one result with no absence at all.
+  if (A.integration) {
+    const order = r.ranked.map((k) => `${cname(k)} ${r.display[k]}`).join(', ');
+    insideParas.push(`**All five, and the question that follows.** ${A.integration}`);
+    insideParas.push(
+      `Your own order is ${order}. ${cname(r.ranked[0])} tends to speak first and ` +
+      `${cname(r.ranked[4])} last, so two people can both read as the Paragon of the ` +
+      `Fateless and still resolve the same dilemma differently. That internal order is ` +
+      `the individual part of this result; the title is only the shape of it.`);
+  }
+
   insideParas.push(...r.notesFor('inside').map((n) => n.text));
 
   pages.push({
@@ -283,8 +307,11 @@ export function buildFivefold(r, opts = {}) {
     growth: A.growth,
     paras: [
       named(`this is the useful part. ${A.atBest}`, `This is the useful part. ${A.atBest}`),
-      ...pathParas,
     ],
+    // The specification asks for this to be a named thing rather than a
+    // paragraph buried in the growth advice, because readers ask "what am I
+    // nearly?" more often than they ask anything else.
+    nearest: pathParas.length ? { title: 'Nearest Path', paras: pathParas } : null,
     stability,
     closing: GUIDE.closing.replace(/\{NAME\}/g, who || 'Reader').replace(/^Reader,\s*/, ''),
     technical: [
@@ -303,6 +330,7 @@ export function buildFivefold(r, opts = {}) {
       'Facets: ' + r.facets.map((f) => `${f.name} ${f.affinity}`).join(', ') + '.',
       `Decision pathway: archetype default${r.pathwaySource === 'reordered' ? ', reordered by score' : ''}${r.tied ? ', order not evidenced by your scores' : ''}.`,
       `Depth Module ${r.depthAnswered ? 'answered' : 'not answered'}. Completed ${when}.`,
+      `Tier ${A.tier}: ${(TIERS[A.tier] || {}).note || ''} ${TIER_CAVEAT}`,
     ],
     disclaimer: GUIDE.disclaimer,
   });
@@ -310,6 +338,7 @@ export function buildFivefold(r, opts = {}) {
   const words = pages.reduce((n, p) => n +
     [...(p.paras || []), ...(p.growth || []), ...(p.technical || []),
      ...(p.ideal || []), ...(p.bad || []), ...(p.party || []), ...(p.voices || []),
+     ...(p.nearest ? p.nearest.paras : []),
      p.closing || '', p.disclaimer || '', p.scalesNote || '',
      p.stability ? p.stability.text : '']
       .join(' ').split(/\s+/).filter(Boolean).length, 0);
@@ -317,6 +346,9 @@ export function buildFivefold(r, opts = {}) {
   return {
     verdict: {
       name: titleCase(A.name), tier: A.tier, blend: A.blend,
+      // only the four-drive results carry one; the Fateless answer to nobody
+      mythicTitle: A.mythicTitle || '',
+      tierNote: (TIERS[A.tier] || {}).note || '',
       motto: A.motto, reader: who, active: r.activeKeys, code: r.code, when,
     },
     // the page and the PDF both render from pages, so they cannot disagree

@@ -435,6 +435,9 @@ const TONES = [
       font-size:clamp(1.9rem,7vw,3.2rem);line-height:1.1;letter-spacing:.03em}
     .rec-blend{font-family:'Cormorant SC',serif;font-size:.72rem;letter-spacing:.26em;
       text-transform:uppercase;color:var(--dim);margin-bottom:1rem}
+    /* the Titan patron, on the four-drive results only */
+    .rec-mythic{font-family:'Cinzel',serif;font-style:italic;font-size:1.02rem;
+      color:var(--oath);letter-spacing:.06em;margin:.35rem 0 .2rem}
     .rec-tag{font-style:italic;font-size:1.14rem;color:var(--text);margin-bottom:1.1rem}
     .rec-clarity{font-size:.92rem;color:var(--dim);margin-top:1rem}
     .rec-date{font-family:'Cormorant SC',serif;font-size:.62rem;letter-spacing:.24em;
@@ -457,6 +460,30 @@ const TONES = [
     .prompts li::before{content:'';position:absolute;left:.15rem;top:1.25rem;
       width:.4rem;height:.4rem;border-radius:50%;background:var(--oath)}
     .prompts li:last-child{border-bottom:none}
+
+    /* ─── the five axes, as one shape ─── */
+    .pent-wrap{margin:.2rem auto 1.6rem;max-width:23rem;text-align:center}
+    .pent{width:100%;height:auto;display:block;overflow:visible}
+    .pent-ring{fill:none;stroke:rgba(200,155,60,.10);stroke-width:1}
+    .pent-edge{fill:none;stroke:rgba(200,155,60,.22);stroke-width:1}
+    /* the activation line, drawn as a real thing because it decides the title */
+    .pent-floor{fill:none;stroke:rgba(200,155,60,.4);stroke-width:1;stroke-dasharray:3 4}
+    .pent-spoke{stroke:rgba(200,155,60,.12);stroke-width:1}
+    .pent-you{fill:rgba(200,155,60,.13);stroke:var(--oath);stroke-width:1.6;
+      stroke-linejoin:round}
+    .pent-dot{stroke-width:1.6}
+    .pent-dot.on{stroke-width:2}
+    .pent-label{font-family:'Cinzel',serif;font-size:11px;fill:var(--dim);letter-spacing:.04em}
+    .pent-label.on{fill:var(--bright)}
+    .pent-value{font-family:'Cormorant SC',serif;font-size:11px;fill:var(--dim);
+      letter-spacing:.08em}
+    .pent-value.on{fill:var(--oath)}
+    .pent-wrap figcaption{font-size:.84rem;color:var(--dim);margin-top:.5rem;
+      text-align:center;line-height:1.5}
+    @media (max-width:420px){
+      .pent-label,.pent-value{font-size:10px}
+      .pent-wrap{max-width:100%}
+    }
 
     .bars{margin:.2rem 0 1.4rem}
     .bar-row{display:flex;align-items:center;gap:.8rem;margin-bottom:.5rem}
@@ -655,8 +682,9 @@ const TONES = [
     <div class="panel" id="panelScience" hidden>
       <h3>About the science</h3>
       <p>A research-inspired fantasy personality assessment. It is not a validated clinical or diagnostic instrument, and it is not a measure of who you objectively are.</p>
-      <p>The Five Callings are a fantasy translation of themes from trait psychology. Each is measured by eight statements on a five point scale, and your score for a Calling is where your answers to those eight fall between the lowest and highest possible totals.</p>
-      <p>Affinity is a score on this test's own scale. A Watch of 80 does not mean you are eighty percent vigilant as an objective fact. It means your answers sat high on the range this test can measure.</p>
+      <p>The five Callings are a fantasy translation of themes from trait psychology. Each is measured by eight statements on a five point scale, some of them deliberately written the other way round. Your score for a Calling is where your answers to those eight fall between the lowest and highest possible totals, placed on a scale of nought to a hundred.</p>
+      <p>All five are continuous. Nobody is one Calling and not another. The Callings that reach the line together pick out one of the thirty-one possible combinations, and that combination is the archetype. The archetypes are our own interpretation laid over the measurement; they are not scientifically validated personality types, and no claim is made that they are.</p>
+      <p>Affinity is a score on this test's own scale. A Vigilance of 80 does not mean you are eighty percent vigilant as an objective fact. It means your answers sat high on the range this test can measure. A high score is not a better score, and a high Virtue reading says principles matter to you, not that you are a better person than someone with a lower one.</p>
     </div>
     <div class="panel" id="panelPrivacy" hidden>
       <h3>Privacy</h3>
@@ -1014,6 +1042,99 @@ const TONES = [
     return p;
   };
 
+  /**
+   * The five affinities as one shape. All five are always drawn: an inactive
+   * Calling is still part of you, so it keeps its axis, its label and its
+   * score, and only the emphasis differs. Active points are filled and
+   * ringed; inactive ones are hollow. Never a chart where low looks absent.
+   */
+  function pentagon(bars) {
+    const NS = 'http://www.w3.org/2000/svg';
+    const R = 92, CX = 150, CY = 138;
+    // top, then clockwise, in the canonical Calling order
+    const seats = ORDER.map((k, i) => {
+      const a = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+      return { k, a, x: CX + Math.cos(a) * R, y: CY + Math.sin(a) * R };
+    });
+    const at = (a, d) => [CX + Math.cos(a) * d, CY + Math.sin(a) * d];
+    const byKey = Object.fromEntries(bars.map((b) => [b.calling, b]));
+
+    const svg = document.createElementNS(NS, 'svg');
+    // Room for the labels, which reach further than the shape they ring: the
+    // side labels sit about 116px out and then run outward by their own
+    // width. Computed from the longest name rather than eyeballed, so the box
+    // is right before anything is measured, and right in a background tab
+    // where nothing can be measured at all.
+    const widest = Math.max(...ORDER.map((k) => CALLINGS[k].name.length)) * 6.6 + 12;
+    const left = Math.round(CX - (R + 30) - widest);
+    const right = Math.round(CX + (R + 30) + widest);
+    svg.setAttribute('viewBox', `${left} -8 ${right - left} 280`);
+    svg.setAttribute('class', 'pent');
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'Your five affinities: ' +
+      ORDER.map((k) => `${CALLINGS[k].name} ${byKey[k].affinity} per cent` +
+        (byKey[k].active ? ', active' : '')).join('; ') + '.');
+    const make = (tag, attrs) => {
+      const n = document.createElementNS(NS, tag);
+      for (const [a, v] of Object.entries(attrs)) n.setAttribute(a, v);
+      return n;
+    };
+
+    // the web: rings at 25, 50, 75 and 100 so a reader can place a score
+    for (const ring of [25, 50, 75, 100]) {
+      svg.appendChild(make('polygon', {
+        points: seats.map((s) => at(s.a, (R * ring) / 100).join(',')).join(' '),
+        class: ring === 100 ? 'pent-edge' : 'pent-ring',
+      }));
+    }
+    // the line that matters: where a Calling becomes archetype-defining
+    svg.appendChild(make('polygon', {
+      points: seats.map((s) => at(s.a, (R * 62.5) / 100).join(',')).join(' '),
+      class: 'pent-floor',
+    }));
+    for (const s of seats) {
+      svg.appendChild(make('line', { x1: CX, y1: CY, x2: s.x, y2: s.y, class: 'pent-spoke' }));
+    }
+
+    // the profile itself
+    const pts = seats.map((s) => at(s.a, (R * Math.max(byKey[s.k].affinity, 0)) / 100));
+    svg.appendChild(make('polygon', { points: pts.map((p) => p.join(',')).join(' '), class: 'pent-you' }));
+
+    seats.forEach((s, i) => {
+      const b = byKey[s.k];
+      const [px, py] = pts[i];
+      svg.appendChild(make('circle', {
+        cx: px, cy: py, r: b.active ? 5 : 3.6,
+        class: 'pent-dot' + (b.active ? ' on' : ''),
+        fill: b.active ? b.colour : 'transparent', stroke: b.colour,
+      }));
+      // labels pushed out past the rim, and nudged so none is clipped
+      const [lx, ly] = at(s.a, R + 30);
+      const anchor = Math.abs(lx - CX) < 12 ? 'middle' : lx > CX ? 'start' : 'end';
+      const label = make('text', {
+        x: anchor === 'start' ? lx - 6 : anchor === 'end' ? lx + 6 : lx,
+        y: ly + (s.a < 0 && Math.abs(lx - CX) < 12 ? -4 : 4),
+        'text-anchor': anchor,
+        class: 'pent-label' + (b.active ? ' on' : ''),
+      });
+      label.textContent = CALLINGS[s.k].name;
+      svg.appendChild(label);
+      const value = make('text', {
+        x: label.getAttribute('x'), y: Number(label.getAttribute('y')) + 13,
+        'text-anchor': anchor, class: 'pent-value' + (b.active ? ' on' : ''),
+      });
+      value.textContent = b.affinity + '%';
+      svg.appendChild(value);
+    });
+
+    const wrap = el('figure', 'pent-wrap');
+    wrap.appendChild(svg);
+    wrap.appendChild(el('figcaption', null,
+      'All five are yours. The inner line is 62.5, where a Calling becomes part of the title.'));
+
+    return wrap;
+  }
+
   function drawRecord(doc, r) {
     const root = $('record');
     root.innerHTML = '';
@@ -1022,6 +1143,11 @@ const TONES = [
     const head = el('div', 'rec-head');
     head.appendChild(el('span', 'rec-tier', doc.verdict.tier));
     head.appendChild(el('h1', 'rec-name', doc.verdict.name));
+    // Only the four-drive results have a Titan patron. The Fateless answer
+    // to none, which is the point of them, so nothing is printed there.
+    if (doc.verdict.mythicTitle) {
+      head.appendChild(el('p', 'rec-mythic', doc.verdict.mythicTitle));
+    }
     const art = el('div', 'rec-art');
     art.setAttribute('role', 'img');
     art.setAttribute('aria-label', doc.verdict.name + '. ' + doc.verdict.blend + '.');
@@ -1047,6 +1173,7 @@ const TONES = [
 
       // all five affinities, always
       if (page.bars) {
+        sec.appendChild(pentagon(page.bars));
         const bars = el('div', 'bars');
         page.bars.forEach((b) => {
           const row = el('div', 'bar-row' + (b.active ? '' : ' off'));
@@ -1161,7 +1288,9 @@ const TONES = [
           (s.terms || []).forEach((t) => {
             const chip = el('span', 'term');
             if (t.calling) {
-              const key = { Oath: 'O', Hearth: 'H', Forge: 'F', Voice: 'V', Watch: 'W' }[t.calling];
+              // looked up from the registry, never written out: the 2026
+              // rename changed all five of these words at once
+              const key = ORDER.find((k) => CALLINGS[k].name === t.calling);
               if (key && CALLINGS[key]) chip.style.borderColor = CALLINGS[key].colour;
               chip.appendChild(el('b', null, t.calling));
             }
@@ -1182,6 +1311,13 @@ const TONES = [
         sec.appendChild(ul);
       }
 
+      // "What am I nearly?" is the question readers ask most, so it gets a
+      // heading of its own rather than sitting inside the growth advice.
+      if (page.nearest) {
+        sec.appendChild(el('h3', null, page.nearest.title));
+        page.nearest.paras.forEach((t) => sec.appendChild(para(t)));
+      }
+
       if (page.stability) {
         const box = el('div', 'stability');
         box.appendChild(el('span', 'stage-label', page.stability.title));
@@ -1192,6 +1328,21 @@ const TONES = [
       if (page.closing) sec.appendChild(para(page.closing));
       root.appendChild(sec);
     }
+
+    // The chart is already drawn with a box wide enough for its labels. Where
+    // the browser can measure what it actually rendered, tighten to that, so
+    // an unexpected font does not leave the shape marooned in white space.
+    // Skipped silently when there is no layout to read, which is what happens
+    // in a background tab, and the authored box carries it.
+    root.querySelectorAll('svg.pent').forEach((svg) => {
+      try {
+        const b = svg.getBBox();
+        if (!b.width) return;
+        const pad = 6;
+        svg.setAttribute('viewBox',
+          (b.x - pad) + ' ' + (b.y - pad) + ' ' + (b.width + pad * 2) + ' ' + (b.height + pad * 2));
+      } catch { /* no layout to measure; the drawn box is close enough */ }
+    });
 
     root.appendChild(el('p', 'rec-limits', doc.pages[doc.pages.length - 1].disclaimer));
 

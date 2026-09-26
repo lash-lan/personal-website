@@ -6,10 +6,25 @@
 // Nothing here can change the code. The Depth Module only sharpens how the
 // result is described.
 
-import { CALLINGS, ORDER, QUESTIONS, RULES } from '../data/fivefold.js';
+import { ARCHETYPES, CALLINGS, ORDER, QUESTIONS, RULES } from '../data/fivefold.js';
 import { score } from './fivefold-engine.js';
 import guide from '../data/fivefold-guide.js';
 import { FACET_PROSE, HIGH_AT, LOW_BELOW } from '../data/fivefold-facet-prose.js';
+
+// fivefold.js is the canonical registry. The guide carries its own copy of
+// every archetype's name and tier, which is exactly the duplication that lets
+// two files drift apart, so the registry is stamped over the top here and the
+// guide keeps only its prose. Nothing else may name an archetype.
+for (const [code, entry] of Object.entries(guide.archetypes)) {
+  const canon = ARCHETYPES[code];
+  if (!canon) continue;
+  entry.name = canon.name;
+  entry.tier = canon.tier;
+  entry.blend = canon.blend;
+  if (canon.mythicTitle) entry.mythicTitle = canon.mythicTitle;
+  if (canon.missing) { entry.missing = canon.missing; entry.tension = canon.tension; entry.notThis = canon.notThis; }
+  if (canon.integration) entry.integration = canon.integration;
+}
 
 export const DEPTH = guide.depth;
 export const FACETS = guide.facets;
@@ -25,9 +40,12 @@ const ITEM = new Map();
 QUESTIONS.forEach((q) => ITEM.set(q.n, { reverse: q.reverse, calling: q.calling }));
 DEPTH.forEach((q) => ITEM.set(q.n, { reverse: q.reverse, calling: q.calling }));
 
-// The guide writes its decision pathways as "Watch detects risk -> Oath judges
-// the standard -> ...", so the leading word of each stage names the Calling.
-const KEY_BY_WORD = { Oath: 'O', Hearth: 'H', Forge: 'F', Voice: 'V', Watch: 'W' };
+// The guide writes its decision pathways as "Vigilance detects risk -> Virtue
+// judges the standard -> ...", so the leading word of each stage names the
+// Calling. Built from the registry rather than written out, because the 2026
+// rename changed all five of these words at once and a hand-written map here
+// would have silently stopped matching.
+const KEY_BY_WORD = Object.fromEntries(ORDER.map((k) => [CALLINGS[k].name, k]));
 
 // The guide's runtime rule for the pathway, quoted so the numbers below can be
 // checked against it: "reorder the first two stages if another active Calling

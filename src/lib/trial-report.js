@@ -161,6 +161,12 @@ export async function buildTrialRecord(doc, result) {
     y -= 34;
   }
   y -= 2;
+  // the Titan patron, carried only by the four-drive results
+  if (doc.verdict.mythicTitle) {
+    page.drawText(safe(doc.verdict.mythicTitle),
+      { x: M, y, size: 12, font: serifI, color: C(INK) });
+    y -= 18;
+  }
   page.drawText(safe(doc.verdict.blend), { x: M, y, size: 10, font: serif, color: C(MUTE) });
   y -= 26;
 
@@ -245,6 +251,12 @@ export async function buildTrialRecord(doc, result) {
     }
 
     bullets('Growth roadmap', s.growth);
+
+    if (s.nearest) {
+      label(s.nearest.title);
+      for (const t of s.nearest.paras) para(t, { gap: 7, indent: 8 });
+      y -= 3;
+    }
 
     if (s.stability) {
       label(s.stability.title);
