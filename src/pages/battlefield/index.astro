@@ -1,0 +1,676 @@
+---
+// Blood of Icetear: Citadel Wars — a playable prototype of the battlefield,
+// for two players at one screen. Every rule lives in src/lib/battle.js; this
+// file only draws the board and turns clicks into calls.
+import { GUARDIAN_BUDGET } from '../../lib/battle.js';
+---
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Citadel Wars | LASH</title>
+  <meta name="description" content="Blood of Icetear: Citadel Wars. Two players, three lanes, one citadel each." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+SC:wght@300;400;500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" />
+  <!-- is:global is required, not cosmetic: the whole board is built by
+       script at run time, and Astro's scoped styles only reach elements that
+       exist at build time. Scoped, every lane, space and unit renders with
+       no border, no stone and the browser's default font. -->
+  <style is:global>
+    :root{
+      --bg:#05080b; --plate:#0d1319; --plate2:#111a22;
+      --text:#c5ced5; --dim:#74818b; --bright:#e1e7ea;
+      --blood:#8b191c; --blood-lt:#b8484b; --gold:#c89b3c; --frost:#8fa8bb;
+      --ember:#d68a33;
+      --line:rgba(197,206,213,.14); --line2:rgba(197,206,213,.07);
+      --p0:#8fa8bb; --p1:#b8484b;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);
+      font-family:'EB Garamond',Georgia,serif;font-size:16px;line-height:1.55;
+      -webkit-font-smoothing:antialiased}
+    h1,h2,h3{font-family:'Cinzel',serif;font-weight:600;color:var(--bright);margin:0}
+    .lbl{font-family:'Cormorant SC',serif;font-size:.62rem;letter-spacing:.24em;
+      text-transform:uppercase;color:var(--dim)}
+    button{font:inherit;color:inherit;background:none;border:1px solid var(--line);
+      padding:.4rem .8rem;cursor:pointer;transition:border-color .15s,color .15s,background .15s}
+    button:hover:not(:disabled){border-color:var(--gold);color:var(--bright)}
+    button:disabled{opacity:.35;cursor:not-allowed}
+    button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+    .primary{border-color:rgba(200,155,60,.5);color:var(--bright);background:rgba(200,155,60,.08)}
+
+    .wrap{max-width:1180px;margin:0 auto;padding:1.2rem 1rem 3rem}
+    header.top{display:flex;align-items:baseline;gap:1rem;flex-wrap:wrap;
+      border-bottom:1px solid var(--line);padding-bottom:.7rem;margin-bottom:1rem}
+    header.top h1{font-size:clamp(1.2rem,3.4vw,1.7rem);letter-spacing:.04em}
+    header.top a{color:var(--dim);text-decoration:none;font-size:.85rem;margin-left:auto}
+    header.top a:hover{color:var(--bright)}
+
+    /* ── setup ── */
+    .setup{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:1.4rem}
+    .col h2{font-size:1rem;margin-bottom:.2rem}
+    .budget{display:flex;align-items:center;gap:.6rem;margin:.5rem 0 .9rem}
+    .meter{flex:1;height:8px;background:rgba(255,255,255,.07);overflow:hidden}
+    .meter i{display:block;height:100%;background:var(--gold)}
+    .meter.over i{background:var(--blood-lt)}
+    .spend{font-variant-numeric:tabular-nums;font-size:.85rem;color:var(--dim);white-space:nowrap}
+    .spend.over{color:var(--blood-lt)}
+    .post{display:flex;align-items:center;gap:.6rem;padding:.5rem 0;border-bottom:1px solid var(--line2)}
+    .post .who{flex:1;min-width:0}
+    .post .nm{display:block;color:var(--bright);font-size:.95rem}
+    .post .rr{font-size:.76rem;color:var(--dim)}
+    .post select{flex:1;min-width:0;background:var(--plate);color:var(--text);
+      border:1px solid var(--line);padding:.35rem;font:inherit;font-size:.86rem}
+
+    /* ── board ── */
+    .hud{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.8rem;
+      padding:.5rem .7rem;border:1px solid var(--line);background:var(--plate)}
+    .phases{display:flex;gap:.3rem;flex-wrap:wrap}
+    .ph{font-family:'Cormorant SC',serif;font-size:.62rem;letter-spacing:.18em;
+      text-transform:uppercase;color:var(--dim);border:1px solid transparent;padding:.2rem .45rem}
+    .ph.on{color:var(--bg);background:var(--gold);border-color:var(--gold)}
+    .turnwho{font-family:'Cinzel',serif;color:var(--bright);font-size:.95rem}
+    .turnwho.p1{color:var(--p1)}
+    .turnwho.p0{color:var(--p0)}
+    .muster{font-variant-numeric:tabular-nums;color:var(--gold);font-size:.9rem}
+
+    /* ── the keep: high gates at the corners, the great gate and the
+          commander down the middle, exactly as the board is drawn ── */
+    .keep{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.7fr) minmax(0,1fr);
+      gap:.45rem;align-items:stretch;margin:.35rem 0}
+    .keep.foe{margin-bottom:.7rem}
+    .mid-stack{display:flex;flex-direction:column;gap:.45rem}
+    .struct{position:relative;border:1px solid rgba(143,168,187,.22);padding:.42rem .6rem;
+      background:linear-gradient(175deg,#16202a 0%,#0e1720 55%,#0a121a 100%);
+      box-shadow:inset 0 1px 0 rgba(197,206,213,.07)}
+    /* the torches burning at the corners of every wall in the reference */
+    .struct::before,.struct::after{content:'';position:absolute;top:.42rem;width:5px;height:5px;
+      border-radius:50%;background:var(--ember);
+      box-shadow:0 0 7px 2px rgba(214,138,51,.55)}
+    .struct::before{left:.42rem} .struct::after{right:.42rem}
+    .struct .nm{display:flex;justify-content:center;gap:.5rem;align-items:baseline;
+      font-family:'Cinzel',serif;font-size:.63rem;letter-spacing:.2em;text-transform:uppercase;
+      color:#cfd9e2;text-align:center}
+    .struct .nm b{font-weight:400;color:var(--gold);font-variant-numeric:tabular-nums;
+      letter-spacing:.04em}
+    .struct .hp{height:5px;background:rgba(0,0,0,.5);margin-top:.34rem;overflow:hidden;
+      border:1px solid rgba(143,168,187,.14)}
+    .struct .hp i{display:block;height:100%;
+      background:linear-gradient(90deg,#6d8fa8,var(--frost))}
+    .struct.down{opacity:.45;border-style:dashed}
+    .struct.down::before,.struct.down::after{background:#3a2a1a;box-shadow:none}
+    .struct.down .hp i{background:var(--blood)}
+    .struct.great{border-color:rgba(200,155,60,.3)}
+    .struct.great .nm{font-size:.7rem;color:var(--bright)}
+    .struct.cmd .hp i{background:linear-gradient(90deg,#8d6a2f,var(--gold))}
+    .citadel{border-color:rgba(200,155,60,.42);
+      background:linear-gradient(175deg,#1d1810,#0f0d0a)}
+    .citadel .hp i{background:linear-gradient(90deg,#8d6a2f,var(--gold))}
+
+    /* ── the field: three lanes on one slab of stone ── */
+    .field{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.7fr) minmax(0,1fr);
+      gap:.45rem;align-items:start;
+      background:radial-gradient(120% 80% at 50% 50%,#16212c 0%,#0b1219 70%,#070d13 100%);
+      border:1px solid rgba(143,168,187,.18);padding:.5rem}
+    .lane{min-width:0}
+    .lane h3{font-family:'Cormorant SC',serif;font-size:.6rem;letter-spacing:.24em;
+      text-transform:uppercase;color:#8d9aa6;text-align:center;margin-bottom:.35rem;font-weight:400}
+    .lane h3 b{color:var(--gold);font-weight:400}
+    .space{position:relative;min-height:2.5rem;padding:.24rem;margin-bottom:.3rem;
+      display:flex;flex-wrap:wrap;gap:.24rem;align-content:center;justify-content:center;
+      border:1px solid rgba(143,168,187,.16);
+      background:linear-gradient(170deg,rgba(40,56,70,.5),rgba(12,20,28,.6));
+      box-shadow:inset 0 1px 0 rgba(197,206,213,.05)}
+    /* the row of swords: your own deployment line */
+    .space.row{border-color:rgba(143,168,187,.3);
+      background:linear-gradient(170deg,rgba(52,70,86,.55),rgba(16,26,36,.7))}
+    .space.row:empty::after{content:'';position:absolute;inset:0;opacity:.3;
+      background:repeating-linear-gradient(90deg,transparent 0 12px,
+        rgba(197,206,213,.5) 12px 13px,transparent 13px 26px)}
+    /* the monster ground, ringed in red on the reference board */
+    .space.mid{border-color:rgba(184,72,75,.45);
+      background:linear-gradient(170deg,rgba(72,26,28,.4),rgba(24,10,12,.6));
+      box-shadow:inset 0 0 14px rgba(184,72,75,.18)}
+    .space.drop{border-color:var(--gold);
+      background:linear-gradient(170deg,rgba(200,155,60,.22),rgba(80,58,20,.3));
+      cursor:pointer}
+    .space.drop::after{content:'Place here';position:absolute;inset:0;display:grid;
+      place-items:center;font-family:'Cormorant SC',serif;font-size:.58rem;
+      letter-spacing:.18em;text-transform:uppercase;color:var(--gold);pointer-events:none}
+
+    .unit{border:1px solid rgba(143,168,187,.3);padding:.2rem .36rem;font-size:.7rem;
+      background:linear-gradient(170deg,#101a24,#070d13);cursor:pointer;max-width:100%;
+      line-height:1.25;text-align:left}
+    .unit .n{display:block;color:var(--bright);white-space:nowrap;overflow:hidden;
+      text-overflow:ellipsis;max-width:7.5rem;font-family:'Cinzel',serif;font-size:.66rem}
+    .unit .s{color:#8d9aa6;font-variant-numeric:tabular-nums;font-size:.66rem}
+    .unit.o0{border-left:3px solid var(--p0);box-shadow:-4px 0 10px -6px var(--p0)}
+    .unit.o1{border-left:3px solid var(--p1);box-shadow:-4px 0 10px -6px var(--p1)}
+    .unit.mon{border-left:3px solid #7d3c2a;background:linear-gradient(170deg,#241310,#120806)}
+    .unit.mon .n{color:#e0b4a2}
+    .unit.sel{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 0 12px rgba(200,155,60,.35)}
+    .unit.tgt{border-color:var(--blood-lt);
+      box-shadow:0 0 0 1px var(--blood-lt),0 0 12px rgba(184,72,75,.4);cursor:crosshair}
+    .unit.spent{opacity:.4}
+
+    .hand{margin-top:1rem;border-top:1px solid var(--line);padding-top:.7rem}
+    .cards{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.45rem}
+    .card{border:1px solid var(--line);background:var(--plate);padding:.4rem .55rem;
+      cursor:pointer;min-width:8.5rem;max-width:11rem;text-align:left}
+    .card .n{display:block;color:var(--bright);font-size:.82rem;line-height:1.2}
+    .card .m{display:block;color:var(--dim);font-size:.72rem;margin-top:.2rem;
+      font-variant-numeric:tabular-nums}
+    .card.sel{border-color:var(--gold);background:rgba(200,155,60,.1)}
+    .card.cant{opacity:.4;cursor:not-allowed}
+    .card.free{border-color:rgba(143,168,187,.5)}
+
+    .log{margin-top:1rem;border-top:1px solid var(--line);padding-top:.6rem;
+      max-height:9rem;overflow-y:auto;font-size:.84rem;color:var(--dim)}
+    .log p{margin:.14rem 0}
+    .log p b{color:var(--text);font-weight:400}
+
+    .banner{text-align:center;padding:1.6rem;border:1px solid rgba(200,155,60,.4);
+      background:rgba(200,155,60,.07);margin-bottom:1rem}
+    .banner h2{font-size:1.5rem;margin-bottom:.3rem}
+    .hint{font-size:.85rem;color:var(--dim);min-height:1.3rem;margin-top:.4rem}
+    .rules{margin-top:1.6rem;border-top:1px solid var(--line);padding-top:.8rem;
+      font-size:.9rem;color:var(--dim)}
+    .rules summary{cursor:pointer;font-family:'Cormorant SC',serif;letter-spacing:.2em;
+      text-transform:uppercase;font-size:.66rem;color:var(--gold)}
+    .rules ul{margin:.6rem 0 0 1rem}
+    .rules li{margin-bottom:.3rem}
+    [hidden]{display:none !important}
+
+    /* ── phones: one lane at a time, chosen by tab ── */
+    .lane-tabs{display:none;gap:.3rem;margin-bottom:.5rem}
+    .lane-tabs button{flex:1;padding:.45rem .3rem;font-family:'Cormorant SC',serif;
+      font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+    .lane-tabs button.on{color:var(--bg);background:var(--gold);border-color:var(--gold)}
+    .lane-tabs button .dot{color:var(--blood-lt)}
+
+    @media (max-width:900px){
+      .wrap{padding:.9rem .7rem 2.5rem}
+      .unit .n{max-width:6rem;font-size:.62rem}
+      .unit .s{font-size:.6rem}
+      .struct .nm{font-size:.56rem;letter-spacing:.12em}
+      .space{min-height:2.2rem}
+    }
+    @media (max-width:680px){
+      .lane-tabs{display:flex}
+      .field{grid-template-columns:1fr}
+      .lane{display:none}
+      .lane.active{display:block}
+      .lane h3{font-size:.66rem}
+      .keep{grid-template-columns:1fr 1.4fr 1fr;gap:.3rem}
+      .struct{padding:.36rem .4rem}
+      .struct::before,.struct::after{display:none}
+      .unit{padding:.3rem .45rem}
+      .unit .n{max-width:100%;font-size:.72rem}
+      .unit .s{font-size:.68rem}
+      .space{min-height:2.8rem}
+      .card{min-width:7.5rem;flex:1 1 7.5rem}
+      .hud{gap:.4rem;padding:.4rem .5rem}
+      .hud .primary{flex:1 1 100%;order:9}
+      .log{max-height:7rem}
+    }
+    @media (max-width:380px){
+      .keep{grid-template-columns:1fr;gap:.25rem}
+      .mid-stack{gap:.25rem}
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Blood of Icetear: Citadel Wars</h1>
+    <span class="lbl">Prototype &middot; two players, one screen</span>
+    <a href="/">Back to the site</a>
+  </header>
+
+  <!-- ── drafting ── -->
+  <section id="setupScreen">
+    <p style="max-width:58ch;margin-bottom:1rem">
+      Before a shot is fired, each side posts its Guardians. You have
+      <b style="color:var(--gold)">{GUARDIAN_BUDGET} points</b> to spend across all three gates, and a
+      Guardian costs whatever their rarity is worth in hit points. Whoever you
+      put on the wall is not in your deck, so a strong gate is paid for with a
+      thinner hand.
+    </p>
+    <div class="setup" id="setupCols"></div>
+    <div style="margin-top:1.2rem;display:flex;gap:.6rem;flex-wrap:wrap;align-items:center">
+      <button type="button" id="btnQuick">Muster both sides for me</button>
+      <button type="button" id="btnStart" class="primary">Open the gates</button>
+      <span class="hint" id="setupHint"></span>
+    </div>
+  </section>
+
+  <!-- ── the battlefield ── -->
+  <section id="boardScreen" hidden>
+    <div class="banner" id="banner" hidden><h2 id="bannerName"></h2><p id="bannerNote"></p></div>
+
+    <div class="hud">
+      <span class="turnwho" id="whoseTurn"></span>
+      <div class="phases" id="phaseBar"></div>
+      <span class="muster" id="musterNow"></span>
+      <button type="button" id="btnNext" class="primary" style="margin-left:auto">Next phase</button>
+      <button type="button" id="btnRestart">New game</button>
+    </div>
+
+    <span class="lbl" id="foeLabel"></span>
+    <div class="keep foe" id="foeKeep"></div>
+
+    <div class="lane-tabs" id="laneTabs" role="tablist" aria-label="Choose a lane"></div>
+    <div class="field" id="field"></div>
+
+    <span class="lbl" style="display:block;margin-top:.9rem" id="myLabel"></span>
+    <div class="keep" id="myKeep"></div>
+
+    <div class="hand">
+      <span class="lbl" id="handLabel">Your hand</span>
+      <div class="cards" id="handCards"></div>
+      <p class="hint" id="hint"></p>
+    </div>
+
+    <div class="log" id="log"></div>
+  </section>
+
+  <details class="rules">
+    <summary>How it plays</summary>
+    <ul>
+      <li><b>Five phases a turn.</b> Draw, Main, Movement, Action, End. One move and one attack per character per turn.</li>
+      <li><b>Three lanes.</b> The centre takes five a side across three spaces. Each side path takes three a side across five, with three monsters spawned across the middle.</li>
+      <li><b>The middle of a side path is the prize.</b> Break the monster standing on it and the enemy in that lane is driven back a space, and two Reinforcements come up behind you at no cost.</li>
+      <li><b>Lose a lane entirely</b> and the position is open again: the other side can walk their own characters up to it.</li>
+      <li><b>Gates are made of Guardians.</b> The Great Gate is its three added together; a High Gate has one Guardian and counts them twice.</li>
+      <li><b>To win</b>, put the enemy Citadel to nought. The gate in a lane must fall first, and the Commander stands behind it.</li>
+      <li>Monsters never take a turn, so they strike back whenever they are struck.</li>
+    </ul>
+  </details>
+</div>
+
+<script>
+  import {
+    newGame, quickArmy, rngFrom, LANES, laneOf, middleOf, homeOf, stepOf,
+    deploy, canDeploy, move, canMove, attack, targetsFor, advance, trackOf,
+    wallFor, guardianSpend, validateArmy, guardianCost, GUARDIAN_BUDGET,
+    cardOf, PHASES, PHASE_NAME,
+  } from '../../lib/battle.js';
+  import { CARDS, RARITY, byId, statsOf } from '../../data/battle-cards.js';
+
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  };
+
+  const NAMES = ['The Silver Host', 'The Crimson Host'];
+  let armies = [null, null];
+  let game = null;
+  let picked = null;        // a card chosen in hand, waiting for a lane
+  let pickedFree = false;
+  let selected = null;      // { lane, uid } a unit chosen on the board
+  let activeLane = 'centre'; // which lane a phone is looking at
+
+  // ── drafting ──────────────────────────────────────────────────────────
+  const POSTS = [
+    { key: 'commander', label: 'Commander', count: 1, only: (c) => c.commander },
+    { key: 'great', label: 'Great Gate Guardians', count: 3 },
+    { key: 'high', label: 'High Gate Guardians', count: 2 },
+    { key: 'reinforcements', label: 'Reinforcements', count: 4 },
+  ];
+
+  function blankArmy() {
+    const rng = rngFrom(Math.floor(Math.random() * 1e9) || 1);
+    return quickArmy(rng);
+  }
+
+  function drawSetup() {
+    const root = $('setupCols');
+    root.innerHTML = '';
+    for (let side = 0; side < 2; side++) {
+      if (!armies[side]) armies[side] = blankArmy();
+      const army = armies[side];
+      const col = el('div', 'col');
+      col.appendChild(el('h2', null, NAMES[side]));
+
+      const spend = guardianSpend(army);
+      const bar = el('div', 'budget');
+      const meter = el('div', 'meter' + (spend.legal ? '' : ' over'));
+      const fill = el('i');
+      fill.style.width = Math.min(100, (spend.spent / GUARDIAN_BUDGET) * 100) + '%';
+      meter.appendChild(fill);
+      bar.appendChild(meter);
+      bar.appendChild(el('span', 'spend' + (spend.legal ? '' : ' over'),
+        `${spend.spent} / ${GUARDIAN_BUDGET}`));
+      col.appendChild(bar);
+
+      for (const post of POSTS) {
+        for (let i = 0; i < post.count; i++) {
+          const row = el('div', 'post');
+          row.appendChild(el('span', 'lbl', post.count > 1 ? `${post.label} ${i + 1}` : post.label));
+          const sel = document.createElement('select');
+          const chosen = post.count === 1 ? army[post.key] : army[post.key][i];
+          const usable = CARDS.filter((c) => !post.only || post.only(c));
+          for (const c of usable) {
+            const o = document.createElement('option');
+            o.value = c.id;
+            const costs = post.key === 'great' || post.key === 'high';
+            o.textContent = `${c.name} — ${c.rarity}${costs ? ` (${guardianCost(c.id)})` : ''}`;
+            if (c.id === chosen) o.selected = true;
+            sel.appendChild(o);
+          }
+          sel.addEventListener('change', () => {
+            if (post.count === 1) army[post.key] = sel.value;
+            else army[post.key][i] = sel.value;
+            drawSetup();
+          });
+          row.appendChild(sel);
+          col.appendChild(row);
+        }
+      }
+      root.appendChild(col);
+    }
+    const problems = armies.map((a, i) => (validateArmy(a) ? `${NAMES[i]}: ${validateArmy(a)}` : null))
+      .filter(Boolean);
+    $('setupHint').textContent = problems.join('  ');
+    $('btnStart').disabled = problems.length > 0;
+  }
+
+  // ── the board ─────────────────────────────────────────────────────────
+  function structure(label, hp, maxHp, extra) {
+    const box = el('div', 'struct' + (hp <= 0 ? ' down' : '') + (extra ? ' ' + extra : ''));
+    const nm = el('div', 'nm');
+    nm.appendChild(el('span', null, label));
+    nm.appendChild(el('b', null, `${Math.max(0, hp)}`));
+    box.appendChild(nm);
+    const hpBar = el('div', 'hp');
+    const i = el('i');
+    i.style.width = Math.max(0, Math.min(100, (hp / maxHp) * 100)) + '%';
+    hpBar.appendChild(i);
+    box.appendChild(hpBar);
+    return box;
+  }
+
+  /**
+   * A keep as the board draws it: a High Gate at each corner, and down the
+   * middle the Great Gate, the Commander behind it and the Citadel behind
+   * them both. The enemy's keep is stacked in the other order, so on screen
+   * the two citadels sit at the far edges and the gates face each other.
+   */
+  function drawKeep(rootId, side, foe) {
+    const p = game.players[side];
+    const root = $(rootId);
+    root.innerHTML = '';
+    root.appendChild(structure('High Gate', p.highGates[0].hp, p.highGates[0].maxHp));
+
+    const stack = el('div', 'mid-stack');
+    const citadel = structure('The Citadel', p.citadel, 100, 'citadel');
+    const commander = structure(cardOf(p.commander.cardId).name,
+      p.commander.hp, p.commander.maxHp, 'cmd');
+    const great = structure('The Great Gate', p.greatGate.hp, p.greatGate.maxHp, 'great');
+    // deepest first for the far side, nearest first for your own
+    for (const part of foe ? [citadel, commander, great] : [great, commander, citadel]) {
+      stack.appendChild(part);
+    }
+    root.appendChild(stack);
+    root.appendChild(structure('High Gate', p.highGates[1].hp, p.highGates[1].maxHp));
+  }
+
+  function unitChip(lane, u) {
+    const card = cardOf(u.cardId);
+    const chip = el('button', 'unit o' + u.owner +
+      (selected && selected.uid === u.uid ? ' sel' : '') +
+      (u.owner === game.current && u.acted && u.moved ? ' spent' : ''));
+    chip.type = 'button';
+    chip.appendChild(el('span', 'n', card.name));
+    chip.appendChild(el('span', 's', `${u.hp}/${u.maxHp} · ${u.atk}`));
+    chip.title = `${card.name} — ${card.rarity}. ${card.note}`;
+    chip.addEventListener('click', () => onUnit(lane, u));
+    return chip;
+  }
+
+  function monsterChip(lane, m) {
+    const chip = el('button', 'unit mon');
+    chip.type = 'button';
+    chip.appendChild(el('span', 'n', m.name));
+    chip.appendChild(el('span', 's', `${m.hp}/${m.maxHp} · ${m.atk}`));
+    chip.addEventListener('click', () => onTargetPick(lane, m.uid));
+    return chip;
+  }
+
+  /**
+   * A phone cannot show three lanes at once and stay legible, so it shows
+   * one and these choose it. The dot marks a lane holding something worth
+   * looking at: your own units waiting, or a middle you hold.
+   */
+  function drawLaneTabs() {
+    const root = $('laneTabs');
+    root.innerHTML = '';
+    for (const lane of LANES) {
+      const l = game.lanes[lane.key];
+      const b = el('button', lane.key === activeLane ? 'on' : '');
+      b.type = 'button';
+      b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', String(lane.key === activeLane));
+      b.append(lane.name.replace('The ', ''));
+      const mine = l.units.filter((u) => u.owner === game.current).length;
+      if (mine || l.holder === game.current) {
+        b.appendChild(el('span', 'dot', ` ·${mine || ''}`));
+      }
+      b.addEventListener('click', () => { activeLane = lane.key; render(true); });
+      root.appendChild(b);
+    }
+  }
+
+  function drawField() {
+    const root = $('field');
+    root.innerHTML = '';
+    // the enemy's end is at the top of every lane, so the board reads the way
+    // it is drawn: their half above, yours below
+    const flip = game.current === 1;
+    for (const lane of LANES) {
+      const l = game.lanes[lane.key];
+      const col = el('div', 'lane' + (lane.key === activeLane ? ' active' : ''));
+      const head = el('h3');
+      head.appendChild(document.createTextNode(lane.name));
+      if (lane.monsters && l.holder !== null) {
+        head.appendChild(document.createTextNode(' · '));
+        head.appendChild(el('b', null, l.holder === game.current ? 'yours' : 'theirs'));
+      }
+      col.appendChild(head);
+
+      const order = [];
+      for (let p = 0; p < trackOf(lane); p++) order.push(p);
+      if (!flip) order.reverse();          // player 0 sits at the bottom
+
+      for (const pos of order) {
+        const isRow = pos === homeOf(lane, 0) || pos === homeOf(lane, 1);
+        const space = el('div', 'space' + (isRow ? ' row' : '') +
+          (middleOf(lane) === pos ? ' mid' : ''));
+        space.dataset.lane = lane.key;
+        space.dataset.pos = String(pos);
+        for (const m of l.monsters) if (m.pos === pos) space.appendChild(monsterChip(lane.key, m));
+        for (const u of l.units) if (u.pos === pos) space.appendChild(unitChip(lane.key, u));
+        // deploying: your own edge is the only way in
+        if (picked && game.phase === 'main' && pos === homeOf(lane, game.current)) {
+          if (!canDeploy(game, lane.key, picked, { free: pickedFree })) {
+            space.classList.add('drop');
+            space.addEventListener('click', () => {
+              const why = deploy(game, lane.key, picked, { free: pickedFree });
+              if (why) { $('hint').textContent = why; return; }
+              picked = null; pickedFree = false;
+              render();
+            });
+          }
+        }
+        col.appendChild(space);
+      }
+      root.appendChild(col);
+    }
+    markTargets();
+  }
+
+  function markTargets() {
+    if (!selected || game.phase !== 'action') return;
+    const list = targetsFor(game, selected.lane, selected.uid);
+    for (const t of list) {
+      if (t.kind === 'unit' || t.kind === 'monster') {
+        for (const chip of document.querySelectorAll('.unit')) {
+          // matched by the text already drawn, so nothing extra is stored
+          if (chip.querySelector('.n') && chip.querySelector('.n').textContent === t.label) {
+            chip.classList.add('tgt');
+          }
+        }
+      }
+    }
+  }
+
+  function onUnit(laneKey, u) {
+    if (game.winner !== null) return;
+    if (u.owner !== game.current) { onTargetPick(laneKey, u.uid); return; }
+    if (game.phase === 'move') {
+      const why = canMove(game, laneKey, u.uid);
+      if (why) { $('hint').textContent = why; return; }
+      move(game, laneKey, u.uid);
+      render();
+      return;
+    }
+    if (game.phase === 'action') {
+      selected = { lane: laneKey, uid: u.uid };
+      const list = targetsFor(game, laneKey, u.uid);
+      $('hint').textContent = list.length
+        ? `${cardOf(u.cardId).name} may strike: ${list.map((t) => t.label).join(', ')}. Choose one.`
+        : `${cardOf(u.cardId).name} has nothing in reach.`;
+      render(true);
+      // the wall is not a chip on the board, so offer it as a button
+      const wallT = list.find((t) => ['gate', 'commander', 'citadel'].includes(t.kind));
+      if (wallT) {
+        const b = el('button', 'primary', `Strike ${wallT.label}`);
+        b.type = 'button';
+        b.style.marginLeft = '.5rem';
+        b.addEventListener('click', () => onTargetPick(laneKey, wallT.uid));
+        $('hint').appendChild(b);
+      }
+      return;
+    }
+    $('hint').textContent = 'Units move in the Movement phase and strike in the Action phase.';
+  }
+
+  function onTargetPick(laneKey, targetUid) {
+    if (!selected || game.phase !== 'action') return;
+    const why = attack(game, selected.lane, selected.uid, { uid: targetUid });
+    if (why) { $('hint').textContent = why; return; }
+    selected = null;
+    render();
+  }
+
+  function drawHand() {
+    const p = game.players[game.current];
+    const root = $('handCards');
+    root.innerHTML = '';
+    $('handLabel').textContent =
+      `${p.name} — hand (${p.hand.length}), deck ${p.deck.length}` +
+      (p.freeDeploys ? `, ${p.freeDeploys} free Reinforcement${p.freeDeploys > 1 ? 's' : ''}` : '');
+
+    const add = (id, free) => {
+      const card = cardOf(id);
+      const st = statsOf(card);
+      const why = canDeploy(game, 'centre', id, { free }) && canDeploy(game, 'left', id, { free });
+      const b = el('button', 'card' + (picked === id && pickedFree === free ? ' sel' : '') +
+        (why ? ' cant' : '') + (free ? ' free' : ''));
+      b.type = 'button';
+      b.appendChild(el('span', 'n', card.name));
+      b.appendChild(el('span', 'm',
+        `${card.rarity} · ${st.hp} hp · ${st.atk} atk · ${free ? 'free' : st.cost + ' muster'}`));
+      b.title = card.note;
+      b.addEventListener('click', () => {
+        picked = (picked === id && pickedFree === free) ? null : id;
+        pickedFree = picked ? free : false;
+        $('hint').textContent = picked
+          ? 'Now choose a highlighted space at your own edge.' : '';
+        render();
+      });
+      root.appendChild(b);
+    };
+    for (const id of p.hand) add(id, false);
+    if (p.freeDeploys > 0) for (const id of p.reinforcements) add(id, true);
+  }
+
+  function drawLog() {
+    const root = $('log');
+    root.innerHTML = '';
+    for (const line of game.log.slice(-14)) {
+      const p = el('p');
+      p.appendChild(el('b', null, `Turn ${line.turn}. `));
+      p.append(line.text);
+      root.appendChild(p);
+    }
+    root.scrollTop = root.scrollHeight;
+  }
+
+  function render(keepHint) {
+    const cur = game.current;
+    $('whoseTurn').textContent = `${game.players[cur].name}, turn ${game.turn}`;
+    $('whoseTurn').className = 'turnwho p' + cur;
+    const bar = $('phaseBar');
+    bar.innerHTML = '';
+    for (const ph of PHASES) {
+      bar.appendChild(el('span', 'ph' + (game.phase === ph ? ' on' : ''), PHASE_NAME[ph]));
+    }
+    $('musterNow').textContent = `${game.players[cur].muster} muster`;
+    $('foeLabel').textContent = `${game.players[cur === 0 ? 1 : 0].name} — their keep`;
+    $('myLabel').textContent = `${game.players[cur].name} — your keep`;
+    drawKeep('foeKeep', cur === 0 ? 1 : 0, true);
+    drawKeep('myKeep', cur, false);
+    drawLaneTabs();
+    drawField();
+    drawHand();
+    drawLog();
+    if (!keepHint) {
+      const tips = {
+        main: 'Choose a character, then a highlighted space at your own edge.',
+        move: 'Click any of your characters to advance them one space.',
+        action: 'Click one of your characters to see what it can strike.',
+        end: 'Nothing left but to pass.',
+        draw: '',
+      };
+      $('hint').textContent = tips[game.phase] || '';
+    }
+    $('btnNext').textContent = game.phase === 'end' ? 'End turn' : 'Next phase';
+    $('btnNext').disabled = game.winner !== null;
+    if (game.winner !== null) {
+      $('banner').hidden = false;
+      $('bannerName').textContent = `${game.players[game.winner].name} has taken the Citadel`;
+      $('bannerNote').textContent = `It fell on turn ${game.turn}.`;
+    }
+  }
+
+  // ── wiring ────────────────────────────────────────────────────────────
+  $('btnQuick').addEventListener('click', () => { armies = [blankArmy(), blankArmy()]; drawSetup(); });
+  $('btnStart').addEventListener('click', () => {
+    game = newGame({ seed: Math.floor(Math.random() * 1e9) || 1, armies, names: NAMES });
+    picked = null; selected = null;
+    $('setupScreen').hidden = true;
+    $('boardScreen').hidden = false;
+    render();
+  });
+  $('btnNext').addEventListener('click', () => {
+    picked = null; selected = null;
+    advance(game);
+    render();
+  });
+  $('btnRestart').addEventListener('click', () => {
+    $('banner').hidden = true;
+    $('boardScreen').hidden = true;
+    $('setupScreen').hidden = false;
+    armies = [null, null];
+    drawSetup();
+  });
+
+  drawSetup();
+</script>
+</body>
+</html>
