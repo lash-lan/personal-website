@@ -1,17 +1,16 @@
 ---
 // Blood of Icetear: Citadel Wars.
 //
-// The painting is the world. This file draws nothing of the battlefield
-// itself: it places the game's pieces on top of one image at coordinates
-// that live in src/data/battlefield-map.js, and turns taps into calls to
-// src/lib/battle.js, which knows nothing about pictures at all.
+// Three layers, kept apart on purpose:
 //
-//   engine        src/lib/battle.js        the rules
-//   opponent      src/lib/battle-ai.js     the Keep
-//   geography     src/data/battlefield-map.js   where the rules sit on art
-//   this file     presentation only
+//   WORLD        the painting. Never built from boxes, never stretched.
+//   ENTITIES     characters, monsters, gates, commanders, standards.
+//   INTERFACE    ground rings, the drag, plaques, the hand, the phase bar.
 //
-// Changing the artwork therefore means writing another map beside that one.
+// The rules live in src/lib/battle.js and know nothing about pictures. Where
+// those rules sit on this particular painting lives in
+// src/data/battlefield-map.js. This file is presentation and input only, so
+// another battlefield means another map beside that one, not another game.
 import { GUARDIAN_BUDGET } from '../../lib/battle.js';
 import { MAPS, DEFAULT_MAP } from '../../data/battlefield-map.js';
 const map = MAPS[DEFAULT_MAP];
@@ -21,7 +20,7 @@ const map = MAPS[DEFAULT_MAP];
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Citadel Wars | LASH</title>
-  <meta name="description" content="Blood of Icetear: Citadel Wars. Two hosts, three roads, one citadel each." />
+  <meta name="description" content="Blood of Icetear: Citadel Wars. Two hosts, three routes, one citadel each." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+SC:wght@300;400;500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" />
@@ -31,12 +30,9 @@ const map = MAPS[DEFAULT_MAP];
        reach elements that exist at build time. -->
   <style is:global>
     :root{
-      --bg:#05080b; --ink:#0b1219;
-      --text:#c5ced5; --dim:#8a97a3; --bright:#e8eef3;
+      --ink:#0b1219; --text:#c5ced5; --dim:#8a97a3; --bright:#e8eef3;
       --blood:#8b191c; --blood-lt:#c65a52; --gold:#c9a24a; --frost:#9fc0d8;
-      --ember:#d68a33;
-      --line:rgba(200,214,226,.18);
-      --p0:#7fb3dd; --p1:#c65a52;
+      --line:rgba(200,214,226,.18); --p0:#7fb3dd; --p1:#c65a52;
     }
     *{box-sizing:border-box}
     html,body{margin:0;background:#04070a;color:var(--text);
@@ -46,203 +42,207 @@ const map = MAPS[DEFAULT_MAP];
     .lbl{font-family:'Cormorant SC',serif;font-size:.6rem;letter-spacing:.24em;
       text-transform:uppercase;color:var(--dim)}
     button{font:inherit;color:inherit;background:none;border:1px solid var(--line);
-      padding:.38rem .7rem;cursor:pointer;
-      transition:border-color .15s,color .15s,background .15s,transform .12s}
+      padding:.34rem .64rem;cursor:pointer;transition:border-color .15s,color .15s,background .15s}
     button:hover:not(:disabled){border-color:var(--gold);color:var(--bright)}
-    button:disabled{opacity:.32;cursor:not-allowed}
+    button:disabled{opacity:.3;cursor:not-allowed}
     button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
     .primary{border-color:rgba(201,162,74,.55);color:var(--bright);
       background:linear-gradient(180deg,rgba(201,162,74,.16),rgba(201,162,74,.05))}
+    button.on{border-color:var(--gold);color:var(--bright)}
     [hidden]{display:none!important}
 
-    /* ── the muster screen, before a battle ── */
+    /* ── mustering ── */
     .wrap{max-width:1180px;margin:0 auto;padding:1.1rem 1rem 3rem}
     header.top{display:flex;align-items:baseline;gap:1rem;flex-wrap:wrap;
       border-bottom:1px solid var(--line);padding-bottom:.7rem;margin-bottom:1rem}
     header.top h1{font-size:clamp(1.1rem,3.4vw,1.6rem);letter-spacing:.05em}
     header.top a{color:var(--dim);text-decoration:none;font-size:.85rem;margin-left:auto}
     .setup{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:1.4rem}
-    .col h2{font-size:1rem;margin-bottom:.2rem}
     .budget{display:flex;align-items:center;gap:.6rem;margin:.5rem 0 .9rem}
     .meter{flex:1;height:8px;background:rgba(255,255,255,.07);overflow:hidden}
     .meter i{display:block;height:100%;background:var(--gold)}
     .meter.over i{background:var(--blood-lt)}
     .spend{font-variant-numeric:tabular-nums;font-size:.85rem;color:var(--dim)}
     .spend.over{color:var(--blood-lt)}
-    .post{display:flex;align-items:center;gap:.6rem;padding:.45rem 0;
+    .post{display:flex;align-items:center;gap:.6rem;padding:.42rem 0;
       border-bottom:1px solid rgba(200,214,226,.08)}
     .post select{flex:1;min-width:0;background:var(--ink);color:var(--text);
       border:1px solid var(--line);padding:.35rem;font:inherit;font-size:.86rem}
     .hint{font-size:.85rem;color:var(--dim);min-height:1.2rem}
 
-    /* ── the battle: the painting fills the screen ── */
-    .battle{position:fixed;inset:0;display:flex;flex-direction:column;
-      background:#04070a}
-    .viewport{position:relative;flex:1;min-height:0;overflow:hidden;
-      touch-action:pan-x pan-y}
-    /* the stage is exactly the painting's own shape, never stretched */
+    /* ── the battle ── */
+    .battle{position:fixed;inset:0;display:flex;flex-direction:column;background:#04070a}
+    .viewport{position:relative;flex:1;min-height:0;overflow:hidden;touch-action:none}
+    /* LAYER 1 — the world. Exactly the painting's shape, never stretched. */
     .stage{position:absolute;left:50%;top:50%;transform-origin:center center;
-      aspect-ratio:1536/1024;background-size:cover;background-position:center;
-      will-change:transform}
-    .stage img{width:100%;height:100%;display:block;object-fit:contain;
-      pointer-events:none;user-select:none}
+      aspect-ratio:1536/1024;will-change:transform;container-type:inline-size}
+    .stage>img{width:100%;height:100%;display:block;object-fit:contain;
+      pointer-events:none;user-select:none;-webkit-user-drag:none}
+    /* LAYER 2 and 3 sit over it and never paint scenery of their own */
+    .entities,.interface,.debug{position:absolute;inset:0;pointer-events:none}
+    .entities{z-index:10} .interface{z-index:20} .debug{z-index:30}
 
-    /* ── nodes: invisible until they have something to say ── */
-    .node{position:absolute;transform:translate(-50%,-50%);
-      display:flex;flex-direction:column;align-items:center;gap:2px;
-      pointer-events:none}
-    .node .crew{display:flex;gap:3px;align-items:flex-end;justify-content:center;
-      pointer-events:auto}
-    /* the ground ring that appears only when a move or a blow is offered */
-    .spot{position:absolute;left:50%;top:50%;width:clamp(30px,4.2cqw,52px);
-      height:clamp(16px,2.2cqw,28px);transform:translate(-50%,-50%);
-      border-radius:50%;pointer-events:none;opacity:0;transition:opacity .18s}
-    .node.open .spot{opacity:1;pointer-events:auto;cursor:pointer;
-      border:1px solid rgba(201,162,74,.85);
-      background:radial-gradient(ellipse at center,rgba(201,162,74,.3),transparent 70%);
-      box-shadow:0 0 16px rgba(201,162,74,.4)}
-    .node.hostile .spot{opacity:1;
-      border:1px solid rgba(198,90,82,.85);
-      background:radial-gradient(ellipse at center,rgba(198,90,82,.3),transparent 70%)}
+    /* ground rings: shown only while something is in hand */
+    .ring{position:absolute;transform:translate(-50%,-50%);border-radius:50%;
+      width:clamp(34px,5cqw,64px);height:clamp(17px,2.5cqw,32px);
+      border:1.5px solid rgba(201,162,74,.85);
+      background:radial-gradient(ellipse at center,rgba(201,162,74,.26),transparent 72%);
+      box-shadow:0 0 18px rgba(201,162,74,.38);transition:box-shadow .15s,transform .15s}
+    .ring.hot{border-color:#f2dca8;transform:translate(-50%,-50%) scale(1.18);
+      background:radial-gradient(ellipse at center,rgba(242,220,168,.48),transparent 72%);
+      box-shadow:0 0 34px rgba(242,220,168,.8)}
 
     /* a character standing on the ground */
-    .pawn{position:relative;width:clamp(26px,3.4cqw,44px);padding:0;border:0;
-      background:none;cursor:pointer;display:block;line-height:0;
-      filter:drop-shadow(0 4px 5px rgba(0,0,0,.75))}
+    .pawn{position:absolute;transform:translate(-50%,-100%);width:clamp(22px,3cqw,40px);
+      padding:0;border:0;background:none;cursor:pointer;line-height:0;
+      pointer-events:auto;touch-action:none;
+      filter:drop-shadow(0 4px 5px rgba(0,0,0,.8))}
     .pawn .face{display:block;width:100%;aspect-ratio:1;border-radius:50%;
       background-size:cover;background-position:center top;background-color:#16202a;
-      border:2px solid var(--ring,#9fc0d8);
-      box-shadow:0 0 0 1px rgba(0,0,0,.8),inset 0 0 12px rgba(0,0,0,.5)}
-    .pawn.o0{--ring:#7fb3dd} .pawn.o1{--ring:#c65a52} .pawn.mon{--ring:#a8703c}
-    .pawn.r-legendary,.pawn.r-mythical{--ring:#c9a24a}
-    .pawn .atk,.pawn .hp{position:absolute;bottom:-3px;min-width:15px;height:15px;
+      border:2px solid var(--ring-c,#9fc0d8);
+      box-shadow:0 0 0 1px rgba(0,0,0,.85),inset 0 0 12px rgba(0,0,0,.45)}
+    .pawn.o0{--ring-c:#7fb3dd} .pawn.o1{--ring-c:#c65a52} .pawn.mon{--ring-c:#a8703c}
+    .pawn.r-legendary,.pawn.r-mythical{--ring-c:#c9a24a}
+    .pawn.mon{width:clamp(26px,3.6cqw,48px)}
+    .pawn .atk,.pawn .hp{position:absolute;bottom:-4px;min-width:14px;height:14px;
       border-radius:50%;display:grid;place-items:center;line-height:1;
-      font-family:'Cinzel',serif;font-size:9px;border:1px solid rgba(0,0,0,.75)}
+      font-family:'Cinzel',serif;font-size:8.5px;border:1px solid rgba(0,0,0,.8)}
     .pawn .atk{left:-4px;background:linear-gradient(180deg,#eef3f7,#93a3b0);color:#080e14}
     .pawn .hp{right:-4px;background:linear-gradient(180deg,#d9564f,#7c1417);color:#fff}
-    .pawn.sel .face{border-color:var(--gold);
-      box-shadow:0 0 0 2px var(--gold),0 0 20px rgba(201,162,74,.6)}
-    .pawn.tgt .face{border-color:var(--blood-lt);
-      box-shadow:0 0 0 2px var(--blood-lt),0 0 20px rgba(198,90,82,.6)}
-    .pawn.spent{opacity:.5}
+    .pawn.sel .face{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 0 22px rgba(201,162,74,.65)}
+    .pawn.tgt .face{border-color:var(--blood-lt);box-shadow:0 0 0 2px var(--blood-lt),0 0 22px rgba(198,90,82,.65)}
+    .pawn.spent{opacity:.45}
+    .pawn.ghost{opacity:.3}
+    /* the thing that follows the finger */
+    .carried{position:fixed;transform:translate(-50%,-115%);pointer-events:none;z-index:90;
+      width:52px;filter:drop-shadow(0 10px 14px rgba(0,0,0,.9))}
+    .carried .face{display:block;width:100%;aspect-ratio:1;border-radius:50%;
+      background-size:cover;background-position:center top;background-color:#16202a;
+      border:2px solid var(--gold);box-shadow:0 0 26px rgba(201,162,74,.6)}
 
-    /* ── keeps: a plaque under the painted gate, not a box over it ── */
+    /* gates, commanders, citadels: plaques beneath painted stone */
     .work{position:absolute;transform:translate(-50%,-50%);text-align:center;
       pointer-events:none;width:max-content}
-    .work .wn{font-family:'Cormorant SC',serif;font-size:clamp(7px,.85cqw,11px);
-      letter-spacing:.18em;text-transform:uppercase;color:#dbe5ed;
-      text-shadow:0 1px 3px #000,0 0 8px rgba(0,0,0,.9);white-space:nowrap}
-    .work .wv{font-family:'Cinzel',serif;font-size:clamp(9px,1.1cqw,14px);
-      color:var(--gold);text-shadow:0 1px 3px #000;font-variant-numeric:tabular-nums}
-    .work .wbar{height:3px;width:clamp(40px,5.5cqw,78px);margin:1px auto 0;
-      background:rgba(0,0,0,.65);border:1px solid rgba(0,0,0,.8)}
+    .work .wn{font-family:'Cormorant SC',serif;font-size:clamp(7px,.82cqw,11px);
+      letter-spacing:.16em;text-transform:uppercase;color:#dde6ee;
+      text-shadow:0 1px 3px #000,0 0 9px rgba(0,0,0,.95);white-space:nowrap}
+    .work .wv{font-family:'Cinzel',serif;font-size:clamp(9px,1cqw,13px);color:var(--gold);
+      text-shadow:0 1px 3px #000;font-variant-numeric:tabular-nums}
+    .work .wbar{height:3px;width:clamp(38px,5cqw,74px);margin:1px auto 0;background:rgba(0,0,0,.7)}
     .work .wbar i{display:block;height:100%;background:var(--frost)}
     .work.theirs .wbar i{background:var(--blood-lt)}
-    .work.fallen{opacity:.45}
-    .work.fallen .wv{color:var(--blood-lt)}
+    .work.fallen{opacity:.4} .work.fallen .wv{color:var(--blood-lt)}
     .work.aim{pointer-events:auto;cursor:crosshair}
-    .work.aim .wn{color:#ffd9b0}
-    .work.aim::after{content:'';position:absolute;inset:-8px -12px;
-      border:1px solid rgba(198,90,82,.8);border-radius:4px;
-      box-shadow:0 0 18px rgba(198,90,82,.45)}
+    .work.aim::after{content:'';position:absolute;inset:-7px -11px;
+      border:1px solid rgba(198,90,82,.85);box-shadow:0 0 18px rgba(198,90,82,.5)}
 
-    /* a small standard where a middle has been taken */
-    .flag{position:absolute;transform:translate(-50%,-50%);width:14px;height:18px;
-      pointer-events:none;transition:opacity .3s}
-    .flag::before{content:'';position:absolute;left:5px;top:0;width:1.5px;height:18px;
-      background:linear-gradient(180deg,#d8e2ea,#5a6873)}
-    .flag::after{content:'';position:absolute;left:6px;top:1px;width:9px;height:7px;
-      background:var(--fc,#7fb3dd);clip-path:polygon(0 0,100% 0,100% 100%,0 100%,25% 50%)}
-    .flag.o1{--fc:#c65a52}
+    /* a standard where a control point has been taken */
+    .std{position:absolute;transform:translate(-50%,-100%);width:13px;height:20px;
+      pointer-events:none}
+    .std::before{content:'';position:absolute;left:5px;bottom:0;width:1.5px;height:20px;
+      background:linear-gradient(180deg,#e2ebf2,#4a5660)}
+    .std::after{content:'';position:absolute;left:6px;top:0;width:9px;height:7px;
+      background:var(--fc,#7fb3dd);clip-path:polygon(0 0,100% 0,100% 100%,0 100%,28% 50%);
+      box-shadow:0 0 8px rgba(0,0,0,.7)}
+    .std.o1{--fc:#c65a52}
 
-    /* ── developer markers, for checking the geography ── */
-    .mark{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;
-      cursor:grab;z-index:40;display:flex;flex-direction:column;align-items:center}
+    /* ── developer view ── */
+    .mark{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;cursor:grab;
+      display:flex;flex-direction:column;align-items:center}
     .mark.drag{cursor:grabbing;z-index:60}
-    .mark i{display:block;width:12px;height:12px;border-radius:50%;
-      background:rgba(201,162,74,.9);border:1.5px solid #05080b;
-      box-shadow:0 0 0 1px rgba(201,162,74,.6),0 0 10px rgba(201,162,74,.5)}
-    .mark.keep i{background:rgba(127,179,221,.95)}
-    .mark.foe i{background:rgba(198,90,82,.95)}
-    .mark span{font-family:'Cormorant SC',serif;font-size:9px;letter-spacing:.12em;
-      color:#fff;background:rgba(4,7,10,.82);padding:1px 4px;margin-top:2px;
-      white-space:nowrap;border:1px solid rgba(201,162,74,.35)}
+    .mark i{width:11px;height:11px;border-radius:50%;background:rgba(201,162,74,.95);
+      border:1.5px solid #05080b;box-shadow:0 0 9px rgba(201,162,74,.6)}
+    .mark.keep i{background:#7fb3dd} .mark.foe i{background:#c65a52}
+    .mark.mons i{background:#c65a52;box-shadow:0 0 10px rgba(198,90,82,.85)}
+    .mark.ctrl i{background:#6fd0e8;box-shadow:0 0 10px rgba(111,208,232,.85)}
+    .mark span{font-family:'Cormorant SC',serif;font-size:9px;letter-spacing:.1em;color:#fff;
+      background:rgba(4,7,10,.85);padding:1px 4px;margin-top:2px;white-space:nowrap;
+      border:1px solid rgba(201,162,74,.35)}
+    .hitbox{position:absolute;transform:translate(-50%,-50%);border-radius:50%;
+      border:1px dashed rgba(111,208,232,.35);pointer-events:none}
+    .debug svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 
-    /* ── the HUD: around the painting, never over its middle ── */
-    .hud{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;
-      padding:.4rem .6rem;background:linear-gradient(180deg,#080d13,#05080b);
-      border-bottom:1px solid var(--line);flex:0 0 auto;
-      padding-top:calc(.4rem + env(safe-area-inset-top,0px))}
-    .who{font-family:'Cinzel',serif;font-size:.85rem;color:var(--bright)}
+    /* ── HUD ── */
+    .hud{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;padding:.35rem .55rem;
+      background:linear-gradient(180deg,#080d13,#05080b);border-bottom:1px solid var(--line);
+      flex:0 0 auto;padding-top:calc(.35rem + env(safe-area-inset-top,0px))}
+    .who{font-family:'Cinzel',serif;font-size:.82rem;color:var(--bright)}
     .who.p1{color:var(--p1)} .who.p0{color:var(--p0)}
     .phases{display:flex;gap:2px}
-    .ph{font-family:'Cormorant SC',serif;font-size:.54rem;letter-spacing:.14em;
-      text-transform:uppercase;color:var(--dim);padding:.16rem .34rem;
-      border:1px solid transparent}
+    .ph{font-family:'Cormorant SC',serif;font-size:.52rem;letter-spacing:.13em;
+      text-transform:uppercase;color:var(--dim);padding:.15rem .32rem;border:1px solid transparent}
     .ph.on{color:#080e14;background:var(--gold);border-color:var(--gold)}
-    .muster{display:flex;align-items:center;gap:3px;font-variant-numeric:tabular-nums;
-      color:var(--gold);font-size:.78rem}
-    .pip{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.14);
+    .muster{display:flex;align-items:center;gap:3px;color:var(--gold);font-size:.76rem;
+      font-variant-numeric:tabular-nums}
+    .pip{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.12);
       border:1px solid rgba(201,162,74,.4)}
-    .pip.on{background:var(--gold);box-shadow:0 0 6px rgba(201,162,74,.7)}
-    .hud .right{margin-left:auto;display:flex;gap:.4rem;align-items:center}
-
-    .cam{display:flex;gap:2px;padding:.3rem .6rem;background:#05080b;
+    .pip.on{background:var(--gold);box-shadow:0 0 5px rgba(201,162,74,.7)}
+    .hud .right{margin-left:auto;display:flex;gap:.35rem;align-items:center}
+    .cam{display:flex;gap:2px;padding:.28rem .55rem;background:#05080b;
       border-top:1px solid var(--line);overflow-x:auto;flex:0 0 auto}
-    .cam button{font-family:'Cormorant SC',serif;font-size:.54rem;letter-spacing:.14em;
-      text-transform:uppercase;padding:.28rem .5rem;white-space:nowrap;flex:1}
-    .cam button.on{border-color:var(--gold);color:var(--bright)}
+    .cam button{font-family:'Cormorant SC',serif;font-size:.52rem;letter-spacing:.13em;
+      text-transform:uppercase;padding:.26rem .45rem;white-space:nowrap;flex:1}
 
-    /* ── the hand, held at the bottom edge ── */
-    .tray{flex:0 0 auto;background:linear-gradient(180deg,#05080b,#080d13);
-      border-top:1px solid var(--line);padding:.3rem .5rem;
-      padding-bottom:calc(.4rem + env(safe-area-inset-bottom,0px))}
-    .trayhead{display:flex;align-items:baseline;gap:.5rem;margin-bottom:.2rem}
-    .cards{display:flex;gap:.3rem;overflow-x:auto;padding:.35rem .1rem .2rem;
-      scrollbar-width:thin;align-items:flex-end}
-    .card{position:relative;flex:0 0 72px;width:72px;height:104px;padding:0;
-      text-align:center;display:block;cursor:pointer;
-      background:linear-gradient(170deg,#1b2733,#0a1017);
-      border:1px solid var(--edge,rgba(160,182,200,.4));
-      box-shadow:0 3px 9px rgba(0,0,0,.6)}
-    .card.r-rare{--edge:rgba(96,140,180,.8)}
-    .card.r-epic{--edge:rgba(150,110,190,.8)}
-    .card.r-legendary{--edge:rgba(201,162,74,.9)}
-    .card.r-mythical{--edge:rgba(228,199,124,1)}
-    .card .cost{position:absolute;top:-6px;left:-6px;width:21px;height:21px;
-      border-radius:50%;display:grid;place-items:center;z-index:2;
-      font-family:'Cinzel',serif;font-size:.66rem;color:#04101a;
-      background:linear-gradient(180deg,#a8d6ef,#3b7ea8);border:1px solid rgba(0,0,0,.7)}
+    /* ── the hand: plainly the player's, not part of the valley ── */
+    .tray{flex:0 0 auto;background:linear-gradient(180deg,#0a1017,#04070a);
+      border-top:1px solid rgba(201,162,74,.3);padding:.25rem .5rem;
+      padding-bottom:calc(.35rem + env(safe-area-inset-bottom,0px));
+      box-shadow:0 -8px 24px rgba(0,0,0,.6)}
+    .cards{display:flex;gap:.3rem;overflow-x:auto;padding:.4rem .1rem .2rem;align-items:flex-end}
+    .card{position:relative;flex:0 0 70px;width:70px;height:100px;padding:0;text-align:center;
+      display:block;cursor:pointer;background:linear-gradient(170deg,#1b2733,#0a1017);
+      border:1px solid var(--edge,rgba(160,182,200,.4));box-shadow:0 3px 9px rgba(0,0,0,.6);
+      transition:transform .13s,box-shadow .13s}
+    .card.r-rare{--edge:rgba(96,140,180,.8)} .card.r-epic{--edge:rgba(150,110,190,.8)}
+    .card.r-legendary{--edge:rgba(201,162,74,.9)} .card.r-mythical{--edge:rgba(228,199,124,1)}
+    .card .cost{position:absolute;top:-6px;left:-6px;width:20px;height:20px;border-radius:50%;
+      display:grid;place-items:center;z-index:2;font-family:'Cinzel',serif;font-size:.64rem;
+      color:#04101a;background:linear-gradient(180deg,#a8d6ef,#3b7ea8);border:1px solid rgba(0,0,0,.7)}
     .card .cost.isfree{background:linear-gradient(180deg,#ecd79c,#c9a24a)}
-    .hart{display:block;height:54px;background-size:cover;background-position:center top;
+    .hart{display:block;height:52px;background-size:cover;background-position:center top;
       background-color:#16202a;border-bottom:1px solid rgba(0,0,0,.6);
-      font-family:'Cinzel',serif;font-size:1.3rem;color:#8d9aa6;line-height:54px}
+      font-family:'Cinzel',serif;font-size:1.25rem;color:#8d9aa6;line-height:52px}
     .hart.none{background-image:linear-gradient(160deg,#243441,#0e1720)}
-    .hname{display:block;padding:.2rem .15rem 0;font-family:'Cinzel',serif;
-      font-size:.5rem;line-height:1.2;color:var(--bright);max-height:2.4em;overflow:hidden}
-    .hst{display:block;font-family:'Cinzel',serif;font-size:.54rem;color:var(--dim);
-      margin-top:.1rem;font-variant-numeric:tabular-nums}
-    .card.sel{transform:translateY(-8px);border-color:var(--gold);
+    .hname{display:block;padding:.18rem .14rem 0;font-family:'Cinzel',serif;font-size:.48rem;
+      line-height:1.2;color:var(--bright);max-height:2.4em;overflow:hidden}
+    .hst{display:block;font-family:'Cinzel',serif;font-size:.52rem;color:var(--dim);
+      font-variant-numeric:tabular-nums}
+    .card.sel{transform:translateY(-9px);border-color:var(--gold);
       box-shadow:0 0 0 1px var(--gold),0 10px 18px rgba(0,0,0,.7)}
-    .card.cant{opacity:.34;cursor:not-allowed;filter:grayscale(.55)}
+    .card.cant{opacity:.32;cursor:not-allowed;filter:grayscale(.55)}
 
     .toast{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);
-      background:rgba(4,7,10,.9);border:1px solid var(--line);padding:.3rem .7rem;
+      background:rgba(4,7,10,.9);border:1px solid var(--line);padding:.28rem .7rem;
       font-size:.78rem;color:var(--bright);pointer-events:none;z-index:50;
       max-width:92%;text-align:center}
+
+    /* inspection: the full card, away from the battlefield */
+    .look{position:fixed;inset:0;z-index:100;display:grid;place-items:center;
+      background:rgba(4,7,10,.8);padding:1rem}
+    .look .sheet{max-width:320px;width:100%;background:linear-gradient(170deg,#141d27,#080d13);
+      border:1px solid var(--edge,rgba(201,162,74,.5));box-shadow:0 20px 50px rgba(0,0,0,.85)}
+    .look .big{height:190px;background-size:cover;background-position:center top;
+      background-color:#16202a;border-bottom:1px solid rgba(0,0,0,.7)}
+    .look .body{padding:.8rem .9rem 1rem}
+    .look h3{font-size:1.1rem;margin-bottom:.15rem}
+    .look .rr{font-family:'Cormorant SC',serif;font-size:.62rem;letter-spacing:.2em;
+      text-transform:uppercase;color:var(--gold)}
+    .look .nums{display:flex;gap:1.1rem;margin:.55rem 0;font-family:'Cinzel',serif;
+      font-size:.95rem;font-variant-numeric:tabular-nums}
+    .look .nums b{color:var(--bright);font-weight:400}
+    .look p{font-style:italic;color:var(--dim);font-size:.92rem;margin:0 0 .8rem}
     .verdict{position:absolute;inset:0;display:grid;place-items:center;z-index:70;
-      background:rgba(4,7,10,.82);text-align:center;padding:1rem}
+      background:rgba(4,7,10,.85);text-align:center;padding:1rem}
     .verdict h2{font-size:clamp(1.3rem,5vw,2rem);margin-bottom:.4rem}
 
     @media (max-width:700px){
-      .card{flex:0 0 64px;width:64px;height:94px}
-      .hart{height:48px;line-height:48px}
+      .card{flex:0 0 62px;width:62px;height:90px}
+      .hart{height:46px;line-height:46px}
     }
   </style>
 </head>
 <body>
 
-<!-- ── mustering ────────────────────────────────────────────────────── -->
 <div class="wrap" id="setupScreen">
   <header class="top">
     <h1>Blood of Icetear: Citadel Wars</h1>
@@ -252,8 +252,7 @@ const map = MAPS[DEFAULT_MAP];
   <p style="max-width:58ch;margin-bottom:1rem">
     Post your Guardians before a shot is fired. You have
     <b style="color:var(--gold)">{GUARDIAN_BUDGET} points</b> across all three gates, and a
-    Guardian costs whatever their rarity is worth in hit points. Whoever stands
-    on the wall is not in your deck.
+    Guardian costs whatever their rarity is worth in hit points.
   </p>
   <div class="setup" id="setupCols"></div>
   <div style="margin-top:1.2rem;display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
@@ -264,14 +263,13 @@ const map = MAPS[DEFAULT_MAP];
   </div>
 </div>
 
-<!-- ── the battlefield ──────────────────────────────────────────────── -->
 <div class="battle" id="battleScreen" hidden>
   <div class="hud">
     <span class="who" id="who"></span>
     <div class="phases" id="phaseBar"></div>
     <span class="muster" id="musterNow"></span>
     <div class="right">
-      <button type="button" id="btnNodes" title="Show the gameplay positions">Nodes</button>
+      <button type="button" id="btnDebug">Debug</button>
       <button type="button" id="btnLeave">Leave</button>
       <button type="button" id="btnNext" class="primary">Next</button>
     </div>
@@ -280,7 +278,9 @@ const map = MAPS[DEFAULT_MAP];
   <div class="viewport" id="viewport">
     <div class="stage" id="stage">
       <img id="plate" src={map.image} alt="The battlefield before the Great Gate" />
-      <div id="layer"></div>
+      <div class="entities" id="entities"></div>
+      <div class="interface" id="iface"></div>
+      <div class="debug" id="debugLayer" hidden></div>
     </div>
     <div class="toast" id="toast" hidden></div>
     <div class="verdict" id="verdict" hidden><div><h2 id="verdictName"></h2><p id="verdictNote"></p>
@@ -290,21 +290,24 @@ const map = MAPS[DEFAULT_MAP];
   <div class="cam" id="cam"></div>
 
   <div class="tray">
-    <div class="trayhead"><span class="lbl" id="handLabel"></span></div>
+    <span class="lbl" id="handLabel"></span>
     <div class="cards" id="handCards"></div>
   </div>
 </div>
 
+<div class="look" id="look" hidden></div>
+
 <script>
   import {
-    newGame, quickArmy, rngFrom, LANES, laneOf, trackOf, middleOf, homeOf,
-    deploy, canDeploy, move, canMove, attack, targetsFor, advance, wallFor,
+    newGame, quickArmy, rngFrom, LANES, laneOf, trackOf, middleOf, homeOf, stepOf,
+    deploy, canDeploy, move, canMove, attack, targetsFor, advance,
     guardianSpend, validateArmy, guardianCost, GUARDIAN_BUDGET,
     cardOf, PHASES, PHASE_NAME, MUSTER_MAX,
   } from '../../lib/battle.js';
   import { playPhase } from '../../lib/battle-ai.js';
-  import { CARDS, RARITY, statsOf, artOf } from '../../data/battle-cards.js';
-  import { MAPS, DEFAULT_MAP, nodeId, markerLabel } from '../../data/battlefield-map.js';
+  import { CARDS, statsOf, artOf, monsterArt } from '../../data/battle-cards.js';
+  import { MAPS, DEFAULT_MAP, nodeId, markerLabel, formation, DROP_RADIUS }
+    from '../../data/battlefield-map.js';
 
   const MAP = MAPS[DEFAULT_MAP];
   const $ = (id) => document.getElementById(id);
@@ -315,25 +318,21 @@ const map = MAPS[DEFAULT_MAP];
     return n;
   };
   const pause = (ms) => new Promise((r) => setTimeout(r, ms));
-
   const NAMES = ['Your Host', 'The Keep'];
+  const DRAG_THRESHOLD = 7;     // below this, a press is a look rather than a move
+
   let armies = [null, null];
   let game = null;
   let aiSide = null, aiBusy = false;
   let picked = null, pickedFree = false;
   let selected = null;
-  let showNodes = false;
-  // the near army is always the bottom of the painting: the picture does not
-  // turn round, so a second player fights from the far end
+  let debugOn = false;
+  let dragging = null;
+
   const viewSide = () => 0;
   const yourTurn = () => game && game.winner === null && !aiBusy &&
     (aiSide === null || game.current === viewSide());
-
-  const say = (text) => {
-    const t = $('toast');
-    t.textContent = text || '';
-    t.hidden = !text;
-  };
+  const say = (t) => { const n = $('toast'); n.textContent = t || ''; n.hidden = !t; };
 
   // ── mustering ─────────────────────────────────────────────────────
   const POSTS = [
@@ -395,23 +394,19 @@ const map = MAPS[DEFAULT_MAP];
   }
 
   // ── the camera ────────────────────────────────────────────────────
-  // The painting never re-renders and is never stretched. The camera is a
-  // transform on the stage, so moving about costs nothing.
   let cam = { scale: 1, x: 0, y: 0 };
   const VIEWS = [
-    { id: 'all', label: 'Whole field', to: { fx: 0.5, fy: 0.5, z: null } },
-    { id: 'mine', label: 'My keep', to: { fx: 0.5, fy: 0.80, z: 1.9 } },
-    { id: 'left', label: 'Left road', to: { fx: 0.20, fy: 0.42, z: 1.8 } },
-    { id: 'centre', label: 'Centre', to: { fx: 0.49, fy: 0.42, z: 1.7 } },
-    { id: 'right', label: 'Right road', to: { fx: 0.83, fy: 0.42, z: 1.8 } },
-    { id: 'theirs', label: 'Their keep', to: { fx: 0.5, fy: 0.13, z: 1.9 } },
+    { id: 'all', label: 'Whole field', fx: 0.5, fy: 0.5, z: null },
+    { id: 'mine', label: 'My keep', fx: 0.5, fy: 0.80, z: 1.9 },
+    { id: 'left', label: 'Left route', fx: 0.20, fy: 0.42, z: 1.8 },
+    { id: 'centre', label: 'Centre', fx: 0.49, fy: 0.42, z: 1.7 },
+    { id: 'right', label: 'Right route', fx: 0.83, fy: 0.42, z: 1.8 },
+    { id: 'theirs', label: 'Their keep', fx: 0.5, fy: 0.13, z: 1.9 },
   ];
   let view = 'all';
 
-  /** Fit the painting inside the viewport without ever distorting it. */
   function layoutStage() {
-    const vp = $('viewport');
-    const stage = $('stage');
+    const vp = $('viewport'), stage = $('stage');
     const w = vp.clientWidth, h = vp.clientHeight;
     if (!w || !h) return;
     const ar = MAP.width / MAP.height;
@@ -419,55 +414,38 @@ const map = MAPS[DEFAULT_MAP];
     if (sh > h) { sh = h; sw = h * ar; }
     stage.style.width = sw + 'px';
     stage.style.height = sh + 'px';
-    stage.style.containerType = 'inline-size';
     applyCam();
   }
-
-  function applyCam() {
-    const { scale, x, y } = cam;
+  const applyCam = () => {
     $('stage').style.transform =
-      `translate(-50%,-50%) translate(${x}px,${y}px) scale(${scale})`;
-  }
-
-  /**
-   * The zoom at which the painting fills the viewport in both directions.
-   * On a wide screen that is 1, and the whole battlefield is visible. On a
-   * phone the painting is far wider than it is tall, so at 1 it would sit in
-   * a thin band with dead space above and below; this fills the screen and
-   * leaves the player to pan across, which is the point of a battlefield.
-   */
+      `translate(-50%,-50%) translate(${cam.x}px,${cam.y}px) scale(${cam.scale})`;
+  };
   function fitZoom() {
     const vp = $('viewport'), stage = $('stage');
     if (!stage.clientHeight) return 1;
-    // Height only, never width. A wide screen already shows the whole field
-    // once the painting is fitted, and filling the width there would zoom in
-    // and cut off both keeps. A phone is the opposite case: the painting
-    // sits in a thin band, so it is grown until it fills and panned across.
+    // Height only. A wide screen already shows the whole field once fitted,
+    // and filling the width there would cut off both keeps; a phone would
+    // otherwise leave the painting in a thin band.
     return Math.max(1, Math.min(2.6, vp.clientHeight / stage.clientHeight));
   }
-
-  /** Put a fraction of the painting in the middle of the viewport. */
-  function lookAt(fx, fy, z) {
-    const stage = $('stage');
-    const sw = stage.clientWidth, sh = stage.clientHeight;
-    cam.scale = z;
-    cam.x = (0.5 - fx) * sw * z;
-    cam.y = (0.5 - fy) * sh * z;
-    clampCam();
-    $('stage').style.transition = 'transform .45s cubic-bezier(.4,0,.2,1)';
-    applyCam();
-    setTimeout(() => { $('stage').style.transition = ''; }, 460);
-  }
-
   function clampCam() {
     const vp = $('viewport'), stage = $('stage');
     const sw = stage.clientWidth * cam.scale, sh = stage.clientHeight * cam.scale;
-    const maxX = Math.max(0, (sw - vp.clientWidth) / 2);
-    const maxY = Math.max(0, (sh - vp.clientHeight) / 2);
-    cam.x = Math.max(-maxX, Math.min(maxX, cam.x));
-    cam.y = Math.max(-maxY, Math.min(maxY, cam.y));
+    const mx = Math.max(0, (sw - vp.clientWidth) / 2);
+    const my = Math.max(0, (sh - vp.clientHeight) / 2);
+    cam.x = Math.max(-mx, Math.min(mx, cam.x));
+    cam.y = Math.max(-my, Math.min(my, cam.y));
   }
-
+  function lookAt(fx, fy, z) {
+    const stage = $('stage');
+    cam.scale = z;
+    cam.x = (0.5 - fx) * stage.clientWidth * z;
+    cam.y = (0.5 - fy) * stage.clientHeight * z;
+    clampCam();
+    stage.style.transition = 'transform .45s cubic-bezier(.4,0,.2,1)';
+    applyCam();
+    setTimeout(() => { stage.style.transition = ''; }, 470);
+  }
   function drawCam() {
     const root = $('cam');
     root.innerHTML = '';
@@ -475,58 +453,57 @@ const map = MAPS[DEFAULT_MAP];
       const b = el('button', view === v.id ? 'on' : '', v.label);
       b.type = 'button';
       b.addEventListener('click', () => {
-        view = v.id;
-        lookAt(v.to.fx, v.to.fy, v.to.z === null ? fitZoom() : v.to.z);
-        drawCam();
+        view = v.id; lookAt(v.fx, v.fy, v.z === null ? fitZoom() : v.z); drawCam();
       });
       root.appendChild(b);
     }
   }
-
-  // dragging the field about
-  let drag = null;
-  function wireDrag() {
-    const vp = $('viewport');
-    vp.addEventListener('pointerdown', (e) => {
-      if (e.target.closest('.pawn,.spot,.work,.mark')) return;
-      drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y };
-      vp.setPointerCapture(e.pointerId);
+  // panning the field, but never while a character is in hand
+  let pan = null;
+  function wirePan() {
+    $('viewport').addEventListener('pointerdown', (e) => {
+      if (dragging || e.target.closest('.pawn,.work,.mark,.ring')) return;
+      pan = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y };
     });
-    vp.addEventListener('pointermove', (e) => {
-      if (!drag) return;
-      cam.x = drag.cx + (e.clientX - drag.x);
-      cam.y = drag.cy + (e.clientY - drag.y);
+    window.addEventListener('pointermove', (e) => {
+      if (!pan || dragging) return;
+      cam.x = pan.cx + (e.clientX - pan.x);
+      cam.y = pan.cy + (e.clientY - pan.y);
       clampCam(); applyCam();
     });
-    const stop = () => { drag = null; };
-    vp.addEventListener('pointerup', stop);
-    vp.addEventListener('pointercancel', stop);
+    window.addEventListener('pointerup', () => { pan = null; });
   }
 
-  // ── placing things on the painting ────────────────────────────────
-  const put = (node, x, y) => {
-    node.style.left = (x * 100) + '%';
-    node.style.top = (y * 100) + '%';
-  };
-
+  // ── geometry ──────────────────────────────────────────────────────
+  const put = (n, x, y) => { n.style.left = (x * 100) + '%'; n.style.top = (y * 100) + '%'; };
+  function pointerOnStage(e) {
+    const box = $('stage').getBoundingClientRect();
+    return { x: (e.clientX - box.left) / box.width, y: (e.clientY - box.top) / box.height };
+  }
   /**
-   * A small formation, so several characters on one piece of ground look
-   * like an army holding it rather than cards stacked in a div.
+   * Distance in width-units, so the drop area is a circle on the ground
+   * rather than an ellipse. Measured from the node's centre and never from
+   * a DOM box, which is what lets a node accept a drop while characters are
+   * already standing on it.
    */
-  function spread(n, i) {
-    if (n <= 1) return { dx: 0, dy: 0 };
-    const perRow = n <= 3 ? n : Math.ceil(n / 2);
-    const row = Math.floor(i / perRow);
-    const col = i % perRow;
-    const inRow = Math.min(perRow, n - row * perRow);
-    return { dx: (col - (inRow - 1) / 2) * 0.62, dy: row * 0.42 };
+  function apart(a, b) {
+    const k = MAP.height / MAP.width;
+    return Math.hypot(a.x - b.x, (a.y - b.y) * k);
+  }
+  /** The one position a character may step to, or null. */
+  function stepTarget(laneKey, uid) {
+    if (canMove(game, laneKey, uid)) return null;
+    const u = game.lanes[laneKey].units.find((x) => x.uid === uid);
+    return u ? { lane: laneKey, pos: u.pos + stepOf(u.owner) } : null;
   }
 
-  function pawnFor(laneKey, u) {
+  // ── LAYER 2: entities ─────────────────────────────────────────────
+  function pawnOf(laneKey, u) {
     const card = cardOf(u.cardId);
     const done = u.owner === game.current && u.acted && u.moved;
     const b = el('button', 'pawn o' + u.owner + ' r-' + card.rarity.toLowerCase() +
-      (selected && selected.uid === u.uid ? ' sel' : '') + (done ? ' spent' : ''));
+      (selected && selected.uid === u.uid ? ' sel' : '') + (done ? ' spent' : '') +
+      (dragging && dragging.uid === u.uid ? ' ghost' : ''));
     b.type = 'button';
     b.dataset.uid = u.uid;
     const face = el('span', 'face');
@@ -535,31 +512,34 @@ const map = MAPS[DEFAULT_MAP];
     b.appendChild(face);
     b.appendChild(el('span', 'atk', String(u.atk)));
     b.appendChild(el('span', 'hp', String(u.hp)));
-    b.title = `${card.name} — ${card.rarity}. ${u.atk} attack, ${u.hp} of ${u.maxHp}. ${card.note}`;
+    b.title = `${card.name} — ${card.rarity}. ${u.atk} attack, ${u.hp} of ${u.maxHp}.`;
     b.setAttribute('aria-label', b.title);
-    b.addEventListener('click', (e) => { e.stopPropagation(); onPawn(laneKey, u); });
+    wirePawn(b, laneKey, u);
     return b;
   }
 
-  function monsterPawn(laneKey, m) {
+  function monsterOf(m) {
     const b = el('button', 'pawn mon');
     b.type = 'button';
     b.dataset.uid = m.uid;
     const face = el('span', 'face');
-    face.style.backgroundImage = 'linear-gradient(160deg,#3a2118,#160b07)';
+    face.style.backgroundImage = `url(${monsterArt(m.mid)})`;
     b.appendChild(face);
     b.appendChild(el('span', 'atk', String(m.atk)));
     b.appendChild(el('span', 'hp', String(m.hp)));
-    b.title = `${m.name} — ${m.atk} attack, ${m.hp} of ${m.maxHp}. It answers whenever struck.`;
+    b.title = `${m.name} — ${m.atk} attack, ${m.hp} of ${m.maxHp}.`;
     b.setAttribute('aria-label', b.title);
-    b.addEventListener('click', (e) => { e.stopPropagation(); onTarget(m.uid); });
+    b.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (selected && game.phase === 'action') strike(m.uid);
+      else inspectMonster(m);
+    });
     return b;
   }
 
-  /** The gates, commanders and citadels, as plaques under the painted stone. */
-  function workFor(id, side, label, hp, maxHp, aimable) {
-    const w = el('div', 'work' + (side === 1 ? ' theirs' : '') +
-      (hp <= 0 ? ' fallen' : '') + (aimable ? ' aim' : ''));
+  function workOf(side, label, hp, maxHp, aim, onAim) {
+    const w = el('div', 'work' + (side === 1 ? ' theirs' : '') + (hp <= 0 ? ' fallen' : '') +
+      (aim ? ' aim' : ''));
     w.appendChild(el('span', 'wn', label));
     w.appendChild(el('span', 'wv', String(Math.max(0, Math.round(hp)))));
     const bar = el('div', 'wbar');
@@ -567,55 +547,18 @@ const map = MAPS[DEFAULT_MAP];
     i.style.width = Math.max(0, Math.min(100, (hp / maxHp) * 100)) + '%';
     bar.appendChild(i);
     w.appendChild(bar);
+    if (aim && onAim) w.addEventListener('click', onAim);
     return w;
   }
 
-  function drawBoard() {
-    const layer = $('layer');
-    layer.innerHTML = '';
+  function drawEntities() {
+    const root = $('entities');
+    root.innerHTML = '';
     const targets = selected && game.phase === 'action'
       ? targetsFor(game, selected.lane, selected.uid) : [];
     const canHit = (uid) => targets.some((t) => t.uid === uid);
-    const wallTarget = targets.find((t) => ['gate', 'commander', 'citadel'].includes(t.kind));
+    const wallT = targets.find((t) => ['gate', 'commander', 'citadel'].includes(t.kind));
 
-    // the keeps
-    for (let side = 0; side < 2; side++) {
-      const p = game.players[side];
-      const nGreat = MAP.nodes[nodeId('centre', side === 0 ? 0 : trackOf(laneOf('centre')) - 1)];
-      const great = workFor('great', side, 'The Great Gate', p.greatGate.hp, p.greatGate.maxHp,
-        wallTarget && selected && selected.lane === 'centre' && side !== viewSide() && p.greatGate.hp > 0);
-      put(great, nGreat.x, nGreat.y);
-      if (great.classList.contains('aim')) great.addEventListener('click', () => onTarget('gate'));
-      layer.appendChild(great);
-
-      for (const [i, laneKey] of ['left', 'right'].entries()) {
-        const g = p.highGates[i];
-        const n = MAP.nodes[nodeId(laneKey, side === 0 ? 0 : trackOf(laneOf(laneKey)) - 1)];
-        const aim = wallTarget && selected && selected.lane === laneKey && side !== viewSide() && g.hp > 0;
-        const w = workFor('high', side, 'High Gate', g.hp, g.maxHp, aim);
-        put(w, n.x, n.y);
-        if (aim) w.addEventListener('click', () => onTarget('gate'));
-        layer.appendChild(w);
-      }
-
-      const nc = MAP.nodes[`commander:${side}`];
-      const cmdAim = wallTarget && wallTarget.kind === 'commander' && side !== viewSide();
-      const cw = workFor('cmd', side, cardOf(p.commander.cardId).name,
-        p.commander.hp, p.commander.maxHp, cmdAim);
-      put(cw, nc.x, nc.y);
-      if (cmdAim) cw.addEventListener('click', () => onTarget('commander'));
-      layer.appendChild(cw);
-
-      const ncit = MAP.nodes[`citadel:${side}`];
-      const citAim = wallTarget && wallTarget.kind === 'citadel' && side !== viewSide();
-      const cit = workFor('cit', side, side === viewSide() ? 'Your Citadel' : 'Their Citadel',
-        p.citadel, 100, citAim);
-      put(cit, ncit.x, ncit.y);
-      if (citAim) cit.addEventListener('click', () => onTarget('citadel'));
-      layer.appendChild(cit);
-    }
-
-    // the roads
     for (const lane of LANES) {
       const track = trackOf(laneOf(lane.key));
       const l = game.lanes[lane.key];
@@ -623,136 +566,223 @@ const map = MAPS[DEFAULT_MAP];
       for (let pos = 0; pos < track; pos++) {
         const n = MAP.nodes[nodeId(lane.key, pos)];
         if (!n) continue;
-        const here = l.units.filter((u) => u.pos === pos);
         const mons = l.monsters.filter((m) => m.pos === pos && m.hp > 0);
-        const crewSize = here.length + mons.length;
-
-        const open = picked && yourTurn() && game.phase === 'main' &&
-          pos === homeOf(laneOf(lane.key), game.current) &&
-          !canDeploy(game, lane.key, picked, { free: pickedFree });
-        const stepHere = selected && game.phase === 'move' &&
-          selected.lane === lane.key && !canMove(game, lane.key, selected.uid) &&
-          pos === (l.units.find((u) => u.uid === selected.uid) || {}).pos +
-            (game.current === 0 ? 1 : -1);
-
-        const node = el('div', 'node' + (open || stepHere ? ' open' : ''));
-        put(node, n.x, n.y);
-        const spot = el('div', 'spot');
-        if (open) spot.addEventListener('click', () => {
-          const why = deploy(game, lane.key, picked, { free: pickedFree });
-          if (why) { say(why); return; }
-          picked = null; pickedFree = false; say('');
-          render();
+        const units = l.units.filter((u) => u.pos === pos);
+        const crew = [...mons.map((m) => ({ mon: m })), ...units.map((u) => ({ unit: u }))];
+        const spots = formation(crew.length);
+        const step = 0.030;                       // one node unit, in board width
+        crew.forEach((c, i) => {
+          const o = spots[i];
+          const pawn = c.mon ? monsterOf(c.mon) : pawnOf(lane.key, c.unit);
+          if (canHit(c.mon ? c.mon.uid : c.unit.uid)) pawn.classList.add('tgt');
+          put(pawn, n.x + o.dx * step, n.y + o.dy * step * (MAP.width / MAP.height) + 0.014);
+          // a figure standing behind sits under the one in front
+          pawn.style.zIndex = String(10 + Math.round(o.dy * 12));
+          root.appendChild(pawn);
         });
-        if (stepHere) spot.addEventListener('click', () => {
-          move(game, lane.key, selected.uid);
-          selected = null; render();
-        });
-        node.appendChild(spot);
-
-        if (crewSize) {
-          const crew = el('div', 'crew');
-          let i = 0;
-          for (const m of mons) {
-            const pw = monsterPawn(lane.key, m);
-            if (canHit(m.uid)) pw.classList.add('tgt');
-            crew.appendChild(pw); i++;
-          }
-          for (const u of here) {
-            const pw = pawnFor(lane.key, u);
-            if (canHit(u.uid)) pw.classList.add('tgt');
-            crew.appendChild(pw); i++;
-          }
-          node.appendChild(crew);
-        }
-        layer.appendChild(node);
-
-        // a standard where a middle has been taken
         if (pos === mid && l.holder !== null) {
-          const f = el('div', 'flag' + (l.holder === 1 ? ' o1' : ''));
-          put(f, n.x + 0.022, n.y - 0.022);
-          layer.appendChild(f);
+          const s = el('div', 'std' + (l.holder === 1 ? ' o1' : ''));
+          put(s, n.x + 0.032, n.y - 0.004);
+          root.appendChild(s);
         }
       }
     }
 
-    if (showNodes) drawMarkers(layer);
-  }
+    for (let side = 0; side < 2; side++) {
+      const p = game.players[side];
+      const foe = side !== viewSide();
+      const gn = MAP.nodes[nodeId('centre', side === 0 ? 0 : trackOf(laneOf('centre')) - 1)];
+      const gAim = !!(wallT && wallT.kind === 'gate' && selected.lane === 'centre' && foe && p.greatGate.hp > 0);
+      const g = workOf(side, 'The Great Gate', p.greatGate.hp, p.greatGate.maxHp, gAim, () => strike('gate'));
+      put(g, gn.x, gn.y); root.appendChild(g);
 
-  // ── developer markers ─────────────────────────────────────────────
-  // Only for checking that the geography sits where it should. Drag one and
-  // the new coordinates are kept, so the map can be corrected by eye and
-  // copied straight back into battlefield-map.js.
-  function drawMarkers(layer) {
-    for (const [id, n] of Object.entries(MAP.nodes)) {
-      const m = el('div', 'mark' + (n.side === 0 ? ' keep' : n.side === 1 ? ' foe' : ''));
-      put(m, n.x, n.y);
-      m.appendChild(el('i'));
-      m.appendChild(el('span', null, markerLabel(id)));
-      m.addEventListener('pointerdown', (e) => {
-        e.stopPropagation();
-        m.classList.add('drag');
-        m.setPointerCapture(e.pointerId);
-        const stage = $('stage');
-        const box = stage.getBoundingClientRect();
-        const moveIt = (ev) => {
-          n.x = Math.max(0, Math.min(1, (ev.clientX - box.left) / box.width));
-          n.y = Math.max(0, Math.min(1, (ev.clientY - box.top) / box.height));
-          put(m, n.x, n.y);
-        };
-        const done = () => {
-          m.classList.remove('drag');
-          m.removeEventListener('pointermove', moveIt);
-          say(`${markerLabel(id)} → x ${n.x.toFixed(3)}, y ${n.y.toFixed(3)}`);
-          render(true);
-        };
-        m.addEventListener('pointermove', moveIt);
-        m.addEventListener('pointerup', done, { once: true });
+      ['left', 'right'].forEach((laneKey, i) => {
+        const hg = p.highGates[i];
+        const hn = MAP.nodes[nodeId(laneKey, side === 0 ? 0 : trackOf(laneOf(laneKey)) - 1)];
+        const aim = !!(wallT && wallT.kind === 'gate' && selected.lane === laneKey && foe && hg.hp > 0);
+        const w = workOf(side, 'High Gate', hg.hp, hg.maxHp, aim, () => strike('gate'));
+        put(w, hn.x, hn.y); root.appendChild(w);
       });
-      layer.appendChild(m);
+
+      const cn = MAP.nodes[`commander:${side}`];
+      const cAim = !!(wallT && wallT.kind === 'commander' && foe);
+      const c = workOf(side, cardOf(p.commander.cardId).name, p.commander.hp, p.commander.maxHp,
+        cAim, () => strike('commander'));
+      put(c, cn.x, cn.y); root.appendChild(c);
+
+      const kn = MAP.nodes[`citadel:${side}`];
+      const kAim = !!(wallT && wallT.kind === 'citadel' && foe);
+      const k = workOf(side, foe ? 'Their Citadel' : 'Your Citadel', p.citadel, 100,
+        kAim, () => strike('citadel'));
+      put(k, kn.x, kn.y); root.appendChild(k);
     }
   }
 
-  /** The whole map as it now stands, for pasting back into the source. */
-  window.citadelMap = () => {
-    const out = {};
-    for (const [id, n] of Object.entries(MAP.nodes)) {
-      out[id] = { x: Number(n.x.toFixed(3)), y: Number(n.y.toFixed(3)) };
-    }
-    console.log(JSON.stringify(out, null, 2));
-    return out;
-  };
-
-  // ── choosing things ───────────────────────────────────────────────
-  function onPawn(laneKey, u) {
+  // ── LAYER 3: ground rings, only while something is in hand ────────
+  function drawInterface() {
+    const root = $('iface');
+    root.innerHTML = '';
     if (!yourTurn()) return;
-    if (u.owner !== viewSide()) { onTarget(u.uid); return; }
-    if (game.phase === 'move') {
-      const why = canMove(game, laneKey, u.uid);
-      if (why) { say(why); return; }
-      selected = { lane: laneKey, uid: u.uid };
-      say(`${cardOf(u.cardId).name} may advance. Touch the lit ground.`);
-      render(true);
-      return;
+    const live = [];
+    if (dragging) {
+      const t = stepTarget(dragging.lane, dragging.uid);
+      if (t) live.push(t);
+    } else if (picked && game.phase === 'main') {
+      for (const lane of LANES) {
+        const pos = homeOf(laneOf(lane.key), game.current);
+        if (!canDeploy(game, lane.key, picked, { free: pickedFree })) live.push({ lane: lane.key, pos });
+      }
     }
-    if (game.phase === 'action') {
-      selected = { lane: laneKey, uid: u.uid };
-      const list = targetsFor(game, laneKey, u.uid);
-      say(list.length
-        ? `${cardOf(u.cardId).name} may strike ${list.map((t) => t.label).join(', ')}.`
-        : `${cardOf(u.cardId).name} has nothing in reach.`);
-      render(true);
-      return;
+    for (const t of live) {
+      const n = MAP.nodes[nodeId(t.lane, t.pos)];
+      if (!n) continue;
+      const hot = dragging && dragging.over &&
+        dragging.over.lane === t.lane && dragging.over.pos === t.pos;
+      const ring = el('div', 'ring' + (hot ? ' hot' : ''));
+      put(ring, n.x, n.y);
+      if (!dragging) {
+        ring.style.pointerEvents = 'auto';
+        ring.style.cursor = 'pointer';
+        ring.addEventListener('click', () => {
+          const why = deploy(game, t.lane, picked, { free: pickedFree });
+          if (why) { say(why); return; }
+          picked = null; pickedFree = false; say(''); render();
+        });
+      }
+      root.appendChild(ring);
     }
-    say('Characters advance in the Movement layer and strike in the Action layer.');
   }
 
-  function onTarget(uid) {
+  // ── press, drag, drop ─────────────────────────────────────────────
+  /** A press that never travelled: look at the card, choose, or strike. */
+  function tapPawn(laneKey, u) {
+    const mine = u.owner === viewSide();
+    if (mine && game.phase === 'action') chooseAttacker(laneKey, u);
+    else if (!mine && selected && game.phase === 'action') strike(u.uid);
+    else inspectCard(u.cardId, u);
+  }
+
+  function wirePawn(b, laneKey, u) {
+    // A real click still works on its own, for a keyboard or anything that
+    // raises a synthetic one; it is ignored when a pointer sequence has just
+    // dealt with the same press.
+    let pointerAt = 0;
+    b.addEventListener('click', () => {
+      if (Date.now() - pointerAt < 400) return;
+      if (!yourTurn()) return;
+      tapPawn(laneKey, u);
+    });
+    b.addEventListener('pointerdown', (e) => {
+      if (!yourTurn()) return;
+      e.stopPropagation();
+      const start = { x: e.clientX, y: e.clientY };
+      const mine = u.owner === viewSide();
+      let began = false;
+
+      const onMove = (ev) => {
+        if (!began) {
+          if (Math.hypot(ev.clientX - start.x, ev.clientY - start.y) < DRAG_THRESHOLD) return;
+          // only your own character, only in Movement, only if it can go
+          if (!mine || game.phase !== 'move' || canMove(game, laneKey, u.uid)) return;
+          began = true;
+          dragging = { lane: laneKey, uid: u.uid, over: null };
+          const c = el('div', 'carried');
+          c.id = 'carried';
+          const f = el('span', 'face');
+          const art = artOf(u.cardId);
+          if (art) f.style.backgroundImage = `url(${art})`;
+          c.appendChild(f);
+          document.body.appendChild(c);
+          drawEntities(); drawInterface();
+        }
+        const c = $('carried');
+        if (c) { c.style.left = ev.clientX + 'px'; c.style.top = ev.clientY + 'px'; }
+        const t = stepTarget(laneKey, u.uid);
+        const was = dragging.over ? `${dragging.over.lane}:${dragging.over.pos}` : '';
+        dragging.over = null;
+        if (t) {
+          const n = MAP.nodes[nodeId(t.lane, t.pos)];
+          if (n && apart(pointerOnStage(ev), n) < DROP_RADIUS) dragging.over = t;
+        }
+        const now = dragging.over ? `${dragging.over.lane}:${dragging.over.pos}` : '';
+        if (was !== now) drawInterface();
+      };
+
+      const onUp = () => {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        pointerAt = Date.now();
+        const c = $('carried');
+        if (c) c.remove();
+        if (!began) { tapPawn(laneKey, u); return; }
+        const drop = dragging && dragging.over;
+        dragging = null;
+        if (drop) {
+          const why = move(game, drop.lane, u.uid);
+          say(why || `${cardOf(u.cardId).name} advances.`);
+        } else {
+          say('Not a place it can reach.');
+        }
+        render(true);
+      };
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+    });
+  }
+
+  function chooseAttacker(laneKey, u) {
+    selected = { lane: laneKey, uid: u.uid };
+    const list = targetsFor(game, laneKey, u.uid);
+    say(list.length
+      ? `${cardOf(u.cardId).name} may strike ${list.map((t) => t.label).join(', ')}.`
+      : `${cardOf(u.cardId).name} has nothing in reach.`);
+    render(true);
+  }
+
+  function strike(uid) {
     if (!selected || game.phase !== 'action') return;
     const why = attack(game, selected.lane, selected.uid, { uid });
     if (why) { say(why); return; }
-    selected = null; say('');
-    render();
+    selected = null; say(''); render();
+  }
+
+  // ── inspection: the full card, off the battlefield ────────────────
+  function sheet(name, rarity, art, atk, hp, maxHp, note, edge) {
+    const box = $('look');
+    box.innerHTML = '';
+    box.hidden = false;
+    const s = el('div', 'sheet');
+    if (edge) s.style.setProperty('--edge', edge);
+    const big = el('div', 'big');
+    if (art) big.style.backgroundImage = `url(${art})`;
+    s.appendChild(big);
+    const body = el('div', 'body');
+    body.appendChild(el('h3', null, name));
+    body.appendChild(el('span', 'rr', rarity));
+    const nums = el('div', 'nums');
+    const a = el('span'); a.append('Attack '); a.appendChild(el('b', null, String(atk)));
+    const h = el('span'); h.append('Life '); h.appendChild(el('b', null, maxHp ? `${hp} / ${maxHp}` : String(hp)));
+    nums.appendChild(a); nums.appendChild(h);
+    body.appendChild(nums);
+    if (note) body.appendChild(el('p', null, note));
+    const close = el('button', 'primary', 'Close');
+    close.type = 'button';
+    close.addEventListener('click', () => { box.hidden = true; });
+    body.appendChild(close);
+    s.appendChild(body);
+    box.appendChild(s);
+    box.onclick = (e) => { if (e.target === box) box.hidden = true; };
+  }
+  function inspectCard(id, unit) {
+    const c = cardOf(id);
+    const st = statsOf(c);
+    sheet(c.name, `${c.rarity} · ${c.house}`, artOf(id),
+      unit ? unit.atk : st.atk, unit ? unit.hp : st.hp, unit ? unit.maxHp : null, c.note);
+  }
+  function inspectMonster(m) {
+    sheet(m.name, 'Monster · holds this ground', monsterArt(m.mid), m.atk, m.hp, m.maxHp,
+      'It never takes a turn of its own, so it answers whenever it is struck.',
+      'rgba(168,112,60,.7)');
   }
 
   // ── the hand ──────────────────────────────────────────────────────
@@ -780,9 +810,21 @@ const map = MAPS[DEFAULT_MAP];
       b.appendChild(art);
       b.appendChild(el('span', 'hname', card.name));
       b.appendChild(el('span', 'hst', `${st.atk} / ${st.hp}`));
-      b.title = `${card.name} — ${card.rarity}. ${card.note}`;
+      // A long press looks at the card; a plain click chooses it. Selection
+      // hangs off click rather than pointerup so that a keyboard, a screen
+      // reader or anything else that raises a synthetic click still works.
+      let held = null, looked = false;
+      const cancelHold = () => { if (held) { clearTimeout(held); held = null; } };
+      b.addEventListener('pointerdown', () => {
+        looked = false;
+        held = setTimeout(() => { held = null; looked = true; inspectCard(id); }, 500);
+      });
+      b.addEventListener('pointerup', cancelHold);
+      b.addEventListener('pointerleave', cancelHold);
       b.addEventListener('click', () => {
-        if (blocked) return;
+        cancelHold();
+        if (looked) { looked = false; return; }   // the long press already answered
+        if (blocked) { inspectCard(id); return; }
         picked = (picked === id && pickedFree === free) ? null : id;
         pickedFree = picked ? free : false;
         say(picked ? 'Touch the lit ground at your own edge.' : '');
@@ -793,6 +835,81 @@ const map = MAPS[DEFAULT_MAP];
     for (const id of p.hand) add(id, false);
     if (p.freeDeploys > 0) for (const id of p.reinforcements) add(id, true);
   }
+
+  // ── developer view ────────────────────────────────────────────────
+  function drawDebug() {
+    const root = $('debugLayer');
+    root.hidden = !debugOn;
+    root.innerHTML = '';
+    if (!debugOn) return;
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 100 100');
+    svg.setAttribute('preserveAspectRatio', 'none');
+    for (const lane of LANES) {
+      const track = trackOf(laneOf(lane.key));
+      for (let p = 0; p < track - 1; p++) {
+        const a = MAP.nodes[nodeId(lane.key, p)], b = MAP.nodes[nodeId(lane.key, p + 1)];
+        if (!a || !b) continue;
+        const ln = document.createElementNS(NS, 'line');
+        ln.setAttribute('x1', a.x * 100); ln.setAttribute('y1', a.y * 100);
+        ln.setAttribute('x2', b.x * 100); ln.setAttribute('y2', b.y * 100);
+        ln.setAttribute('stroke', 'rgba(111,208,232,.5)');
+        ln.setAttribute('stroke-width', '.22');
+        ln.setAttribute('stroke-dasharray', '1 1');
+        svg.appendChild(ln);
+      }
+    }
+    root.appendChild(svg);
+    const boardW = $('stage').clientWidth;
+    for (const [id, n] of Object.entries(MAP.nodes)) {
+      const [laneKey, posStr] = id.split(':');
+      const pos = Number(posStr);
+      const l = game.lanes[laneKey];
+      if (n.capacity) {
+        const hb = el('div', 'hitbox');
+        const d = DROP_RADIUS * 2 * boardW;
+        hb.style.width = d + 'px'; hb.style.height = d + 'px';
+        put(hb, n.x, n.y);
+        root.appendChild(hb);
+      }
+      const here = l ? l.units.filter((u) => u.pos === pos).length : 0;
+      const m = el('div', 'mark' + (n.control ? ' ctrl' : n.monster ? ' mons' :
+        n.side === 0 ? ' keep' : n.side === 1 ? ' foe' : ''));
+      put(m, n.x, n.y);
+      m.appendChild(el('i'));
+      m.appendChild(el('span', null,
+        markerLabel(id) + (n.capacity ? `  ${here}/${n.capacity}` : '')));
+      m.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        m.classList.add('drag');
+        const box = $('stage').getBoundingClientRect();
+        const mv = (ev) => {
+          n.x = Math.max(0, Math.min(1, (ev.clientX - box.left) / box.width));
+          n.y = Math.max(0, Math.min(1, (ev.clientY - box.top) / box.height));
+          put(m, n.x, n.y);
+        };
+        const up = () => {
+          m.classList.remove('drag');
+          window.removeEventListener('pointermove', mv);
+          window.removeEventListener('pointerup', up);
+          say(`${markerLabel(id)} → x ${n.x.toFixed(3)}, y ${n.y.toFixed(3)}`);
+          render(true);
+        };
+        window.addEventListener('pointermove', mv);
+        window.addEventListener('pointerup', up);
+      });
+      root.appendChild(m);
+    }
+  }
+  window.citadelMap = () => {
+    const out = {};
+    for (const [id, n] of Object.entries(MAP.nodes)) {
+      out[id] = { x: Number(n.x.toFixed(3)), y: Number(n.y.toFixed(3)) };
+    }
+    console.log(JSON.stringify(out, null, 2));
+    return out;
+  };
 
   // ── the frame ─────────────────────────────────────────────────────
   function render(keepToast) {
@@ -806,20 +923,19 @@ const map = MAPS[DEFAULT_MAP];
     const m = $('musterNow');
     m.innerHTML = '';
     const have = game.players[mover].muster;
-    for (let i = 0; i < Math.min(MUSTER_MAX, 10); i++) {
-      m.appendChild(el('span', 'pip' + (i < have ? ' on' : '')));
-    }
+    for (let i = 0; i < MUSTER_MAX; i++) m.appendChild(el('span', 'pip' + (i < have ? ' on' : '')));
     m.appendChild(el('span', null, ` ${have}`));
     $('btnNext').textContent = game.phase === 'end' ? 'End turn' : 'Next';
     $('btnNext').disabled = !yourTurn();
-    $('btnNodes').classList.toggle('on', showNodes);
-    drawBoard();
-    drawHand();
+    $('btnDebug').classList.toggle('on', debugOn);
+    drawEntities(); drawInterface(); drawHand(); drawDebug();
     if (!keepToast && !aiBusy) {
-      const tips = { main: 'Choose a card, then the lit ground.',
-        move: 'Touch a character to advance it.',
-        action: 'Touch a character to see what it can strike.',
-        end: 'Nothing left but to pass.', draw: '' };
+      const tips = {
+        main: 'Choose a card, then the lit ground.',
+        move: 'Press and drag a character to move it. A tap opens its card.',
+        action: 'Tap one of yours, then its target.',
+        end: 'Nothing left but to pass.', draw: '',
+      };
       say(tips[game.phase] || '');
     }
     if (game.winner !== null) {
@@ -846,22 +962,15 @@ const map = MAPS[DEFAULT_MAP];
     aiSide = against;
     game = newGame({ seed: Math.floor(Math.random() * 1e9) || 1, armies,
       names: against === null ? ['Near Host', 'Far Host'] : NAMES });
-    picked = null; selected = null; aiBusy = false; showNodes = false;
+    picked = null; selected = null; aiBusy = false; dragging = null;
     $('setupScreen').hidden = true;
     $('battleScreen').hidden = false;
     $('verdict').hidden = true;
-    // Laid out straight away rather than inside an animation frame: a tab in
-    // the background never gets a frame, and the board would stay empty.
-    // The camera bar and the hand are drawn first, because they take height
-    // from the viewport. Fitting the painting before they exist measures a
-    // taller screen than the one the player ends up with, and the top and
-    // bottom of the battlefield fall off the edge.
-    drawCam();
-    render();
+    // drawn first: the camera bar and the hand take height from the viewport,
+    // and fitting before they exist measures a taller screen than the player gets
+    drawCam(); render();
     layoutStage();
     const z = fitZoom();
-    // a phone opens on your own end, where you deploy; a wide screen already
-    // sees the whole field at once
     if (z > 1.15) { view = 'mine'; lookAt(0.5, 0.72, z); }
     else { view = 'all'; lookAt(0.5, 0.5, z); }
     drawCam();
@@ -870,41 +979,22 @@ const map = MAPS[DEFAULT_MAP];
   $('btnSkirmish').addEventListener('click', () => { armies = [blankArmy(), blankArmy()]; begin(1); });
   $('btnQuick').addEventListener('click', () => { armies = [blankArmy(), blankArmy()]; drawSetup(); });
   $('btnStart').addEventListener('click', () => begin(null));
-  $('btnNodes').addEventListener('click', () => { showNodes = !showNodes; render(true); });
+  $('btnDebug').addEventListener('click', () => { debugOn = !debugOn; render(true); });
   $('btnLeave').addEventListener('click', () => {
     $('battleScreen').hidden = true; $('setupScreen').hidden = false;
     aiSide = null; aiBusy = false; armies = [null, null]; drawSetup();
   });
   $('btnAgain').addEventListener('click', () => {
-    $('verdict').hidden = true;
-    armies = [blankArmy(), blankArmy()];
-    begin(aiSide);
+    $('verdict').hidden = true; armies = [blankArmy(), blankArmy()]; begin(aiSide);
   });
   $('btnNext').addEventListener('click', () => {
     if (!yourTurn()) return;
     picked = null; selected = null;
-    advance(game);
-    render();
+    advance(game); render();
     if (aiSide !== null && game.current === aiSide) aiTurn();
   });
-
   window.addEventListener('resize', () => { if (game) { layoutStage(); render(true); } });
-  // The tray and the camera bar are built after the battle screen appears,
-  // so the viewport is shorter than it was a moment earlier. Watching it is
-  // more reliable than measuring once and hoping.
-  if (window.ResizeObserver) {
-    let last = '';
-    new ResizeObserver(() => {
-      const vp = $('viewport');
-      const size = `${vp.clientWidth}x${vp.clientHeight}`;
-      if (!game || size === last || !vp.clientHeight) return;
-      last = size;
-      layoutStage();
-      const v = VIEWS.find((x) => x.id === view) || VIEWS[0];
-      lookAt(v.to.fx, v.to.fy, v.to.z === null ? fitZoom() : v.to.z);
-    }).observe($('viewport'));
-  }
-  wireDrag();
+  wirePan();
   drawSetup();
 </script>
 </body>

@@ -107,24 +107,33 @@ export const CARDS = [
   C('cassian', 'Cassian Chandralon', "Alfar's uncle", 'Common', 'Led the burning of an elven city.'),
 ];
 
-/** The neutral things squatting in the side lanes. Nobody owns them. */
+/**
+ * The neutral things squatting in the side routes. Nobody owns them, they
+ * never take a turn, and they are entities held at a position rather than
+ * anything painted into the battlefield, so killing one frees the ground.
+ * Art comes from Lash's own battlefield sheet.
+ */
 export const MONSTERS = [
-  { id: 'troll', name: 'Veil Troll', hp: 24, atk: 5 },
-  { id: 'wight', name: 'Winter Wight', hp: 18, atk: 7 },
-  { id: 'lich', name: 'Lich Lord', hp: 30, atk: 6 },
-  { id: 'serpent', name: 'Swamp Serpent', hp: 22, atk: 6 },
-  { id: 'behemoth', name: 'Behemoth Calf', hp: 34, atk: 4 },
-  { id: 'shade', name: 'Abyssal Shade', hp: 16, atk: 9 },
+  { id: 'corrupted-angel', name: 'Corrupted Angel', hp: 26, atk: 7 },
+  { id: 'golden-angel',    name: 'Golden Angel',    hp: 30, atk: 6 },
+  { id: 'serpent-beast',   name: 'Serpent Beast',   hp: 22, atk: 6 },
+  { id: 'winged-lich',     name: 'Winged Lich',     hp: 18, atk: 8 },
+  { id: 'spider-horror',   name: 'Spider Horror',   hp: 20, atk: 7 },
+  { id: 'dark-dragon',     name: 'Dark Dragon',     hp: 34, atk: 5 },
 ];
+
+/** A monster's portrait. Every one of the six has one. */
+export const monsterArt = (mid) => `/images/monsters/${mid}.webp`;
 
 /**
  * The cards Lash has drawn a portrait for. Built from his own character
- * references on the Desktop by scripts/build-card-art.mjs, cropped square
- * and shrunk to a thumbnail. Everyone else shows their house colour until
- * there is a picture for them.
+ * references by scripts/build-card-art.mjs, cropped square and shrunk to a
+ * thumbnail. Everyone else shows their initial until there is a picture.
  */
 export const ART = new Set([
-  'abel', 'adamas', 'anthuriun', 'cainan', 'evalon', 'gilgamesh', 'glorfarsall', 'hannarial', 'hansall', 'hansenel', 'raastali', 'revendrinn', 'sederous', 'serallion', 'tiamel',
+  'abel', 'adamas', 'anthuriun', 'cainan', 'evalon', 'gilgamesh', 'glorfarsall',
+  'hannarial', 'hansall', 'hansenel', 'raastali', 'revendrinn', 'sederous',
+  'serallion', 'tiamel',
 ]);
 
 /** The portrait for a card, or null where none has been drawn yet. */
