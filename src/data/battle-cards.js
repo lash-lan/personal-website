@@ -117,6 +117,19 @@ export const MONSTERS = [
   { id: 'shade', name: 'Abyssal Shade', hp: 16, atk: 9 },
 ];
 
+/**
+ * The cards Lash has drawn a portrait for. Built from his own character
+ * references on the Desktop by scripts/build-card-art.mjs, cropped square
+ * and shrunk to a thumbnail. Everyone else shows their house colour until
+ * there is a picture for them.
+ */
+export const ART = new Set([
+  'abel', 'adamas', 'anthuriun', 'cainan', 'evalon', 'gilgamesh', 'glorfarsall', 'hannarial', 'hansall', 'hansenel', 'raastali', 'revendrinn', 'sederous', 'serallion', 'tiamel',
+]);
+
+/** The portrait for a card, or null where none has been drawn yet. */
+export const artOf = (id) => (ART.has(id) ? `/images/cards/${id}.webp` : null);
+
 export const byId = Object.fromEntries(CARDS.map((c) => [c.id, c]));
 
 /** A card's fighting numbers, from its rarity. */
