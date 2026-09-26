@@ -117,7 +117,7 @@ import { GUARDIAN_BUDGET } from '../../lib/battle.js';
     .lane h3{font-family:'Cormorant SC',serif;font-size:.6rem;letter-spacing:.24em;
       text-transform:uppercase;color:#8d9aa6;text-align:center;margin-bottom:.35rem;font-weight:400}
     .lane h3 b{color:var(--gold);font-weight:400}
-    .space{position:relative;min-height:2.5rem;padding:.24rem;margin-bottom:.3rem;
+    .space{position:relative;min-height:4.6rem;padding:.3rem .24rem;margin-bottom:.3rem;
       display:flex;flex-wrap:wrap;gap:.24rem;align-content:center;justify-content:center;
       border:1px solid rgba(143,168,187,.16);
       background:linear-gradient(170deg,rgba(40,56,70,.5),rgba(12,20,28,.6));
@@ -139,6 +139,39 @@ import { GUARDIAN_BUDGET } from '../../lib/battle.js';
       place-items:center;font-family:'Cormorant SC',serif;font-size:.58rem;
       letter-spacing:.18em;text-transform:uppercase;color:var(--gold);pointer-events:none}
 
+    /* ── a character on the field: portrait, blow, life ── */
+    .tok{position:relative;width:58px;padding:0;border:0;background:none;cursor:pointer;
+      display:flex;flex-direction:column;align-items:center;gap:0}
+    .tok-art{width:46px;height:46px;border-radius:50%;background-size:cover;
+      background-position:center top;border:2px solid var(--ring,#8fa8bb);
+      box-shadow:0 0 0 1px rgba(0,0,0,.7),0 2px 8px rgba(0,0,0,.6);
+      display:grid;place-items:center;color:#cfd9e2;
+      font-family:'Cinzel',serif;font-size:1.05rem;
+      background-color:#16202a;transition:transform .12s,box-shadow .12s}
+    .tok-art.none{background-image:linear-gradient(160deg,#243441,#0e1720)}
+    .tok:hover .tok-art{transform:translateY(-2px)}
+    .tok.o0{--ring:#8fa8bb}
+    .tok.o1{--ring:#b8484b}
+    .tok.mon{--ring:#7d3c2a}
+    .tok.r-legendary{--ring:#c89b3c}
+    .tok.r-mythical{--ring:#e0c070}
+    .tok.o1.r-legendary,.tok.o1.r-mythical{--ring:#d4763a}
+    .tok-atk,.tok-hp{position:absolute;top:30px;min-width:17px;height:17px;border-radius:50%;
+      display:grid;place-items:center;font-family:'Cinzel',serif;font-size:.6rem;
+      color:#0b0f14;font-variant-numeric:tabular-nums;border:1px solid rgba(0,0,0,.65)}
+    .tok-atk{left:2px;background:linear-gradient(180deg,#e2e8ee,#93a3b0)}
+    .tok-hp{right:2px;background:linear-gradient(180deg,#d9564f,#8b191c);color:#fff}
+    .tok-name{margin-top:2px;font-family:'Cormorant SC',serif;font-size:.52rem;
+      letter-spacing:.06em;text-transform:uppercase;color:#9fb0bd;text-align:center;
+      max-width:58px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3}
+    .tok.sel .tok-art{box-shadow:0 0 0 2px var(--gold),0 0 16px rgba(200,155,60,.55)}
+    .tok.tgt .tok-art{box-shadow:0 0 0 2px var(--blood-lt),0 0 16px rgba(184,72,75,.6);
+      cursor:crosshair}
+    .tok.tgt::after{content:'';position:absolute;inset:-3px 0 auto;height:52px;
+      border-radius:50%;pointer-events:none}
+    .tok.spent{opacity:.45}
+    .tok.spent .tok-name{color:#6b7783}
+
     .unit{border:1px solid rgba(143,168,187,.3);padding:.2rem .36rem;font-size:.7rem;
       background:linear-gradient(170deg,#101a24,#070d13);cursor:pointer;max-width:100%;
       line-height:1.25;text-align:left}
@@ -159,19 +192,45 @@ import { GUARDIAN_BUDGET } from '../../lib/battle.js';
     .unit.spent{opacity:.4}
 
     .hand{margin-top:1rem;border-top:1px solid var(--line);padding-top:.7rem}
-    .cards{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.45rem}
-    .card{border:1px solid var(--line);background:var(--plate);padding:.4rem .55rem;
-      cursor:pointer;min-width:8.5rem;max-width:11rem;text-align:left}
-    .card{display:flex;gap:.45rem;align-items:center}
-    .card .face{width:52px;height:52px;object-fit:cover;flex:0 0 52px;
-      border:1px solid rgba(143,168,187,.35);filter:saturate(.85) contrast(1.05)}
-    .card-text{min-width:0}
-    .card .n{display:block;color:var(--bright);font-size:.82rem;line-height:1.2}
+    /* ── the hand: cards you are holding ── */
+    .cards{display:flex;gap:.4rem;margin-top:.45rem;overflow-x:auto;padding:.3rem .1rem .5rem;
+      scrollbar-width:thin}
+    .card{position:relative;flex:0 0 86px;width:86px;height:124px;padding:0;text-align:center;
+      background:linear-gradient(170deg,#1b2733,#0b1219);
+      border:1px solid var(--edge,rgba(143,168,187,.35));
+      box-shadow:0 3px 10px rgba(0,0,0,.55);transition:transform .12s,box-shadow .12s;
+      display:block;cursor:pointer}
+    .card:hover:not(.cant){transform:translateY(-5px);
+      box-shadow:0 8px 18px rgba(0,0,0,.6)}
+    .card.r-uncommon{--edge:rgba(143,168,187,.5)}
+    .card.r-rare{--edge:rgba(96,140,180,.75)}
+    .card.r-epic{--edge:rgba(150,110,190,.75)}
+    .card.r-legendary{--edge:rgba(200,155,60,.85)}
+    .card.r-mythical{--edge:rgba(224,192,112,.95)}
+    .card .cost{position:absolute;top:-7px;left:-7px;width:24px;height:24px;border-radius:50%;
+      display:grid;place-items:center;z-index:2;font-family:'Cinzel',serif;font-size:.74rem;
+      color:#06111c;background:linear-gradient(180deg,#9fd0ec,#3b7ea8);
+      border:1px solid rgba(0,0,0,.6);box-shadow:0 1px 5px rgba(0,0,0,.6)}
+    .card .cost.isfree{background:linear-gradient(180deg,#e9d190,#c89b3c)}
+    .hart{display:block;height:64px;background-size:cover;background-position:center top;
+      background-color:#16202a;border-bottom:1px solid rgba(0,0,0,.6);
+      font-family:'Cinzel',serif;font-size:1.5rem;color:#8d9aa6;line-height:64px}
+    .hart.none{background-image:linear-gradient(160deg,#243441,#0e1720)}
+    .hname{display:block;padding:.22rem .2rem 0;font-family:'Cinzel',serif;font-size:.56rem;
+      line-height:1.22;color:var(--bright);max-height:2.5em;overflow:hidden}
+    .hrar{display:block;font-family:'Cormorant SC',serif;font-size:.48rem;letter-spacing:.14em;
+      text-transform:uppercase;color:#7d8b97;margin-top:.1rem}
+    .hatk,.hhp{position:absolute;bottom:-6px;width:22px;height:22px;border-radius:50%;
+      display:grid;place-items:center;font-family:'Cinzel',serif;font-size:.68rem;
+      border:1px solid rgba(0,0,0,.65)}
+    .hatk{left:-6px;background:linear-gradient(180deg,#e2e8ee,#93a3b0);color:#0b0f14}
+    .hhp{right:-6px;background:linear-gradient(180deg,#d9564f,#8b191c);color:#fff}
+    .card.sel{transform:translateY(-8px);border-color:var(--gold);
+      box-shadow:0 0 0 1px var(--gold),0 10px 20px rgba(0,0,0,.6)}
     .card .m{display:block;color:var(--dim);font-size:.72rem;margin-top:.2rem;
       font-variant-numeric:tabular-nums}
-    .card.sel{border-color:var(--gold);background:rgba(200,155,60,.1)}
-    .card.cant{opacity:.4;cursor:not-allowed}
-    .card.free{border-color:rgba(143,168,187,.5)}
+    .card.cant{opacity:.35;cursor:not-allowed;filter:grayscale(.5)}
+    .card.free{--edge:rgba(200,155,60,.7)}
 
     .log{margin-top:1rem;border-top:1px solid var(--line);padding-top:.6rem;
       max-height:9rem;overflow-y:auto;font-size:.84rem;color:var(--dim)}
@@ -202,7 +261,7 @@ import { GUARDIAN_BUDGET } from '../../lib/battle.js';
       .unit .n{max-width:6rem;font-size:.62rem}
       .unit .s{font-size:.6rem}
       .struct .nm{font-size:.56rem;letter-spacing:.12em}
-      .space{min-height:2.2rem}
+      .space{min-height:4.4rem}
     }
     @media (max-width:680px){
       .lane-tabs{display:flex}
@@ -216,8 +275,9 @@ import { GUARDIAN_BUDGET } from '../../lib/battle.js';
       .unit{padding:.3rem .45rem}
       .unit .n{max-width:100%;font-size:.72rem}
       .unit .s{font-size:.68rem}
-      .space{min-height:2.8rem}
-      .card{min-width:7.5rem;flex:1 1 7.5rem}
+      .space{min-height:4.8rem}
+      .card{flex:0 0 78px;width:78px;height:114px}
+      .hart{height:58px;line-height:58px}
       .hud{gap:.4rem;padding:.4rem .5rem}
       .hud .primary{flex:1 1 100%;order:9}
       .log{max-height:7rem}
@@ -434,32 +494,47 @@ import { GUARDIAN_BUDGET } from '../../lib/battle.js';
     root.appendChild(structure('High Gate', p.highGates[1].hp, p.highGates[1].maxHp));
   }
 
+  /** The first letter, for anyone who has no portrait drawn yet. */
+  const initialOf = (name) => String(name || '?').replace(/^The /, '').charAt(0);
+
+  /**
+   * A character standing in a lane: a round portrait with its blow on one
+   * side and its remaining life on the other, ringed in its owner's colour.
+   * The ring is the only thing telling you whose it is, so it is never
+   * subtle.
+   */
   function unitChip(lane, u) {
     const card = cardOf(u.cardId);
-    const chip = el('button', 'unit o' + u.owner +
-      (selected && selected.uid === u.uid ? ' sel' : '') +
-      (u.owner === game.current && u.acted && u.moved ? ' spent' : ''));
+    const done = u.owner === game.current && u.acted && u.moved;
+    const chip = el('button', 'tok o' + u.owner + ' r-' + card.rarity.toLowerCase() +
+      (selected && selected.uid === u.uid ? ' sel' : '') + (done ? ' spent' : ''));
     chip.type = 'button';
+    chip.dataset.uid = u.uid;
+    const art = el('span', 'tok-art');
     const face = artOf(u.cardId);
-    if (face) {
-      const img = el('img', 'pip');
-      img.src = face; img.alt = ''; img.loading = 'lazy'; img.width = 26; img.height = 26;
-      chip.appendChild(img);
-    }
-    const text = el('span', 'unit-text');
-    text.appendChild(el('span', 'n', card.name));
-    text.appendChild(el('span', 's', `${u.hp}/${u.maxHp} · ${u.atk}`));
-    chip.appendChild(text);
-    chip.title = `${card.name} — ${card.rarity}. ${card.note}`;
+    if (face) art.style.backgroundImage = `url(${face})`;
+    else { art.classList.add('none'); art.textContent = initialOf(card.name); }
+    chip.appendChild(art);
+    chip.appendChild(el('span', 'tok-atk', String(u.atk)));
+    chip.appendChild(el('span', 'tok-hp', String(u.hp)));
+    chip.appendChild(el('span', 'tok-name', card.name.replace(/^(Lord|King|The) /, '')));
+    chip.title = `${card.name} — ${card.rarity}. ${u.atk} attack, ${u.hp} of ${u.maxHp} life. ${card.note}`;
+    chip.setAttribute('aria-label', chip.title);
     chip.addEventListener('click', () => onUnit(lane, u));
     return chip;
   }
 
   function monsterChip(lane, m) {
-    const chip = el('button', 'unit mon');
+    const chip = el('button', 'tok mon');
     chip.type = 'button';
-    chip.appendChild(el('span', 'n', m.name));
-    chip.appendChild(el('span', 's', `${m.hp}/${m.maxHp} · ${m.atk}`));
+    chip.dataset.uid = m.uid;
+    const art = el('span', 'tok-art none', initialOf(m.name));
+    chip.appendChild(art);
+    chip.appendChild(el('span', 'tok-atk', String(m.atk)));
+    chip.appendChild(el('span', 'tok-hp', String(m.hp)));
+    chip.appendChild(el('span', 'tok-name', m.name));
+    chip.title = `${m.name} — ${m.atk} attack, ${m.hp} of ${m.maxHp} life. It answers whenever it is struck.`;
+    chip.setAttribute('aria-label', chip.title);
     chip.addEventListener('click', () => onTargetPick(lane, m.uid));
     return chip;
   }
@@ -536,18 +611,15 @@ import { GUARDIAN_BUDGET } from '../../lib/battle.js';
     markTargets();
   }
 
+  /** Ring everything the chosen character can reach. Matched by id: two
+      characters can share a name, and matching on the printed text lit up
+      the wrong one. */
   function markTargets() {
     if (!selected || game.phase !== 'action') return;
-    const list = targetsFor(game, selected.lane, selected.uid);
-    for (const t of list) {
-      if (t.kind === 'unit' || t.kind === 'monster') {
-        for (const chip of document.querySelectorAll('.unit')) {
-          // matched by the text already drawn, so nothing extra is stored
-          if (chip.querySelector('.n') && chip.querySelector('.n').textContent === t.label) {
-            chip.classList.add('tgt');
-          }
-        }
-      }
+    for (const t of targetsFor(game, selected.lane, selected.uid)) {
+      if (t.kind !== 'unit' && t.kind !== 'monster') continue;
+      const chip = document.querySelector(`.tok[data-uid="${t.uid}"]`);
+      if (chip) chip.classList.add('tgt');
     }
   }
 
@@ -606,17 +678,21 @@ import { GUARDIAN_BUDGET } from '../../lib/battle.js';
       const b = el('button', 'card' + (picked === id && pickedFree === free ? ' sel' : '') +
         (why ? ' cant' : '') + (free ? ' free' : ''));
       b.type = 'button';
+      b.classList.add('r-' + card.rarity.toLowerCase());
+      const cost = el('span', 'cost', free ? '0' : String(st.cost));
+      if (free) cost.classList.add('isfree');
+      b.appendChild(cost);
+      const art = el('span', 'hart');
       const face = artOf(id);
-      if (face) {
-        const img = el('img', 'face');
-        img.src = face; img.alt = ''; img.loading = 'lazy'; img.width = 52; img.height = 52;
-        b.appendChild(img);
-      }
-      const text = el('span', 'card-text');
-      text.appendChild(el('span', 'n', card.name));
-      text.appendChild(el('span', 'm',
-        `${card.rarity} · ${st.hp} hp · ${st.atk} atk · ${free ? 'free' : st.cost + ' muster'}`));
-      b.appendChild(text);
+      if (face) art.style.backgroundImage = `url(${face})`;
+      else { art.classList.add('none'); art.textContent = initialOf(card.name); }
+      b.appendChild(art);
+      b.appendChild(el('span', 'hname', card.name));
+      b.appendChild(el('span', 'hrar', free ? 'Reinforcement' : card.rarity));
+      b.appendChild(el('span', 'hatk', String(st.atk)));
+      b.appendChild(el('span', 'hhp', String(st.hp)));
+      b.title = `${card.name} — ${card.rarity}. ${st.atk} attack, ${st.hp} life, ` +
+        `${free ? 'free' : st.cost + ' muster'}. ${card.note}`;
       b.title = card.note;
       b.addEventListener('click', () => {
         picked = (picked === id && pickedFree === free) ? null : id;
