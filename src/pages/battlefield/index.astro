@@ -93,7 +93,7 @@ const map = MAPS[DEFAULT_MAP];
       box-shadow:0 0 34px rgba(242,220,168,.8)}
 
     /* a character standing on the ground */
-    .pawn{position:absolute;transform:translate(-50%,-100%);width:clamp(22px,3cqw,40px);
+    .pawn{position:absolute;transform:translate(-50%,-100%);width:clamp(26px,3.2cqw,44px);
       padding:0;border:0;background:none;cursor:pointer;line-height:0;
       pointer-events:auto;touch-action:none;
       filter:drop-shadow(0 4px 5px rgba(0,0,0,.8))}
@@ -103,7 +103,7 @@ const map = MAPS[DEFAULT_MAP];
       box-shadow:0 0 0 1px rgba(0,0,0,.85),inset 0 0 12px rgba(0,0,0,.45)}
     .pawn.o0{--ring-c:#7fb3dd} .pawn.o1{--ring-c:#c65a52} .pawn.mon{--ring-c:#a8703c}
     .pawn.r-legendary,.pawn.r-mythical{--ring-c:#c9a24a}
-    .pawn.mon{width:clamp(26px,3.6cqw,48px)}
+    .pawn.mon{width:clamp(30px,3.8cqw,50px)}
     .pawn .atk,.pawn .hp{position:absolute;bottom:-4px;min-width:14px;height:14px;
       border-radius:50%;display:grid;place-items:center;line-height:1;
       font-family:'Cinzel',serif;font-size:8.5px;border:1px solid rgba(0,0,0,.8)}
@@ -136,6 +136,15 @@ const map = MAPS[DEFAULT_MAP];
     .work.aim::after{content:'';position:absolute;inset:-7px -11px;
       border:1px solid rgba(198,90,82,.85);box-shadow:0 0 18px rgba(198,90,82,.5)}
 
+    /* a control point that has been taken: a standard planted, and the
+       ground around it lit as though someone had made camp. Never a wash of
+       colour across the landscape. */
+    .held{position:absolute;transform:translate(-50%,-50%);border-radius:50%;
+      width:clamp(46px,7cqw,92px);height:clamp(22px,3.4cqw,44px);pointer-events:none;
+      background:radial-gradient(ellipse at center,var(--glow,rgba(127,179,221,.3)),transparent 70%);
+      animation:breathe 4.5s ease-in-out infinite}
+    .held.o1{--glow:rgba(198,90,82,.32)}
+    @keyframes breathe{0%,100%{opacity:.55}50%{opacity:.95}}
     /* a standard where a control point has been taken */
     .std{position:absolute;transform:translate(-50%,-100%);width:13px;height:20px;
       pointer-events:none}
@@ -570,17 +579,32 @@ const map = MAPS[DEFAULT_MAP];
         const units = l.units.filter((u) => u.pos === pos);
         const crew = [...mons.map((m) => ({ mon: m })), ...units.map((u) => ({ unit: u }))];
         const spots = formation(crew.length);
-        const step = 0.030;                       // one node unit, in board width
+        // Spacing is measured in figures, not in fractions of the board. The
+        // figure has a floor of 26px so it stays thumb-sized, and if the gap
+        // were worked out independently the two would drift apart on a small
+        // screen and half the formation would end up hidden behind the rest.
+        const stageW = $('stage').clientWidth || 1;
+        const stageH = $('stage').clientHeight || 1;
+        const figure = Math.min(44, Math.max(26, stageW * 0.032));
         crew.forEach((c, i) => {
           const o = spots[i];
           const pawn = c.mon ? monsterOf(c.mon) : pawnOf(lane.key, c.unit);
           if (canHit(c.mon ? c.mon.uid : c.unit.uid)) pawn.classList.add('tgt');
-          put(pawn, n.x + o.dx * step, n.y + o.dy * step * (MAP.width / MAP.height) + 0.014);
+          // 1.8 across and 0.95 down, because the tightest gap any of the
+          // shapes asks for is 0.55 of a unit: at those multipliers the
+          // closest pair of figures just touch instead of covering one
+          // another, which is what keeps all five separately reachable.
+          put(pawn,
+            n.x + (o.dx * figure * 1.8) / stageW,
+            n.y + (o.dy * figure * 0.95) / stageH + (figure * 0.34) / stageH);
           // a figure standing behind sits under the one in front
           pawn.style.zIndex = String(10 + Math.round(o.dy * 12));
           root.appendChild(pawn);
         });
         if (pos === mid && l.holder !== null) {
+          const glow = el('div', 'held' + (l.holder === 1 ? ' o1' : ''));
+          put(glow, n.x, n.y);
+          root.appendChild(glow);
           const s = el('div', 'std' + (l.holder === 1 ? ' o1' : ''));
           put(s, n.x + 0.032, n.y - 0.004);
           root.appendChild(s);
@@ -902,6 +926,15 @@ const map = MAPS[DEFAULT_MAP];
       root.appendChild(m);
     }
   }
+  // A way into the running battle, for checking behaviour that would
+  // otherwise take forty turns to reach by hand. Read or poke, then call
+  // redraw(). Only ever a development aid; nothing in the game uses it.
+  window.citadel = {
+    game: () => game,
+    redraw: () => render(true),
+    map: () => MAP,
+  };
+
   window.citadelMap = () => {
     const out = {};
     for (const [id, n] of Object.entries(MAP.nodes)) {
