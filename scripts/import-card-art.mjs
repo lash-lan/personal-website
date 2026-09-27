@@ -70,6 +70,12 @@ const MAP = {
   'World Sage Nilream, The White Dragon': 'mon-nilream',
   'Zhou Ying, Phoenix General': 'men-zhou',
   'Zhuge Guan, Dragon Strategist': 'men-zhuge',
+  "The Morrigan's Avatar": 'aby-morrigan-avatar',
+  "Lucifial's Avatar, The Whisperer": 'aby-whisperer',
+  'The Devil Kings Avatar': 'aby-devil-kings',
+  'Archangel Skyrehaal': 'div-skyrehaal',
+  'Barlgowrath': 'mon-barlgowrath',
+  'Sinbad-Sinodess, The Pirate King': 'LAH.30',
 };
 
 // Where each card's painting is written. A card that already has a file keeps
@@ -102,6 +108,9 @@ const FILENAME = {
   'tylon-5': 'tylon-leviathan', 'men-wufgarr': 'warlord-wufgarr',
   'mon-winter': 'winter-ghosthowl', 'mon-nilream': 'world-sage-nilream',
   'men-zhou': 'zhou-ying', 'men-zhuge': 'zhuge-guan',
+  'aby-morrigan-avatar': 'morrigan-avatar', 'aby-whisperer': 'whisperer',
+  'aby-devil-kings': 'devil-kings-avatar', 'div-skyrehaal': 'archangel-skyrehaal',
+  'mon-barlgowrath': 'barlgowrath', 'LAH.30': 'sinbad-sinodess',
 };
 
 const src = process.argv[2];
@@ -119,7 +128,7 @@ const unmatched = [];
 
 for (const file of files) {
   const stem = basename(file).replace(/\.[^.]+$/, '').trim();
-  const id = MAP[stem];
+  const id = MAP[stem] ?? MAP[stem.replace(/\s+-\s+.*$/, '').trim()];
   if (!id) { unmatched.push(file); continue; }
   const card = byId[id];
   if (!card) { console.log(`  no card with id ${id} (for ${file})`); continue; }

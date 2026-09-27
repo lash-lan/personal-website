@@ -639,23 +639,23 @@ const ART = {
   // The Foundation Age codex paintings. The World Titans are not cards, so
   // the three of their paintings used here sit on the deeds they are known
   // for rather than on the gods themselves.
-  'aby-whisperer': '/images/codex/lucifials-avatar.jpg',
-  'aby-morrigan-avatar': '/images/codex/morrigan.jpg',
+  'aby-whisperer': '/images/cards/whisperer.webp',
+  'aby-morrigan-avatar': '/images/cards/morrigan-avatar.webp',
   'gb-solomon': '/images/codex/solomon.jpg',
   'gb-lazarus': '/images/codex/lazarus.jpg',
   'gb-caligula': '/images/codex/caligula.jpg',
-  'LAH.30': '/images/codex/sinbad-sinodess.jpg',
+  'LAH.30': '/images/cards/sinbad-sinodess.webp',
   'elu-hsal-eraklah': '/images/codex/hsal-eraklah.jpg',
   'div-liger': '/images/codex/avalonus.jpg',
 
   // The monster paintings.
   'mon-leviathan': '/images/monsters/serpent-beast.webp',
   'mon-bhahamut': '/images/monsters/dark-dragon.webp',
-  'mon-barlgowrath': '/images/monsters/spider-horror.webp',
+  'mon-barlgowrath': '/images/cards/barlgowrath.webp',
   'und-pale-lady': '/images/cards/the-pale-lady.webp',
   'und-wraith-knight': '/images/monsters/winged-lich.webp',
-  'div-skyrehaal': '/images/monsters/golden-angel.webp',
-  'aby-devil-kings': '/images/monsters/corrupted-angel.webp',
+  'div-skyrehaal': '/images/cards/archangel-skyrehaal.webp',
+  'aby-devil-kings': '/images/cards/devil-kings-avatar.webp',
 
   // The Red Rangers story paintings.
   'LAH.09': '/images/rangers/shaedra-nyxthorn.jpg',
