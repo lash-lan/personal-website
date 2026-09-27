@@ -76,8 +76,11 @@ the rule rather than a coincidence:
 | tier_2 | Uncommon | 5–7 | 2 | 3 |
 | tier_3 | Rare | 8–12 | 3–4 | 3 |
 | tier_4 | Epic | 13–18 | 5–6 | 2 |
-| tier_5 | Legendary | 19–24 | 7–8 | 1 |
+| tier_5 | Ascendant | 19–24 | 7–8 | 1 |
 | tier_6 | Mythical | 25–30 | 9–10 | 1 |
+
+Tier 5 was called Legendary until Legendary became a card *type*. It is now
+Ascendant, so the two words never mean two things at once.
 
 **Rarity is stored as `tier_3`, never as "Rare".** The display name can change
 whenever you decide on lore-friendly ones; no data has to move.
@@ -134,6 +137,34 @@ with them.
 Exile mattering *because* the graveyard is reachable is good design and it is
 already in your cards — Hidden Boss returns a character from the opponent's
 graveyard, so exiling is how you deny it.
+
+---
+
+## 5a. Named characters are Legendary
+
+Lash's rule, and it is the right one: **a named character is a specific
+person, so a deck may hold one copy of them — however common their card is.**
+
+This is the card's **type**, not its rarity, exactly as on the cards Lash sent
+me: a *Legendary Creature* printed at *Mythic* rarity. Two separate ideas on
+one card.
+
+- **Legendary Character** — a specific individual. Shaedra Nyxthorn, Koschei,
+  Leviathan. There is one of them in the world. **One copy per deck.** 69 of
+  them.
+- **Character** — a kind of person. A Red Ranger, an Inquisitor, a Ghoul, a
+  Mersoldier. There are many. **Copy limit from rarity**, so up to three. 75
+  of them.
+
+The dividing line is whether the lore describes one of a thing or a kind of
+thing. The bestiary settles most of them on its own: Wraith Knights are "spirits
+bound to defend the boundaries of the dead" — plural, a kind — while Leviathan
+is "a god-thing, older than tides". The Tylon are a people of the shore
+kingdoms, so the Tylon cards are generic even though they are a closed cycle.
+
+Keeping this as a type rather than a rarity is what saved the curve. Had every
+named character been promoted to Ascendant rarity, 25 cards would have moved up
+and the middle of the game would have emptied out.
 
 ---
 

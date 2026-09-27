@@ -32,7 +32,7 @@ export const TIERS = {
   tier_2: { id: 'tier_2', name: 'Uncommon',  letter: 'U', power: [5, 7],   copies: 3, weight: 52 },
   tier_3: { id: 'tier_3', name: 'Rare',      letter: 'R', power: [8, 12],  copies: 3, weight: 26 },
   tier_4: { id: 'tier_4', name: 'Epic',      letter: 'E', power: [13, 18], copies: 2, weight: 10 },
-  tier_5: { id: 'tier_5', name: 'Legendary', letter: 'L', power: [19, 24], copies: 1, weight: 3.5 },
+  tier_5: { id: 'tier_5', name: 'Ascendant',  letter: 'A', power: [19, 24], copies: 1, weight: 3.5 },
   tier_6: { id: 'tier_6', name: 'Mythical',  letter: 'M', power: [25, 30], copies: 1, weight: 1 },
 };
 export const TIER_ORDER = ['tier_1', 'tier_2', 'tier_3', 'tier_4', 'tier_5', 'tier_6'];
@@ -488,6 +488,57 @@ export const CARDS = [
   s('rel-abel-spear', 'Abel, the Divine Spear of Light', 'tier_5', 7,
     'Destroy any character and exile it. This cannot be prevented.', ['Relic']),
 ];
+
+/**
+ * Who is a person and who is a kind of person.
+ *
+ * A named character is a specific individual — there is one Shaedra Nyxthorn
+ * in the world — so her card prints "Legendary Character" and a deck may hold
+ * one copy however common she is. A generic character is a type of person: a
+ * Red Ranger, an Inquisitor, a Ghoul. There are many, and a deck may hold
+ * three.
+ *
+ * This is a card's TYPE, not its rarity. The two are separate, exactly as on
+ * the cards Lash sent me: a Legendary Creature at Mythic rarity. Listing the
+ * generic ones is the short list and the easier one to check by eye.
+ */
+const GENERIC = new Set([
+  // tokens and rank and file
+  'rr-ranger', 'knight-token', 'orc-raider', 'wolf-token', 'beast-token',
+  'demon-token', 'und-ghoul',
+  'rf-enclave-farmer', 'rf-half-elf-levy', 'rf-risen-levy', 'rf-serpent-hatchling',
+  'rf-icetear-squire', 'rf-primus-initiate', 'rf-citadel-squire', 'rf-moon-novice',
+  'rf-sinodess-deckhand', 'rf-exodan-scout', 'rf-abyssal-insect', 'rf-tylon-whelp',
+  'rf-treant-sapling', 'rf-adamas-spearman', 'rf-kalbeliya-outrider', 'rf-ranger-scout',
+  'rf-human-militia', 'rf-slayer-apprentice', 'rf-orc-skirmisher', 'rf-bone-picker',
+  'rf-magi-apprentice', 'rf-oinstan-mason', 'rf-tidecaller', 'rf-soul-acolyte',
+  'rf-inquisition-warden', 'rf-sinodess-corsair', 'rf-reef-lurker', 'rf-norgod-oarsman',
+  'rf-hedge-witch', 'rf-ranger-tracker', 'rf-winterguard', 'rf-dragon-outrider',
+  'rf-dwarf-stoneguard', 'rf-cliff-garuda', 'rf-godsblood-initiate',
+  // ranks and orders: a title, not a person
+  'LAH.17', 'LAH.05', 'LAH.14', 'LAH.03', 'men-citadel-captain', 'men-fleetmaster',
+  'ord-moon-sister', 'ord-moon-matron', 'ord-inquisitor', 'ord-high-inquisitor',
+  'ord-slayer', 'ord-slayer-captain', 'ord-gypsy-seer', 'ord-gypsy-dancer',
+  'rac-exodan', 'rac-oinstan', 'rac-norgod', 'rac-norgod-jarl',
+  'wit-bruhneville-daughter', 'elu-hsal-eraklah',
+  // creatures the bestiary describes as a kind rather than one of a kind
+  'und-wraith-knight', 'und-goulargz', 'mon-stormspear', 'mon-fallen-lycaron',
+  'mon-mercaptain', 'mon-mersoldier', 'mon-garudling', 'mon-imptizzle',
+  // the Tylon are a people of the shore kingdoms, not one animal
+  'tylon-1', 'tylon-2', 'tylon-3', 'tylon-4', 'tylon-5',
+]);
+
+/** True for a specific individual: prints "Legendary Character", one per deck. */
+export const isNamed = (card) => card.type === 'character' && !GENERIC.has(card.id);
+
+/** How many copies of a card a deck may hold. */
+export const copiesOf = (card) => (isNamed(card) ? 1 : TIERS[card.tier].copies);
+
+/** The type line, as printed: "Legendary Character (High Elf)". */
+export const typeLineOf = (card) =>
+  card.type === 'spell'
+    ? (card.instant ? 'Instant Spell' : 'Spell')
+    : `${isNamed(card) ? 'Legendary Character' : 'Character'} (${card.line})`;
 
 /**
  * Where a card's portrait lives. Most belong in /images/cards, but a great

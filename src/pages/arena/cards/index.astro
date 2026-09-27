@@ -1,6 +1,6 @@
 ---
 import SectionLayout from '../../../layouts/SectionLayout.astro';
-import { CARDS, TIERS, TIER_ORDER, KEYWORDS, artOf, numberOf } from '../../../data/cards.js';
+import { CARDS, TIERS, TIER_ORDER, KEYWORDS, artOf, numberOf, typeLineOf, isNamed, copiesOf } from '../../../data/cards.js';
 
 // Every card is rendered at build time and the filters only hide and show
 // them. Nothing here is built by a script, so the scoped styles below reach
@@ -45,6 +45,13 @@ const painted = CARDS.filter((c) => artOf(c)).length;
         little for a strong ability.
       </p>
       <dl class="keys">
+        <div>
+          <dt>Legendary</dt>
+          <dd>A specific person, not a kind of person. There is only one
+              Shaedra Nyxthorn in the world, so a deck may hold one copy of
+              her however common her card is. This is the card’s type, not its
+              rarity — the two are separate.</dd>
+        </div>
         {Object.entries(KEYWORDS).map(([word, meaning]) => (
           <div><dt>{word}</dt><dd>{meaning}</dd></div>
         ))}
@@ -100,10 +107,9 @@ const painted = CARDS.filter((c) => artOf(c)).length;
       {cards.map((c, i) => {
         const art = artOf(c);
         // The type line reads "[Rarity] — [Type] ([Race])", as on the
-        // prototype. A spell has no race, so it prints its kind alone.
-        const kind = c.type === 'spell'
-          ? (c.instant ? 'Instant Spell' : 'Spell')
-          : `Character (${c.line})`;
+        // prototype. A named individual is a Legendary Character; a spell has
+        // no race, so it prints its kind alone.
+        const kind = typeLineOf(c);
         return (
           <button
             class="tok"

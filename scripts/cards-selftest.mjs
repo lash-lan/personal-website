@@ -6,7 +6,7 @@
 // enforces them. Every rule in the document is a test here.
 
 import { existsSync } from 'node:fs';
-import { CARDS, TIERS, TIER_ORDER, KEYWORDS, MUSTER_CEILING, costOf, artOf, COLLECTIBLE } from '../src/data/cards.js';
+import { CARDS, TIERS, TIER_ORDER, KEYWORDS, MUSTER_CEILING, costOf, artOf, COLLECTIBLE, isNamed, copiesOf, typeLineOf } from '../src/data/cards.js';
 
 let fails = 0;
 const fail = (msg) => { fails += 1; console.log(`  FAIL  ${msg}`); };
@@ -98,6 +98,26 @@ for (const k of CARDS) {
   }
 }
 
+// ── named characters are Legendary, and one of a kind ───────────────────────
+section('Legendary');
+const namedChars = CARDS.filter(isNamed);
+for (const k of namedChars) {
+  if (copiesOf(k) !== 1) fail(`${k.name} is a named character but allows ${copiesOf(k)} copies`);
+  if (!typeLineOf(k).startsWith('Legendary Character')) {
+    fail(`${k.name} is a named character but its type line reads "${typeLineOf(k)}"`);
+  }
+}
+// A generic character takes its copy limit from its rarity alone. (Some are
+// already limited to one by being Ascendant or Mythical, which is fine — what
+// would be wrong is the named rule quietly applying to them.)
+for (const k of CARDS.filter((c) => c.type === 'character' && !isNamed(c))) {
+  if (copiesOf(k) !== TIERS[k.tier].copies) {
+    fail(`${k.name} is generic but allows ${copiesOf(k)} copies, not its rarity's ${TIERS[k.tier].copies}`);
+  }
+}
+console.log(`  ${namedChars.length} named, one copy each; ` +
+            `${CARDS.filter((c) => c.type === 'character').length - namedChars.length} generic`);
+
 // ── art points at files that exist ──────────────────────────────────────────
 section('Art');
 let painted = 0;
@@ -121,7 +141,7 @@ if (spells.length < 8) fail('fewer than 8 spells exist, so no legal deck can be 
 // Counting copies: the pool must be able to fill 50 slots without a Mythical.
 const slots = COLLECTIBLE
   .filter((k) => k.tier !== 'tier_6')
-  .reduce((n, k) => n + TIERS[k.tier].copies, 0);
+  .reduce((n, k) => n + copiesOf(k), 0);
 if (slots < 50) fail(`only ${slots} non-Mythical card slots exist; 50 are needed`);
 console.log(`  ${slots} legal slots available below Mythical`);
 
