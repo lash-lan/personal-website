@@ -129,6 +129,9 @@ w('');
 w('Save each result into `public/images/cards/` under the filename given, then');
 w('tell me and I will wire it up.');
 w('');
+w('The First Family portraits and the eleven undersized ones have been');
+w('replaced already, so what is left below is the art that has never existed.');
+w('');
 w('---');
 w('');
 w('## 1. The house style - paste this first');
@@ -168,77 +171,12 @@ w('');
 w('---');
 w('');
 
-// ── 2. the four that must be replaced ───────────────────────────────────────
-w('## 2. Replace these four first');
-w('');
-w('These are the First Family, the founders of humanity, and they are currently');
-w('photographic headshots on plain white - they look like casting photographs');
-w('beside the rest of the set. They are the highest-value fix in the whole list.');
-w('');
-const REPLACE = [
-  ['Adamas, First King of Men', 'adamas',
-   'Waist-up portrait of Adamas, the first man and first King of Humanity. A hard, weathered man in his prime with white hair and a short beard, wearing layered leather and furs over dark mail, a heavy travelling cloak clasped at the shoulder. He holds the Sword of Light, a blade of holy steel that glows from within along the fuller. Standing on the walls of his fortified mortal kingdom at dusk, watchfires burning behind him, a storm coming in. He looks like a man who has been fighting for a very long time and has not lost yet. Mortal dignity before gods.'],
-  ['Evalon, Mother of Humanity', 'evalon',
-   'Waist-up portrait of Evalon, the first woman and Mother of Humanity. Long dark hair, a calm and tired face, wearing a simple robe of undyed linen with fae embroidery at the collar. Faint abyssal marks trace her forearms and throat like dark veins under the skin - the price she accepted to protect humanity. Standing in the Fae Garden Sanctuary: an ancient timeless forest of enormous pale trees, floating motes of light, deep green shadow. Warmth and grief in the same face. Power gained at personal cost.'],
-  ['Abel, the Fallen Son', 'abel',
-   'Waist-up portrait of Abel, the second son of Adamas and the first human to die. A young man with fair curling hair and open, unguarded features, wearing a plain shepherd’s tunic and a rough wool wrap. He holds a simple staff. Behind him a field at golden hour, long grass, a low stone altar with smoke rising straight up. Light falls on him as though it has picked him out. He does not know what is coming. Sacrifice and grief.'],
-  ['Cainan, First Fracture', 'cainan',
-   'Waist-up portrait of Cainan, eldest son of Adamas and the first murderer. A lean man with dark red hair and a hard, closed face, wearing dark leathers and a heavy cloak, a working blade at his belt. His hands are dirty. Standing on a bare ridge at dusk under a bruised sky, the fires of his father’s kingdom small and far below him. He is looking back at something out of frame. Humanity’s shadow.'],
-];
-for (const [name, file, prompt] of REPLACE) {
-  const card = CARDS.find((c) => c.name === name);
-  w(`### ${name} - \`${numberOf(card)}\``);
-  w(`Save as \`public/images/cards/${file}.webp\` (replaces the current one).`);
-  w('');
-  w('```');
-  w(prompt);
-  w('```');
-  w('');
-}
-w('---');
-w('');
-
-// ── 3. the ones that exist but are too small ────────────────────────────────
-w('## 3. Regenerate these at a usable size');
-w('');
-w('These eleven are good paintings, but they are 320 x 320 - square, and a');
-w('quarter of the resolution a zoomed card needs. Ask for the same character');
-w('again at 2:3 and full size. Keep the current file: if the new one is worse,');
-w('we keep what we have.');
-w('');
-const REDO = {
-  'Hansall, First High King of Elves': 'A severe, ancient High Elf king enthroned in a great chair of pale twisted wood, wearing white and gold layered robes and a spiked white crown, long white hair, red under-robe. An old forest behind the throne. Leave clear space above the crown.',
-  'Tiamel, First Queen of the Elu-Dragar': 'A dragon-elf queen in gold-green scaled armour with vast membranous dragon wings spread behind her, a flared crown of gold spines, long gold hair, fire at her hand. Volcanic mountains and dark cloud behind. Leave clear space above the crown, and wings must stay inside the frame.',
-  'Sederous Lionheart, King of Scraps': 'A leonine half-elf king with a golden mane, in ornate gold armour and a deep blue cloak, holding a great sword point-down. A golden city burning with light behind him. Chest-up, sword hilt visible but the blade out of the bottom quarter.',
-  'King Gilgamesh': 'A golden-haired half-elf king in gold and white armour with a blue cloak, holding a radiant gold staff. A white castle and bright sky behind. Waist-up.',
-  'Serallion, Matron of the Moon': 'A silver-haired moon elf priestess in a crown set with a crescent sapphire, pale blue gowns, holding a moon-topped staff. A moonlit sea and a huge low moon behind her. Leave clear space above the crown.',
-  'Revendrinn Nyxthorn': 'A black-haired elf in black feathered shadow-armour with a violet sigil glowing at the chest, in a dark wood at night. Low violet light. This one is already the best composition in the set - keep it exactly, just larger.',
-  'Glorfarsall Elysium': 'A golden-haired high elf paladin in pale blue and gold armour with a sunburst on the breastplate, one hand raised, a sword low in the other. A sunlit hall of pale columns behind. Keep the raised hand well inside the frame.',
-  'Captain Hannah Icetear': 'A blonde high elf captain of the Red Rangers in red and gold armour, holding a great sword upright before her. A deep forest with red leaves falling. Centre the blade so it is not cut off at the edge.',
-  'Anthurian Icetear': 'Re-generate the existing Anthurian Icetear portrait at 2:3 and full size, same character and same palette.',
-  'Hansenel Icetear': 'A silver-haired high elf lord in pale teal and gold filigree armour, hands folded before him, in a hall of blue ice and carved stone.',
-  'Prince Raastali': 'A golden-haired half-elf prince in ornate gold and white armour set with green stones, holding a blade, a sunlit citadel and blue sky behind.',
-};
-for (const [name, prompt] of Object.entries(REDO)) {
-  const card = CARDS.find((c) => c.name === name);
-  if (!card) continue;
-  w(`### ${name} - \`${numberOf(card)}\``);
-  w(`Overwrite \`public${artOf(card)}\``);
-  w('');
-  w('```');
-  w(prompt);
-  w('```');
-  w('');
-}
-w('---');
-w('');
-
 // ── 4. everything still unpainted, in the order it matters ──────────────────
 const unpainted = CARDS.filter((c) => !artOf(c) && !(c.tags || []).includes('Token'));
 const ORDER = ['tier_6', 'tier_5', 'tier_4', 'tier_3', 'tier_2', 'tier_1'];
 unpainted.sort((a, b) => ORDER.indexOf(a.tier) - ORDER.indexOf(b.tier) || a.name.localeCompare(b.name));
 
-w(`## 4. The ${unpainted.length} cards with no art yet`);
+w(`## 2. The ${unpainted.length} cards with no art yet`);
 w('');
 w('In order of how much it matters - the rarest cards are the ones people look');
 w('at. If you only do some, do them from the top.');
@@ -262,7 +200,7 @@ for (const card of unpainted) {
 
 w('---');
 w('');
-w('## 5. The tokens');
+w('## 3. The tokens');
 w('');
 w('Tokens are summoned rather than drawn, so they are seen constantly. They can');
 w('share art with their parent card or get something simple and generic.');
@@ -274,4 +212,4 @@ w('');
 
 writeFileSync(new URL('../docs/card-art-prompts.md', import.meta.url), L.join('\n'), 'utf8');
 console.log(`docs/card-art-prompts.md written`);
-console.log(`  4 replacements, ${Object.keys(REDO).length} regenerations, ${unpainted.length} new, ${CARDS.filter((c) => (c.tags || []).includes('Token')).length} tokens`);
+console.log(`  ${unpainted.length} cards still needing art, ${CARDS.filter((c) => (c.tags || []).includes('Token')).length} of them tokens`);

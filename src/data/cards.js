@@ -99,10 +99,12 @@ export const CARDS = [
     'When Shaedra Nyxthorn enters the arena, summon 2 Red Rangers to your side of the arena.'),
   c('LAH.08', 'Solenyra Gravespine', 'tier_5', 20, 'High Elf', ['Red Rangers', 'Gravespine'],
     'When Solenyra Gravespine enters the arena, exile 2 Rare or lower characters, or exile 1 Epic or higher character.', 1),
-  c('LAH.16', 'Anthurian Icetear', 'tier_5', 21, 'High Elf', ['Red Rangers', 'Icetear'],
+  c('LAH.16', 'Anthurian Icetear, Vice Captain of the Red Rangers', 'tier_5', 21, 'High Elf', ['Red Rangers', 'Icetear'],
     'When Anthurian Icetear enters the arena, summon 2 Red Rangers Squad Leaders to your side of the arena.'),
-  c('LAH.06', 'Captain Hannah Icetear', 'tier_5', 22, 'High Elf', ['Red Rangers', 'Icetear'],
-    'When Captain Hannah Icetear enters the arena, summon 2 Red Rangers Squad Leaders to your side of the arena.', 1),
+  c('ice-hannarial-young', 'Hannarial Icetear', 'tier_3', 12, 'High Elf', ['Red Rangers', 'Icetear'],
+    'When Hannarial Icetear enters the arena, summon a Red Ranger to your side of the arena.'),
+  c('LAH.06', 'Hannarial Icetear, Captain of the Red Rangers', 'tier_5', 22, 'High Elf', ['Red Rangers', 'Icetear'],
+    'When Hannarial Icetear enters the arena, summon 2 Red Rangers Squad Leaders to your side of the arena.', 1),
 
   // ───────────────────────── HOUSE ICETEAR ─────────────────────────
   c('ice-ascena', 'Ascena Icetear', 'tier_3', 9, 'High Elf', ['Icetear'],
@@ -158,11 +160,11 @@ export const CARDS = [
   // ───────────────────────── THE FIRST FAMILY ─────────────────────────
   c('fa-evalon', 'Evalon, Mother of Humanity', 'tier_3', 9, 'Human', ['Humanity', 'Healer'],
     'At the end of your turn, restore 2 Power to each of your damaged characters.', 1),
-  c('fa-abel', 'Abel, the Fallen Son', 'tier_4', 14, 'Human', ['Humanity'],
+  c('fa-abel', 'Abel, Second Son of Humanity', 'tier_4', 14, 'Human', ['Humanity'],
     'When Abel dies, a friendly character gains +6 Power. Exile Abel.'),
-  c('fa-cainan', 'Cainan, First Fracture', 'tier_4', 16, 'Human', ['Humanity'],
+  c('fa-cainan', 'Cainan, First Son of Humanity', 'tier_4', 16, 'Human', ['Humanity'],
     'When Cainan enters the arena, destroy a friendly character. Cainan gains half its Power.'),
-  c('fa-adamas', 'Adamas, First King of Men', 'tier_5', 23, 'Human Lord', ['Humanity', 'Crown'],
+  c('fa-adamas', 'Adamas, Father of Humanity', 'tier_5', 23, 'Human Lord', ['Humanity', 'Crown'],
     'While Adamas is in the arena, your Citadel Mastery cannot fall by more than 10 in a single turn.', 1),
 
   // ───────────────────────── THE GODS BLOOD ─────────────────────────
@@ -232,7 +234,7 @@ export const CARDS = [
     'Cannot be destroyed by a spell. When Wraith Knight dies, exile it.', 1),
   c('und-koschei', 'Koschei, the Zombie King', 'tier_5', 22, 'Zombie Lord', ['Undead', 'Crown'],
     'Quick Attack. When a friendly Undead dies, Koschei gains 2 Power.', 1),
-  c('und-pale-lady', 'The Pale Lady', 'tier_6', 27, 'Ancient Spirit', ['Undead', 'Witch'],
+  c('und-pale-lady', 'The Pale Lady Slahaln', 'tier_6', 27, 'Ancient Spirit', ['Undead', 'Witch'],
     'Every enemy character loses 10 Power for two of your opponent’s turns.', 2),
 
   // ───────────────────────── THE BESTIARY ─────────────────────────
@@ -490,6 +492,30 @@ export const CARDS = [
 ];
 
 /**
+ * Characters who appear on more than one card, usually younger and older.
+ * Each version is its own card with its own number, and they are linked here
+ * so the game and the gallery can tell they are one person.
+ *
+ * Working rule, to be confirmed: a deck may hold one of each version, but
+ * only one version of a person may stand in the arena at a time. There is
+ * only one Hannarial at any given moment.
+ */
+const PERSON = {
+  'ice-hannarial-young': 'hannarial',
+  'LAH.06': 'hannarial',
+};
+
+/** The person a card depicts, where more than one card depicts them. */
+export const personOf = (card) => PERSON[typeof card === 'string' ? card : card.id] || null;
+
+/** Every other card depicting the same person. */
+export const versionsOf = (card) => {
+  const who = personOf(card);
+  if (!who) return [];
+  return CARDS.filter((k) => k.id !== card.id && PERSON[k.id] === who);
+};
+
+/**
  * Who is a person and who is a kind of person.
  *
  * A named character is a specific individual - there is one Shaedra Nyxthorn
@@ -553,6 +579,7 @@ const ART = {
   'div-tyberius': '/images/cards/knight-titan-tyberius.webp',
   'LAH.25': '/images/cards/susanna-bruhneville.webp',
   'LAH.06': '/images/cards/hannarial.webp',
+  'ice-hannarial-young': '/images/cards/hannarial-young.webp',
   'elu-hansall': '/images/cards/hansall.webp',
   'elu-tiamel': '/images/cards/tiamel.webp',
   'elu-serallion': '/images/cards/serallion.webp',

@@ -168,6 +168,27 @@ and the middle of the game would have emptied out.
 
 ---
 
+## 5b. A character may be drawn more than once
+
+Lash's note: some characters will have more than one version, usually younger
+and older. Hannarial Icetear is the first. She has two paintings, one in House
+Icetear blue and gold in a snowstorm and one in Red Rangers crimson titled
+Captain of the Red Rangers, so she has two cards.
+
+- Each version is **its own card**, with its own number, Power and cost.
+- The progression should be readable off the pair. Young Hannarial summons one
+  Red Ranger, Captain Hannarial summons two Squad Leaders.
+- They are linked in the data by a shared `person`, so the game and the
+  gallery know they are one woman.
+
+**Working rule, not yet confirmed with Lash:** a deck may hold one of each
+version, but only one version of a person may stand in the arena at a time.
+There is only one Hannarial at any given moment. This is the obvious reading of
+the Legendary rule and it is flavourful, but it is my assumption rather than
+his instruction.
+
+---
+
 ## 6a. Who is allowed to be a card
 
 **The World Titans are not cards.** Lash's call, and the lore backs it: the

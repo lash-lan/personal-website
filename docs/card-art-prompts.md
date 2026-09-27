@@ -12,6 +12,9 @@ new one and the style drifts.
 Save each result into `public/images/cards/` under the filename given, then
 tell me and I will wire it up.
 
+The First Family portraits and the eleven undersized ones have been
+replaced already, so what is left below is the art that has never existed.
+
 ---
 
 ## 1. The house style - paste this first
@@ -50,141 +53,13 @@ Reply "ready" and I will send the first character.
 
 ---
 
-## 2. Replace these four first
-
-These are the First Family, the founders of humanity, and they are currently
-photographic headshots on plain white - they look like casting photographs
-beside the rest of the set. They are the highest-value fix in the whole list.
-
-### Adamas, First King of Men - `N0.01.BOI.026`
-Save as `public/images/cards/adamas.webp` (replaces the current one).
-
-```
-Waist-up portrait of Adamas, the first man and first King of Humanity. A hard, weathered man in his prime with white hair and a short beard, wearing layered leather and furs over dark mail, a heavy travelling cloak clasped at the shoulder. He holds the Sword of Light, a blade of holy steel that glows from within along the fuller. Standing on the walls of his fortified mortal kingdom at dusk, watchfires burning behind him, a storm coming in. He looks like a man who has been fighting for a very long time and has not lost yet. Mortal dignity before gods.
-```
-
-### Evalon, Mother of Humanity - `N0.01.BOI.023`
-Save as `public/images/cards/evalon.webp` (replaces the current one).
-
-```
-Waist-up portrait of Evalon, the first woman and Mother of Humanity. Long dark hair, a calm and tired face, wearing a simple robe of undyed linen with fae embroidery at the collar. Faint abyssal marks trace her forearms and throat like dark veins under the skin - the price she accepted to protect humanity. Standing in the Fae Garden Sanctuary: an ancient timeless forest of enormous pale trees, floating motes of light, deep green shadow. Warmth and grief in the same face. Power gained at personal cost.
-```
-
-### Abel, the Fallen Son - `N0.01.BOI.024`
-Save as `public/images/cards/abel.webp` (replaces the current one).
-
-```
-Waist-up portrait of Abel, the second son of Adamas and the first human to die. A young man with fair curling hair and open, unguarded features, wearing a plain shepherd’s tunic and a rough wool wrap. He holds a simple staff. Behind him a field at golden hour, long grass, a low stone altar with smoke rising straight up. Light falls on him as though it has picked him out. He does not know what is coming. Sacrifice and grief.
-```
-
-### Cainan, First Fracture - `N0.01.BOI.025`
-Save as `public/images/cards/cainan.webp` (replaces the current one).
-
-```
-Waist-up portrait of Cainan, eldest son of Adamas and the first murderer. A lean man with dark red hair and a hard, closed face, wearing dark leathers and a heavy cloak, a working blade at his belt. His hands are dirty. Standing on a bare ridge at dusk under a bruised sky, the fires of his father’s kingdom small and far below him. He is looking back at something out of frame. Humanity’s shadow.
-```
-
----
-
-## 3. Regenerate these at a usable size
-
-These eleven are good paintings, but they are 320 x 320 - square, and a
-quarter of the resolution a zoomed card needs. Ask for the same character
-again at 2:3 and full size. Keep the current file: if the new one is worse,
-we keep what we have.
-
-### Hansall, First High King of Elves - `N0.01.BOI.021`
-Overwrite `public/images/cards/hansall.webp`
-
-```
-A severe, ancient High Elf king enthroned in a great chair of pale twisted wood, wearing white and gold layered robes and a spiked white crown, long white hair, red under-robe. An old forest behind the throne. Leave clear space above the crown.
-```
-
-### Tiamel, First Queen of the Elu-Dragar - `N0.01.BOI.020`
-Overwrite `public/images/cards/tiamel.webp`
-
-```
-A dragon-elf queen in gold-green scaled armour with vast membranous dragon wings spread behind her, a flared crown of gold spines, long gold hair, fire at her hand. Volcanic mountains and dark cloud behind. Leave clear space above the crown, and wings must stay inside the frame.
-```
-
-### Sederous Lionheart, King of Scraps - `N0.01.BOI.013`
-Overwrite `public/images/cards/sederous.webp`
-
-```
-A leonine half-elf king with a golden mane, in ornate gold armour and a deep blue cloak, holding a great sword point-down. A golden city burning with light behind him. Chest-up, sword hilt visible but the blade out of the bottom quarter.
-```
-
-### King Gilgamesh - `N0.01.BOI.018`
-Overwrite `public/images/cards/gilgamesh.webp`
-
-```
-A golden-haired half-elf king in gold and white armour with a blue cloak, holding a radiant gold staff. A white castle and bright sky behind. Waist-up.
-```
-
-### Serallion, Matron of the Moon - `N0.01.BOI.009`
-Overwrite `public/images/cards/serallion.webp`
-
-```
-A silver-haired moon elf priestess in a crown set with a crescent sapphire, pale blue gowns, holding a moon-topped staff. A moonlit sea and a huge low moon behind her. Leave clear space above the crown.
-```
-
-### Revendrinn Nyxthorn - `N0.01.BOI.010`
-Overwrite `public/images/cards/revendrinn.webp`
-
-```
-A black-haired elf in black feathered shadow-armour with a violet sigil glowing at the chest, in a dark wood at night. Low violet light. This one is already the best composition in the set - keep it exactly, just larger.
-```
-
-### Glorfarsall Elysium - `N0.01.BOI.011`
-Overwrite `public/images/cards/glorfarsall.webp`
-
-```
-A golden-haired high elf paladin in pale blue and gold armour with a sunburst on the breastplate, one hand raised, a sword low in the other. A sunlit hall of pale columns behind. Keep the raised hand well inside the frame.
-```
-
-### Captain Hannah Icetear - `N0.01.LAH.06`
-Overwrite `public/images/cards/hannarial.webp`
-
-```
-A blonde high elf captain of the Red Rangers in red and gold armour, holding a great sword upright before her. A deep forest with red leaves falling. Centre the blade so it is not cut off at the edge.
-```
-
-### Anthurian Icetear - `N0.01.LAH.16`
-Overwrite `public/images/cards/anthuriun.webp`
-
-```
-Re-generate the existing Anthurian Icetear portrait at 2:3 and full size, same character and same palette.
-```
-
-### Hansenel Icetear - `N0.01.BOI.004`
-Overwrite `public/images/cards/hansenel.webp`
-
-```
-A silver-haired high elf lord in pale teal and gold filigree armour, hands folded before him, in a hall of blue ice and carved stone.
-```
-
-### Prince Raastali - `N0.01.BOI.015`
-Overwrite `public/images/cards/raastali.webp`
-
-```
-A golden-haired half-elf prince in ornate gold and white armour set with green stones, holding a blade, a sunlit citadel and blue sky behind.
-```
-
----
-
-## 4. The 113 cards with no art yet
+## 2. The 108 cards with no art yet
 
 In order of how much it matters - the rarest cards are the ones people look
 at. If you only do some, do them from the top.
 
 
-### Mythical (8)
-
-**Antharaiel Whitewing** - `N0.01.BOI.022` - save as `public/images/cards/antharaiel-whitewing.webp`
-
-```
-Waist-up portrait of Antharaiel Whitewing, a High Elf Lord. Standing in an ancient elven grove, white bark and gold leaf. Mythical rarity: unmistakably one of the great powers of the world, the composition built around them.
-```
+### Mythical (3)
 
 **Divine Intervention** - `N0.01.LAH.20` - save as `public/images/cards/divine-intervention.webp`
 
@@ -192,37 +67,13 @@ Waist-up portrait of Antharaiel Whitewing, a High Elf Lord. Standing in an ancie
 A moment, not a portrait: Divine Intervention. Halve the Power of every enemy character. May be played at any time, even after a strike is declared. Set in Avalonus: radiant cloud and white gold architecture, unbearable light behind. No lettering anywhere in the image. Leave the top fifth and the bottom quarter uncluttered.
 ```
 
-**Icetear, Child of Winter** - `N0.01.BOI.005` - save as `public/images/cards/icetear-child-of-winter.webp`
-
-```
-Waist-up portrait of Icetear, Child of Winter, a Prime God. Standing in a hall of pale blue ice, frost blooming across carved stone, cold winter light. Mythical rarity: unmistakably one of the great powers of the world, the composition built around them.
-```
-
-**Knight Titan Tyberius** - `N0.01.BOI.076` - save as `public/images/cards/knight-titan-tyberius.webp`
-
-```
-Waist-up portrait of Knight Titan Tyberius, a Prime God. Standing in Avalonus: radiant cloud and white gold architecture, unbearable light behind. Mythical rarity: unmistakably one of the great powers of the world, the composition built around them.
-```
-
-**Susanna Bruhneville, Great Witch of the North** - `N0.01.LAH.25` - save as `public/images/cards/susanna-bruhneville-great-witch-of-the-north.webp`
-
-```
-Waist-up portrait of Susanna Bruhneville, Great Witch of the North, an Ancient Spirit. Standing in a black wood under a huge moon, candles burning in the branches. Mythical rarity: unmistakably one of the great powers of the world, the composition built around them.
-```
-
-**The Pale Lady** - `N0.01.BOI.049` - save as `public/images/cards/the-pale-lady.webp`
-
-```
-Waist-up portrait of The Pale Lady, an Ancient Spirit. Standing in catacombs lit by low green flame, bone stacked in the arches. Mythical rarity: unmistakably one of the great powers of the world, the composition built around them.
-```
-
-**Tylon (Leviathan)** - `N0.01.BOI.069` - save as `public/images/cards/tylon-leviathan.webp`
+**Tylon (Leviathan)** - `N0.01.BOI.070` - save as `public/images/cards/tylon-leviathan.webp`
 
 ```
 Waist-up portrait of Tylon (Leviathan), a Tylon. Standing in deep green water, shafts of light coming down from far above. Mythical rarity: unmistakably one of the great powers of the world, the composition built around them.
 ```
 
-**World Sage Nilream, The White Dragon** - `N0.01.BOI.062` - save as `public/images/cards/world-sage-nilream-the-white-dragon.webp`
+**World Sage Nilream, The White Dragon** - `N0.01.BOI.063` - save as `public/images/cards/world-sage-nilream-the-white-dragon.webp`
 
 ```
 Waist-up portrait of World Sage Nilream, The White Dragon, an Elder Dragon. Standing in the High Dragon Mountains, peaks piercing the cloud. Mythical rarity: unmistakably one of the great powers of the world, the composition built around them.
@@ -231,37 +82,37 @@ Waist-up portrait of World Sage Nilream, The White Dragon, an Elder Dragon. Stan
 
 ### Ascendant (22)
 
-**Archmagi Geof** - `N0.01.BOI.041` - save as `public/images/cards/archmagi-geof.webp`
+**Archmagi Geof** - `N0.01.BOI.042` - save as `public/images/cards/archmagi-geof.webp`
 
 ```
 Waist-up portrait of Archmagi Geof, a Dwarf Wizard. Standing in a high tower room of instruments and drifting light. Ascendant rarity: unmistakably one of the great powers of the world, the composition built around them.
 ```
 
-**Archmagi Serra** - `N0.01.BOI.043` - save as `public/images/cards/archmagi-serra.webp`
+**Archmagi Serra** - `N0.01.BOI.044` - save as `public/images/cards/archmagi-serra.webp`
 
 ```
 Waist-up portrait of Archmagi Serra, a High Elf Wizard. Standing in a high tower room of instruments and drifting light. Ascendant rarity: unmistakably one of the great powers of the world, the composition built around them.
 ```
 
-**Archmagi Treantan** - `N0.01.BOI.042` - save as `public/images/cards/archmagi-treantan.webp`
+**Archmagi Treantan** - `N0.01.BOI.043` - save as `public/images/cards/archmagi-treantan.webp`
 
 ```
 Waist-up portrait of Archmagi Treantan, a Treant Wizard. Standing in a high tower room of instruments and drifting light. Ascendant rarity: unmistakably one of the great powers of the world, the composition built around them.
 ```
 
-**Archmagi Vault** - `N0.01.BOI.040` - save as `public/images/cards/archmagi-vault.webp`
+**Archmagi Vault** - `N0.01.BOI.041` - save as `public/images/cards/archmagi-vault.webp`
 
 ```
 Waist-up portrait of Archmagi Vault, a Human Wizard. Standing in a high tower room of instruments and drifting light. Ascendant rarity: unmistakably one of the great powers of the world, the composition built around them.
 ```
 
-**Avalon, Queen of Elu-Hsal** - `N0.01.BOI.016` - save as `public/images/cards/avalon-queen-of-elu-hsal.webp`
+**Avalon, Queen of Elu-Hsal** - `N0.01.BOI.017` - save as `public/images/cards/avalon-queen-of-elu-hsal.webp`
 
 ```
 Waist-up portrait of Avalon, Queen of Elu-Hsal, a Soul Elf Lord. Standing in grey ghost-light over broken funerary stones, thin mist at knee height. Ascendant rarity: unmistakably one of the great powers of the world, the composition built around them.
 ```
 
-**Darklord Anthurian** - `N0.01.BOI.019` - save as `public/images/cards/darklord-anthurian.webp`
+**Darklord Anthurian** - `N0.01.BOI.020` - save as `public/images/cards/darklord-anthurian.webp`
 
 ```
 Waist-up portrait of Darklord Anthurian, a Half Elf Lord. Standing in a sunlit elven citadel of pale stone and blue banners. Ascendant rarity: unmistakably one of the great powers of the world, the composition built around them.
@@ -273,25 +124,25 @@ Waist-up portrait of Darklord Anthurian, a Half Elf Lord. Standing in a sunlit e
 Waist-up portrait of Helena Katsunra, Great Witch of the East, a Human. Standing in a black wood under a huge moon, candles burning in the branches. Ascendant rarity: unmistakably one of the great powers of the world, the composition built around them.
 ```
 
-**Karscyll, Sixth Queen of Elu-Dragar** - `N0.01.BOI.017` - save as `public/images/cards/karscyll-sixth-queen-of-elu-dragar.webp`
+**Karscyll, Sixth Queen of Elu-Dragar** - `N0.01.BOI.018` - save as `public/images/cards/karscyll-sixth-queen-of-elu-dragar.webp`
 
 ```
 Waist-up portrait of Karscyll, Sixth Queen of Elu-Dragar, a Dragon Elf Lord. Standing in storm-wracked mountain peaks above the cloud line, dragons circling in the far distance. Ascendant rarity: unmistakably one of the great powers of the world, the composition built around them.
 ```
 
-**Koschei, the Zombie King** - `N0.01.BOI.048` - save as `public/images/cards/koschei-the-zombie-king.webp`
+**Koschei, the Zombie King** - `N0.01.BOI.049` - save as `public/images/cards/koschei-the-zombie-king.webp`
 
 ```
 Waist-up portrait of Koschei, the Zombie King, a Zombie Lord. Standing in catacombs lit by low green flame, bone stacked in the arches. Ascendant rarity: unmistakably one of the great powers of the world, the composition built around them.
 ```
 
-**Leonarr** - `N0.01.BOI.060` - save as `public/images/cards/leonarr.webp`
+**Leonarr** - `N0.01.BOI.061` - save as `public/images/cards/leonarr.webp`
 
 ```
 Waist-up portrait of Leonarr, a Beast King. Standing in the Verdant Wilds: dense jungle, enormous ferns, heavy wet air. Ascendant rarity: unmistakably one of the great powers of the world, the composition built around them.
 ```
 
-**Lycanor** - `N0.01.BOI.059` - save as `public/images/cards/lycanor.webp`
+**Lycanor** - `N0.01.BOI.060` - save as `public/images/cards/lycanor.webp`
 
 ```
 Waist-up portrait of Lycanor, a Beast King. Standing in the Verdant Wilds: dense jungle, enormous ferns, heavy wet air. Ascendant rarity: unmistakably one of the great powers of the world, the composition built around them.
@@ -303,13 +154,13 @@ Waist-up portrait of Lycanor, a Beast King. Standing in the Verdant Wilds: dense
 Waist-up portrait of Melissra Orscina, Great Witch of the South, an Elder Vampire. Standing in a black wood under a huge moon, candles burning in the branches. Ascendant rarity: unmistakably one of the great powers of the world, the composition built around them.
 ```
 
-**Miss Crowly** - `N0.01.BOI.046` - save as `public/images/cards/miss-crowly.webp`
+**Miss Crowly** - `N0.01.BOI.047` - save as `public/images/cards/miss-crowly.webp`
 
 ```
 Waist-up portrait of Miss Crowly, an Ancient Spirit. Standing in catacombs lit by low green flame, bone stacked in the arches. Ascendant rarity: unmistakably one of the great powers of the world, the composition built around them.
 ```
 
-**Mordred, The Broken** - `N0.01.BOI.036` - save as `public/images/cards/mordred-the-broken.webp`
+**Mordred, The Broken** - `N0.01.BOI.037` - save as `public/images/cards/mordred-the-broken.webp`
 
 ```
 Waist-up portrait of Mordred, The Broken, a Human Druid. Standing in the fortified stone kingdom of Adamas. Ascendant rarity: unmistakably one of the great powers of the world, the composition built around them.
@@ -321,7 +172,7 @@ Waist-up portrait of Mordred, The Broken, a Human Druid. Standing in the fortifi
 Waist-up portrait of Morrina Penfyre, Great Witch of the West, a Human. Standing in a black wood under a huge moon, candles burning in the branches. Ascendant rarity: unmistakably one of the great powers of the world, the composition built around them.
 ```
 
-**Norgod Jarl** - `N0.01.BOI.088` - save as `public/images/cards/norgod-jarl.webp`
+**Norgod Jarl** - `N0.01.BOI.089` - save as `public/images/cards/norgod-jarl.webp`
 
 ```
 Waist-up portrait of Norgod Jarl, a Norgods. Dwarf-like in build but colossal in size. Stone-blooded and iron-veined. Standing in a freezing northern cliff above a grey sea. Ascendant rarity: unmistakably one of the great powers of the world, the composition built around them.
@@ -339,25 +190,25 @@ Waist-up portrait of Seneal Icetear, a High Elf. Standing in a hall of pale blue
 Waist-up portrait of Solenyra Gravespine, a High Elf. Standing in a deep green forest of enormous trees, crimson banners hanging between them, the light coming down in shafts. Ascendant rarity: unmistakably one of the great powers of the world, the composition built around them.
 ```
 
-**Tylon (Spirit Awakened)** - `N0.01.BOI.068` - save as `public/images/cards/tylon-spirit-awakened.webp`
+**Tylon (Spirit Awakened)** - `N0.01.BOI.069` - save as `public/images/cards/tylon-spirit-awakened.webp`
 
 ```
 Waist-up portrait of Tylon (Spirit Awakened), a Tylon. Standing in the Verdant Wilds: dense jungle, enormous ferns, heavy wet air. Ascendant rarity: unmistakably one of the great powers of the world, the composition built around them.
 ```
 
-**Warlord Wufgarr** - `N0.01.BOI.038` - save as `public/images/cards/warlord-wufgarr.webp`
+**Warlord Wufgarr** - `N0.01.BOI.039` - save as `public/images/cards/warlord-wufgarr.webp`
 
 ```
 Waist-up portrait of Warlord Wufgarr, an Orc Lord. Standing in a raided camp at dusk, smoke rising behind. Ascendant rarity: unmistakably one of the great powers of the world, the composition built around them.
 ```
 
-**Zhou Ying, Phoenix General** - `N0.01.BOI.035` - save as `public/images/cards/zhou-ying-phoenix-general.webp`
+**Zhou Ying, Phoenix General** - `N0.01.BOI.036` - save as `public/images/cards/zhou-ying-phoenix-general.webp`
 
 ```
 Waist-up portrait of Zhou Ying, Phoenix General, a Human Lord. Standing in the fortified stone kingdom of Adamas. Ascendant rarity: unmistakably one of the great powers of the world, the composition built around them.
 ```
 
-**Zhuge Guan, Dragon Strategist** - `N0.01.BOI.034` - save as `public/images/cards/zhuge-guan-dragon-strategist.webp`
+**Zhuge Guan, Dragon Strategist** - `N0.01.BOI.035` - save as `public/images/cards/zhuge-guan-dragon-strategist.webp`
 
 ```
 Waist-up portrait of Zhuge Guan, Dragon Strategist, a Human Lord. Standing in the fortified stone kingdom of Adamas. Ascendant rarity: unmistakably one of the great powers of the world, the composition built around them.
@@ -384,7 +235,7 @@ Waist-up portrait of Duke Lycareon Tyberious, a Human. Standing in the fortified
 Waist-up portrait of Edmonta Lothrin, a Soul Elf. Standing in grey ghost-light over broken funerary stones, thin mist at knee height. Epic rarity: someone of real standing, better armed and better dressed than most.
 ```
 
-**Fallen Lycaron** - `N0.01.BOI.057` - save as `public/images/cards/fallen-lycaron.webp`
+**Fallen Lycaron** - `N0.01.BOI.058` - save as `public/images/cards/fallen-lycaron.webp`
 
 ```
 Waist-up portrait of Fallen Lycaron, a Beastling. A winged, emaciated wolf-beast with crimson eyes and exposed bone joints. Its wings resemble torn shadows. Standing in the Verdant Wilds: dense jungle, enormous ferns, heavy wet air. Epic rarity: someone of real standing, better armed and better dressed than most.
@@ -396,7 +247,7 @@ Waist-up portrait of Fallen Lycaron, a Beastling. A winged, emaciated wolf-beast
 A moment, not a portrait: Hidden Boss. Return an Epic or Legendary character from your opponent’s graveyard to your side of the arena. Set in a wild landscape of the world of Icetear, weather closing in. No lettering anywhere in the image. Leave the top fifth and the bottom quarter uncluttered.
 ```
 
-**High Inquisitor** - `N0.01.BOI.084` - save as `public/images/cards/high-inquisitor.webp`
+**High Inquisitor** - `N0.01.BOI.085` - save as `public/images/cards/high-inquisitor.webp`
 
 ```
 Waist-up portrait of High Inquisitor, a Human. Standing in a candlelit stone chamber hung with chains and writ. Epic rarity: someone of real standing, better armed and better dressed than most.
@@ -408,13 +259,13 @@ Waist-up portrait of High Inquisitor, a Human. Standing in a candlelit stone cha
 Waist-up portrait of Leon Godrick, Second Prince of the Lionheart, a Human. Standing in a gold and crimson throne hall. Epic rarity: someone of real standing, better armed and better dressed than most.
 ```
 
-**Matron of the Moon** - `N0.01.BOI.083` - save as `public/images/cards/matron-of-the-moon.webp`
+**Matron of the Moon** - `N0.01.BOI.084` - save as `public/images/cards/matron-of-the-moon.webp`
 
 ```
 Waist-up portrait of Matron of the Moon, a Human Knight. Standing in a moonlit cloister of pale stone, the moon framed in an arch. Epic rarity: someone of real standing, better armed and better dressed than most.
 ```
 
-**Norgod Reaver** - `N0.01.BOI.087` - save as `public/images/cards/norgod-reaver.webp`
+**Norgod Reaver** - `N0.01.BOI.088` - save as `public/images/cards/norgod-reaver.webp`
 
 ```
 Waist-up portrait of Norgod Reaver, a Norgods. Dwarf-like in build but colossal in size. Stone-blooded and iron-veined. Standing in a freezing northern cliff above a grey sea. Epic rarity: someone of real standing, better armed and better dressed than most.
@@ -426,43 +277,43 @@ Waist-up portrait of Norgod Reaver, a Norgods. Dwarf-like in build but colossal 
 Waist-up portrait of Nyrial Dagrhan, a Dragon Elf Lord. Standing in storm-wracked mountain peaks above the cloud line, dragons circling in the far distance. Epic rarity: someone of real standing, better armed and better dressed than most.
 ```
 
-**Oath of the Sacred Order** - `N0.01.BOI.145` - save as `public/images/cards/oath-of-the-sacred-order.webp`
+**Oath of the Sacred Order** - `N0.01.BOI.146` - save as `public/images/cards/oath-of-the-sacred-order.webp`
 
 ```
 A moment, not a portrait: Oath of the Sacred Order. Every friendly character gains +4 Power. Set in a wild landscape of the world of Icetear, weather closing in. No lettering anywhere in the image. Leave the top fifth and the bottom quarter uncluttered.
 ```
 
-**Princess Anna, the White Witch** - `N0.01.BOI.014` - save as `public/images/cards/princess-anna-the-white-witch.webp`
+**Princess Anna, the White Witch** - `N0.01.BOI.015` - save as `public/images/cards/princess-anna-the-white-witch.webp`
 
 ```
 Waist-up portrait of Princess Anna, the White Witch, a Half Elf. Standing in a sunlit elven citadel of pale stone and blue banners. Epic rarity: someone of real standing, better armed and better dressed than most.
 ```
 
-**Slayer Captain** - `N0.01.BOI.082` - save as `public/images/cards/slayer-captain.webp`
+**Slayer Captain** - `N0.01.BOI.083` - save as `public/images/cards/slayer-captain.webp`
 
 ```
 Waist-up portrait of Slayer Captain, a Human. Standing in a cold hillside beside the carcass of something enormous. Epic rarity: someone of real standing, better armed and better dressed than most.
 ```
 
-**Stormspear** - `N0.01.BOI.056` - save as `public/images/cards/stormspear.webp`
+**Stormspear** - `N0.01.BOI.057` - save as `public/images/cards/stormspear.webp`
 
 ```
 Waist-up portrait of Stormspear, a Beast. Avian humanoid with silver feathers and cloud-wrapped wings. Carries a staff etched with lightning runes. Standing in the Verdant Wilds: dense jungle, enormous ferns, heavy wet air. Epic rarity: someone of real standing, better armed and better dressed than most.
 ```
 
-**Tylon (Awakened)** - `N0.01.BOI.067` - save as `public/images/cards/tylon-awakened.webp`
+**Tylon (Awakened)** - `N0.01.BOI.068` - save as `public/images/cards/tylon-awakened.webp`
 
 ```
 Waist-up portrait of Tylon (Awakened), a Tylon. Standing in the Verdant Wilds: dense jungle, enormous ferns, heavy wet air. Epic rarity: someone of real standing, better armed and better dressed than most.
 ```
 
-**Tylon (Corrupted)** - `N0.01.BOI.066` - save as `public/images/cards/tylon-corrupted.webp`
+**Tylon (Corrupted)** - `N0.01.BOI.067` - save as `public/images/cards/tylon-corrupted.webp`
 
 ```
 Waist-up portrait of Tylon (Corrupted), a Tylon. Standing in the Verdant Wilds: dense jungle, enormous ferns, heavy wet air. Epic rarity: someone of real standing, better armed and better dressed than most.
 ```
 
-**Winter, Ghosthowl** - `N0.01.BOI.058` - save as `public/images/cards/winter-ghosthowl.webp`
+**Winter, Ghosthowl** - `N0.01.BOI.059` - save as `public/images/cards/winter-ghosthowl.webp`
 
 ```
 Waist-up portrait of Winter, Ghosthowl, a Beastling. Standing in the Verdant Wilds: dense jungle, enormous ferns, heavy wet air. Epic rarity: someone of real standing, better armed and better dressed than most.
@@ -471,19 +322,19 @@ Waist-up portrait of Winter, Ghosthowl, a Beastling. Standing in the Verdant Wil
 
 ### Rare (19)
 
-**Ascena Icetear** - `N0.01.BOI.003` - save as `public/images/cards/ascena-icetear.webp`
+**Ascena Icetear** - `N0.01.BOI.004` - save as `public/images/cards/ascena-icetear.webp`
 
 ```
 Waist-up portrait of Ascena Icetear, a High Elf. Standing in a hall of pale blue ice, frost blooming across carved stone, cold winter light. Rare rarity: someone of rank and note, but not a legend.
 ```
 
-**Bruhneville Daughter** - `N0.01.BOI.031` - save as `public/images/cards/bruhneville-daughter.webp`
+**Bruhneville Daughter** - `N0.01.BOI.032` - save as `public/images/cards/bruhneville-daughter.webp`
 
 ```
 Waist-up portrait of Bruhneville Daughter, a Human Spirit. Standing in a black wood under a huge moon, candles burning in the branches. Rare rarity: someone of rank and note, but not a legend.
 ```
 
-**Citadel Captain** - `N0.01.BOI.033` - save as `public/images/cards/citadel-captain.webp`
+**Citadel Captain** - `N0.01.BOI.034` - save as `public/images/cards/citadel-captain.webp`
 
 ```
 Waist-up portrait of Citadel Captain, a Human Knight. Standing in the walls of a great citadel, banners snapping in the wind. Rare rarity: someone of rank and note, but not a legend.
@@ -495,55 +346,55 @@ Waist-up portrait of Citadel Captain, a Human Knight. Standing in the walls of a
 Waist-up portrait of Elarien Thornwither, a High Elf. Standing in a deep green forest of enormous trees, crimson banners hanging between them, the light coming down in shafts. Rare rarity: someone of rank and note, but not a legend.
 ```
 
-**Fiarra** - `N0.01.BOI.006` - save as `public/images/cards/fiarra.webp`
+**Fiarra** - `N0.01.BOI.007` - save as `public/images/cards/fiarra.webp`
 
 ```
 Waist-up portrait of Fiarra, a High Elf. Standing in an ancient elven grove, white bark and gold leaf, warm filtered light. Rare rarity: someone of rank and note, but not a legend.
 ```
 
-**Goulargz** - `N0.01.BOI.045` - save as `public/images/cards/goulargz.webp`
+**Goulargz** - `N0.01.BOI.046` - save as `public/images/cards/goulargz.webp`
 
 ```
 Waist-up portrait of Goulargz, an Undead. Massive, tusked humanoid with bone armour fused to its flesh, low-frequency growls unnerving everything near it. Standing in catacombs lit by low green flame, bone stacked in the arches. Rare rarity: someone of rank and note, but not a legend.
 ```
 
-**Inquisitor** - `N0.01.BOI.080` - save as `public/images/cards/inquisitor.webp`
+**Inquisitor** - `N0.01.BOI.081` - save as `public/images/cards/inquisitor.webp`
 
 ```
 Waist-up portrait of Inquisitor, a Human. Standing in a candlelit stone chamber hung with chains and writ. Rare rarity: someone of rank and note, but not a legend.
 ```
 
-**Kalbeliya Seer** - `N0.01.BOI.079` - save as `public/images/cards/kalbeliya-seer.webp`
+**Kalbeliya Seer** - `N0.01.BOI.080` - save as `public/images/cards/kalbeliya-seer.webp`
 
 ```
 Waist-up portrait of Kalbeliya Seer, a Gypsy. Brightly robed, flame-eyed, skin tattooed with protective and storytelling sigils. Standing in a night camp in the heat of Lokharron, firelight, painted wagons. Rare rarity: someone of rank and note, but not a legend.
 ```
 
-**Mayra Padukindel** - `N0.01.BOI.007` - save as `public/images/cards/mayra-padukindel.webp`
+**Mayra Padukindel** - `N0.01.BOI.008` - save as `public/images/cards/mayra-padukindel.webp`
 
 ```
 Waist-up portrait of Mayra Padukindel, a High Elf. Standing in an ancient elven grove, white bark and gold leaf, warm filtered light. Rare rarity: someone of rank and note, but not a legend.
 ```
 
-**Mercaptain** - `N0.01.BOI.055` - save as `public/images/cards/mercaptain.webp`
+**Mercaptain** - `N0.01.BOI.056` - save as `public/images/cards/mercaptain.webp`
 
 ```
 Waist-up portrait of Mercaptain, a Merfolk. Scaled humanoid with a trident crown and a mantle of jellyfish silk. Standing in deep green water, shafts of light coming down from far above. Rare rarity: someone of rank and note, but not a legend.
 ```
 
-**Muster the Host** - `N0.01.BOI.142` - save as `public/images/cards/muster-the-host.webp`
+**Muster the Host** - `N0.01.BOI.143` - save as `public/images/cards/muster-the-host.webp`
 
 ```
 A moment, not a portrait: Muster the Host. Draw 2 cards, and your Muster rises by 1 this turn. Set in a wild landscape of the world of Icetear, weather closing in. No lettering anywhere in the image. Leave the top fifth and the bottom quarter uncluttered.
 ```
 
-**Numaya Steamrose** - `N0.01.BOI.008` - save as `public/images/cards/numaya-steamrose.webp`
+**Numaya Steamrose** - `N0.01.BOI.009` - save as `public/images/cards/numaya-steamrose.webp`
 
 ```
 Waist-up portrait of Numaya Steamrose, a High Elf. Standing in an ancient elven grove, white bark and gold leaf, warm filtered light. Rare rarity: someone of rank and note, but not a legend.
 ```
 
-**Oinstan Stonewright** - `N0.01.BOI.086` - save as `public/images/cards/oinstan-stonewright.webp`
+**Oinstan Stonewright** - `N0.01.BOI.087` - save as `public/images/cards/oinstan-stonewright.webp`
 
 ```
 Waist-up portrait of Oinstan Stonewright, an Oinstans. Tall, thick-skinned humanoid with tusks, a wide jaw, and beast-shaped war paint. Standing in a vast stone quarry under a hard white sky. Rare rarity: someone of rank and note, but not a legend.
@@ -567,19 +418,19 @@ Waist-up portrait of Red Rangers Squad Leader, a High Elf. Standing in a deep gr
 Waist-up portrait of Rellien & Vessa Aerwyn, a High Elf. Standing in a deep green forest of enormous trees, crimson banners hanging between them, the light coming down in shafts. Rare rarity: someone of rank and note, but not a legend.
 ```
 
-**Sinodess Fleetmaster** - `N0.01.BOI.039` - save as `public/images/cards/sinodess-fleetmaster.webp`
+**Sinodess Fleetmaster** - `N0.01.BOI.040` - save as `public/images/cards/sinodess-fleetmaster.webp`
 
 ```
 Waist-up portrait of Sinodess Fleetmaster, a Human. Standing in the deck of a ship at sea, rigging and salt spray, a hard bright sky. Rare rarity: someone of rank and note, but not a legend.
 ```
 
-**Slayer** - `N0.01.BOI.081` - save as `public/images/cards/slayer.webp`
+**Slayer** - `N0.01.BOI.082` - save as `public/images/cards/slayer.webp`
 
 ```
 Waist-up portrait of Slayer, a Human. Standing in a cold hillside beside the carcass of something enormous. Rare rarity: someone of rank and note, but not a legend.
 ```
 
-**Tylon** - `N0.01.BOI.065` - save as `public/images/cards/tylon.webp`
+**Tylon** - `N0.01.BOI.066` - save as `public/images/cards/tylon.webp`
 
 ```
 Waist-up portrait of Tylon, a Tylon. Standing in the Verdant Wilds: dense jungle, enormous ferns, heavy wet air. Rare rarity: someone of rank and note, but not a legend.
@@ -588,97 +439,97 @@ Waist-up portrait of Tylon, a Tylon. Standing in the Verdant Wilds: dense jungle
 
 ### Uncommon (28)
 
-**Bone Picker** - `N0.01.BOI.108` - save as `public/images/cards/bone-picker.webp`
+**Bone Picker** - `N0.01.BOI.109` - save as `public/images/cards/bone-picker.webp`
 
 ```
 Waist-up portrait of Bone Picker, an Undead. Standing in catacombs lit by low green flame, bone stacked in the arches. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Cliff Garuda** - `N0.01.BOI.122` - save as `public/images/cards/cliff-garuda.webp`
+**Cliff Garuda** - `N0.01.BOI.123` - save as `public/images/cards/cliff-garuda.webp`
 
 ```
 Waist-up portrait of Cliff Garuda, a Beast. Standing in the Verdant Wilds: dense jungle, enormous ferns, heavy wet air. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Dragon Elf Outrider** - `N0.01.BOI.120` - save as `public/images/cards/dragon-elf-outrider.webp`
+**Dragon Elf Outrider** - `N0.01.BOI.121` - save as `public/images/cards/dragon-elf-outrider.webp`
 
 ```
 Waist-up portrait of Dragon Elf Outrider, a Dragon Elf. Standing in storm-wracked mountain peaks above the cloud line, dragons circling in the far distance. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Dwarf Stoneguard** - `N0.01.BOI.121` - save as `public/images/cards/dwarf-stoneguard.webp`
+**Dwarf Stoneguard** - `N0.01.BOI.122` - save as `public/images/cards/dwarf-stoneguard.webp`
 
 ```
 Waist-up portrait of Dwarf Stoneguard, a Dwarf. Standing in a wild landscape of the world of Icetear, weather closing in. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Exodan Wanderer** - `N0.01.BOI.085` - save as `public/images/cards/exodan-wanderer.webp`
+**Exodan Wanderer** - `N0.01.BOI.086` - save as `public/images/cards/exodan-wanderer.webp`
 
 ```
 Waist-up portrait of Exodan Wanderer, an Exodas. Marked by unnatural eyes, a strange aura, and half-manifested power showing at the edges. Standing in the Shattered Lowlands: broken farmland and ruined walls to the horizon. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Frostbind** - `N0.01.BOI.138` - save as `public/images/cards/frostbind.webp`
+**Frostbind** - `N0.01.BOI.139` - save as `public/images/cards/frostbind.webp`
 
 ```
 A moment, not a portrait: Frostbind. An enemy character cannot strike for two turns. Set in a hall of pale blue ice, frost blooming across carved stone, cold winter light. No lettering anywhere in the image. Leave the top fifth and the bottom quarter uncluttered.
 ```
 
-**Garudling** - `N0.01.BOI.051` - save as `public/images/cards/garudling.webp`
+**Garudling** - `N0.01.BOI.052` - save as `public/images/cards/garudling.webp`
 
 ```
 Waist-up portrait of Garudling, a Beast. Fist-sized feathery raptor with too-bright eyes and sparks flickering off its beak. Standing in the Verdant Wilds: dense jungle, enormous ferns, heavy wet air. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Gods Blood Initiate** - `N0.01.BOI.123` - save as `public/images/cards/gods-blood-initiate.webp`
+**Gods Blood Initiate** - `N0.01.BOI.124` - save as `public/images/cards/gods-blood-initiate.webp`
 
 ```
 Waist-up portrait of Gods Blood Initiate, a Gods Blood. Standing in Heaven’s Throat: a mountain empire carved in gold, colossal golden statues standing along the walls. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Hedge Witch** - `N0.01.BOI.117` - save as `public/images/cards/hedge-witch.webp`
+**Hedge Witch** - `N0.01.BOI.118` - save as `public/images/cards/hedge-witch.webp`
 
 ```
 Waist-up portrait of Hedge Witch, a Human. Standing in a black wood under a huge moon, candles burning in the branches. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Icetear Winterguard** - `N0.01.BOI.119` - save as `public/images/cards/icetear-winterguard.webp`
+**Icetear Winterguard** - `N0.01.BOI.120` - save as `public/images/cards/icetear-winterguard.webp`
 
 ```
 Waist-up portrait of Icetear Winterguard, a High Elf. Standing in a hall of pale blue ice, frost blooming across carved stone, cold winter light. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Inquisition Warden** - `N0.01.BOI.113` - save as `public/images/cards/inquisition-warden.webp`
+**Inquisition Warden** - `N0.01.BOI.114` - save as `public/images/cards/inquisition-warden.webp`
 
 ```
 Waist-up portrait of Inquisition Warden, a Human. Standing in a candlelit stone chamber hung with chains and writ. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Kalbeliya Dancer** - `N0.01.BOI.078` - save as `public/images/cards/kalbeliya-dancer.webp`
+**Kalbeliya Dancer** - `N0.01.BOI.079` - save as `public/images/cards/kalbeliya-dancer.webp`
 
 ```
 Waist-up portrait of Kalbeliya Dancer, a Gypsy. Brightly robed, flame-eyed, skin tattooed with protective and storytelling sigils. Standing in a night camp in the heat of Lokharron, firelight, painted wagons. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Kingdom Militia** - `N0.01.BOI.105` - save as `public/images/cards/kingdom-militia.webp`
+**Kingdom Militia** - `N0.01.BOI.106` - save as `public/images/cards/kingdom-militia.webp`
 
 ```
 Waist-up portrait of Kingdom Militia, a Human. Standing in the fortified stone kingdom of Adamas, watchfires burning on the walls. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Magi Apprentice** - `N0.01.BOI.109` - save as `public/images/cards/magi-apprentice.webp`
+**Magi Apprentice** - `N0.01.BOI.110` - save as `public/images/cards/magi-apprentice.webp`
 
 ```
 Waist-up portrait of Magi Apprentice, a Human Wizard. Standing in a high tower room of instruments and drifting light. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Mersoldier** - `N0.01.BOI.052` - save as `public/images/cards/mersoldier.webp`
+**Mersoldier** - `N0.01.BOI.053` - save as `public/images/cards/mersoldier.webp`
 
 ```
 Waist-up portrait of Mersoldier, a Merfolk. Pale blue humanoid with webbed limbs, barnacled armour, and gills pulsing on the neck. Standing in deep green water, shafts of light coming down from far above. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Moon Elf Tidecaller** - `N0.01.BOI.111` - save as `public/images/cards/moon-elf-tidecaller.webp`
+**Moon Elf Tidecaller** - `N0.01.BOI.112` - save as `public/images/cards/moon-elf-tidecaller.webp`
 
 ```
 Waist-up portrait of Moon Elf Tidecaller, a Moon Elf. Standing in a moonlit shore, silver water, a huge low moon behind. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
@@ -690,19 +541,19 @@ Waist-up portrait of Moon Elf Tidecaller, a Moon Elf. Standing in a moonlit shor
 Waist-up portrait of Moon Warrior, a High Elf. Standing in a deep green forest of enormous trees, crimson banners hanging between them, the light coming down in shafts. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Norgod Oarsman** - `N0.01.BOI.116` - save as `public/images/cards/norgod-oarsman.webp`
+**Norgod Oarsman** - `N0.01.BOI.117` - save as `public/images/cards/norgod-oarsman.webp`
 
 ```
 Waist-up portrait of Norgod Oarsman, a Norgods. Dwarf-like in build but colossal in size. Stone-blooded and iron-veined. Standing in a freezing northern cliff above a grey sea. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Oinstan Mason** - `N0.01.BOI.110` - save as `public/images/cards/oinstan-mason.webp`
+**Oinstan Mason** - `N0.01.BOI.111` - save as `public/images/cards/oinstan-mason.webp`
 
 ```
 Waist-up portrait of Oinstan Mason, an Oinstans. Tall, thick-skinned humanoid with tusks, a wide jaw, and beast-shaped war paint. Standing in a vast stone quarry under a hard white sky. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Orc Skirmisher** - `N0.01.BOI.107` - save as `public/images/cards/orc-skirmisher.webp`
+**Orc Skirmisher** - `N0.01.BOI.108` - save as `public/images/cards/orc-skirmisher.webp`
 
 ```
 Waist-up portrait of Orc Skirmisher, an Orc. Standing in a raided camp at dusk, smoke rising behind. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
@@ -714,7 +565,7 @@ Waist-up portrait of Orc Skirmisher, an Orc. Standing in a raided camp at dusk, 
 Waist-up portrait of Red Rangers Archer, a High Elf. Standing in a deep green forest of enormous trees, crimson banners hanging between them, the light coming down in shafts. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Red Rangers Tracker** - `N0.01.BOI.118` - save as `public/images/cards/red-rangers-tracker.webp`
+**Red Rangers Tracker** - `N0.01.BOI.119` - save as `public/images/cards/red-rangers-tracker.webp`
 
 ```
 Waist-up portrait of Red Rangers Tracker, a High Elf. Standing in a deep green forest of enormous trees, crimson banners hanging between them, the light coming down in shafts. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
@@ -726,31 +577,31 @@ Waist-up portrait of Red Rangers Tracker, a High Elf. Standing in a deep green f
 Waist-up portrait of Red Rangers Warrior, a High Elf. Standing in a deep green forest of enormous trees, crimson banners hanging between them, the light coming down in shafts. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Reef Lurker** - `N0.01.BOI.115` - save as `public/images/cards/reef-lurker.webp`
+**Reef Lurker** - `N0.01.BOI.116` - save as `public/images/cards/reef-lurker.webp`
 
 ```
 Waist-up portrait of Reef Lurker, a Merfolk. Standing in deep green water, shafts of light coming down from far above. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Sinodess Corsair** - `N0.01.BOI.114` - save as `public/images/cards/sinodess-corsair.webp`
+**Sinodess Corsair** - `N0.01.BOI.115` - save as `public/images/cards/sinodess-corsair.webp`
 
 ```
 Waist-up portrait of Sinodess Corsair, a Human. Standing in the deck of a ship at sea, rigging and salt spray, a hard bright sky. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Sister of the Moon** - `N0.01.BOI.077` - save as `public/images/cards/sister-of-the-moon.webp`
+**Sister of the Moon** - `N0.01.BOI.078` - save as `public/images/cards/sister-of-the-moon.webp`
 
 ```
 Waist-up portrait of Sister of the Moon, a Human Knight. Standing in a moonlit cloister of pale stone, the moon framed in an arch. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Slayer Apprentice** - `N0.01.BOI.106` - save as `public/images/cards/slayer-apprentice.webp`
+**Slayer Apprentice** - `N0.01.BOI.107` - save as `public/images/cards/slayer-apprentice.webp`
 
 ```
 Waist-up portrait of Slayer Apprentice, a Human. Standing in a cold hillside beside the carcass of something enormous. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Soul Elf Acolyte** - `N0.01.BOI.112` - save as `public/images/cards/soul-elf-acolyte.webp`
+**Soul Elf Acolyte** - `N0.01.BOI.113` - save as `public/images/cards/soul-elf-acolyte.webp`
 
 ```
 Waist-up portrait of Soul Elf Acolyte, a Soul Elf. Standing in grey ghost-light over broken funerary stones, thin mist at knee height. Uncommon rarity: an ordinary soldier of their people, plain gear, no grandeur.
@@ -759,115 +610,115 @@ Waist-up portrait of Soul Elf Acolyte, a Soul Elf. Standing in grey ghost-light 
 
 ### Common (19)
 
-**Abyssal Insect** - `N0.01.BOI.099` - save as `public/images/cards/abyssal-insect.webp`
+**Abyssal Insect** - `N0.01.BOI.100` - save as `public/images/cards/abyssal-insect.webp`
 
 ```
 Waist-up portrait of Abyssal Insect, an Insect. Standing in the Abyssal Breach: a wound in the world, reality unstable around it. Common rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Elu Primus Initiate** - `N0.01.BOI.094` - save as `public/images/cards/elu-primus-initiate.webp`
+**Elu Primus Initiate** - `N0.01.BOI.095` - save as `public/images/cards/elu-primus-initiate.webp`
 
 ```
 Waist-up portrait of Elu Primus Initiate, a High Elf. Standing in an ancient elven grove, white bark and gold leaf, warm filtered light. Common rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Enclave Farmer** - `N0.01.BOI.089` - save as `public/images/cards/enclave-farmer.webp`
+**Enclave Farmer** - `N0.01.BOI.090` - save as `public/images/cards/enclave-farmer.webp`
 
 ```
 Waist-up portrait of Enclave Farmer, a Human. Standing in the fortified stone kingdom of Adamas, watchfires burning on the walls. Common rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Exodan Scout** - `N0.01.BOI.098` - save as `public/images/cards/exodan-scout.webp`
+**Exodan Scout** - `N0.01.BOI.099` - save as `public/images/cards/exodan-scout.webp`
 
 ```
 Waist-up portrait of Exodan Scout, an Exodas. Marked by unnatural eyes, a strange aura, and half-manifested power showing at the edges. Standing in the Shattered Lowlands: broken farmland and ruined walls to the horizon. Common rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Faesilver Edge** - `N0.01.BOI.124` - save as `public/images/cards/faesilver-edge.webp`
+**Faesilver Edge** - `N0.01.BOI.125` - save as `public/images/cards/faesilver-edge.webp`
 
 ```
 A moment, not a portrait: Faesilver Edge. A friendly character gains +3 Power this turn. Set in a wild landscape of the world of Icetear, weather closing in. No lettering anywhere in the image. Leave the top fifth and the bottom quarter uncluttered.
 ```
 
-**Ghoul** - `N0.01.BOI.044` - save as `public/images/cards/ghoul.webp`
+**Ghoul** - `N0.01.BOI.045` - save as `public/images/cards/ghoul.webp`
 
 ```
 Waist-up portrait of Ghoul, an Undead. Pale, skin-stripped humanoid with elongated arms, jagged teeth, and no visible eyes. Standing in catacombs lit by low green flame, bone stacked in the arches. Common rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Half Elf Levy** - `N0.01.BOI.090` - save as `public/images/cards/half-elf-levy.webp`
+**Half Elf Levy** - `N0.01.BOI.091` - save as `public/images/cards/half-elf-levy.webp`
 
 ```
 Waist-up portrait of Half Elf Levy, a Half Elf. Standing in a sunlit elven citadel of pale stone and blue banners. Common rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Icetear Squire** - `N0.01.BOI.093` - save as `public/images/cards/icetear-squire.webp`
+**Icetear Squire** - `N0.01.BOI.094` - save as `public/images/cards/icetear-squire.webp`
 
 ```
 Waist-up portrait of Icetear Squire, a High Elf. Standing in a hall of pale blue ice, frost blooming across carved stone, cold winter light. Common rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Imptizzle** - `N0.01.BOI.050` - save as `public/images/cards/imptizzle.webp`
+**Imptizzle** - `N0.01.BOI.051` - save as `public/images/cards/imptizzle.webp`
 
 ```
 Waist-up portrait of Imptizzle, an Imp. A palm-sized, chattering creature with bat wings, glowing yellow teeth, and a forked tongue too large for its mouth. Standing in the Abyssal Realm: black rock, distant fire, a sky like a bruise. Common rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Kalbeliya Outrider** - `N0.01.BOI.103` - save as `public/images/cards/kalbeliya-outrider.webp`
+**Kalbeliya Outrider** - `N0.01.BOI.104` - save as `public/images/cards/kalbeliya-outrider.webp`
 
 ```
 Waist-up portrait of Kalbeliya Outrider, a Gypsy. Brightly robed, flame-eyed, skin tattooed with protective and storytelling sigils. Standing in a night camp in the heat of Lokharron, firelight, painted wagons. Common rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Novice of the Moon** - `N0.01.BOI.096` - save as `public/images/cards/novice-of-the-moon.webp`
+**Novice of the Moon** - `N0.01.BOI.097` - save as `public/images/cards/novice-of-the-moon.webp`
 
 ```
 Waist-up portrait of Novice of the Moon, a Human Knight. Standing in a moonlit cloister of pale stone, the moon framed in an arch. Common rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Red Rangers Scout** - `N0.01.BOI.104` - save as `public/images/cards/red-rangers-scout.webp`
+**Red Rangers Scout** - `N0.01.BOI.105` - save as `public/images/cards/red-rangers-scout.webp`
 
 ```
 Waist-up portrait of Red Rangers Scout, a High Elf. Standing in a deep green forest of enormous trees, crimson banners hanging between them, the light coming down in shafts. Common rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Risen Levy** - `N0.01.BOI.091` - save as `public/images/cards/risen-levy.webp`
+**Risen Levy** - `N0.01.BOI.092` - save as `public/images/cards/risen-levy.webp`
 
 ```
 Waist-up portrait of Risen Levy, an Undead. Standing in catacombs lit by low green flame, bone stacked in the arches. Common rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Serpent Hatchling** - `N0.01.BOI.092` - save as `public/images/cards/serpent-hatchling.webp`
+**Serpent Hatchling** - `N0.01.BOI.093` - save as `public/images/cards/serpent-hatchling.webp`
 
 ```
 Waist-up portrait of Serpent Hatchling, a Beast. Standing in the Verdant Wilds: dense jungle, enormous ferns, heavy wet air. Common rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Sinodess Deckhand** - `N0.01.BOI.097` - save as `public/images/cards/sinodess-deckhand.webp`
+**Sinodess Deckhand** - `N0.01.BOI.098` - save as `public/images/cards/sinodess-deckhand.webp`
 
 ```
 Waist-up portrait of Sinodess Deckhand, a Human. Standing in the deck of a ship at sea, rigging and salt spray, a hard bright sky. Common rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Spearman of Adamas** - `N0.01.BOI.102` - save as `public/images/cards/spearman-of-adamas.webp`
+**Spearman of Adamas** - `N0.01.BOI.103` - save as `public/images/cards/spearman-of-adamas.webp`
 
 ```
 Waist-up portrait of Spearman of Adamas, a Human. Standing in the fortified stone kingdom of Adamas, watchfires burning on the walls. Common rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Squire of the Citadel** - `N0.01.BOI.095` - save as `public/images/cards/squire-of-the-citadel.webp`
+**Squire of the Citadel** - `N0.01.BOI.096` - save as `public/images/cards/squire-of-the-citadel.webp`
 
 ```
 Waist-up portrait of Squire of the Citadel, a Human Knight. Standing in the walls of a great citadel, banners snapping in the wind. Common rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Treant Sapling** - `N0.01.BOI.101` - save as `public/images/cards/treant-sapling.webp`
+**Treant Sapling** - `N0.01.BOI.102` - save as `public/images/cards/treant-sapling.webp`
 
 ```
 Waist-up portrait of Treant Sapling, a Treant. Standing in a wild landscape of the world of Icetear, weather closing in. Common rarity: an ordinary soldier of their people, plain gear, no grandeur.
 ```
 
-**Tylon Whelp** - `N0.01.BOI.100` - save as `public/images/cards/tylon-whelp.webp`
+**Tylon Whelp** - `N0.01.BOI.101` - save as `public/images/cards/tylon-whelp.webp`
 
 ```
 Waist-up portrait of Tylon Whelp, a Tylon. Standing in the Verdant Wilds: dense jungle, enormous ferns, heavy wet air. Common rarity: an ordinary soldier of their people, plain gear, no grandeur.
@@ -875,7 +726,7 @@ Waist-up portrait of Tylon Whelp, a Tylon. Standing in the Verdant Wilds: dense 
 
 ---
 
-## 5. The tokens
+## 3. The tokens
 
 Tokens are summoned rather than drawn, so they are seen constantly. They can
 share art with their parent card or get something simple and generic.

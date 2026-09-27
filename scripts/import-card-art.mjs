@@ -25,6 +25,7 @@ const MAP = {
   'Evalon, Mother of Humanity': 'fa-evalon',
   'Glorfarsall Elysium': 'elu-glorfarsall',
   'Hannahrial Icetear - Captain of the Red Rangers': 'LAH.06',
+  'Hannahrial Icetear': 'ice-hannarial-young',   // her earlier self, in House colours
   'Hansall, First High King of Elves': 'elu-hansall',
   'Hansenel Icetear': 'ice-hansenel',
   'Icetear, Child of Winter': 'ice-child-of-winter',
@@ -44,6 +45,7 @@ const MAP = {
 const FILENAME = {
   'fa-abel': 'abel', 'fa-adamas': 'adamas', 'fa-cainan': 'cainan', 'fa-evalon': 'evalon',
   'LAH.16': 'anthuriun', 'LAH.06': 'hannarial', 'ice-hansenel': 'hansenel',
+  'ice-hannarial-young': 'hannarial-young',
   'elu-hansall': 'hansall', 'elu-tiamel': 'tiamel', 'elu-serallion': 'serallion',
   'elu-sederous': 'sederous', 'elu-gilgamesh': 'gilgamesh', 'elu-raastali': 'raastali',
   'elu-revendrinn': 'revendrinn', 'elu-glorfarsall': 'glorfarsall',
