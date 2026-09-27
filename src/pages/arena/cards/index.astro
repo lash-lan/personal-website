@@ -4,7 +4,7 @@ import { CARDS, TIERS, TIER_ORDER, KEYWORDS, artOf, numberOf, typeLineOf, isName
 
 // Every card is rendered at build time and the filters only hide and show
 // them. Nothing here is built by a script, so the scoped styles below reach
-// all of it — which is the trap the battlefield fell into.
+// all of it - which is the trap the battlefield fell into.
 const order = { character: 0, spell: 1 };
 const cards = [...CARDS].sort((a, b) =>
   TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier)
@@ -39,8 +39,8 @@ const painted = CARDS.filter((c) => artOf(c)).length;
       <p>
         A character has one number, <strong>Power</strong>, in the shield at
         the bottom. When two characters fight, each takes the other’s Power
-        off its own; at nought or less it dies. The number in the ring at the
-        top is <strong>Cost</strong> — the Muster you pay to put it in the
+        off its own, and at nought or less it dies. The number in the ring at the
+        top is <strong>Cost</strong> - the Muster you pay to put it in the
         arena. Cost is always Power divided by three, rounded up, plus a
         little for a strong ability.
       </p>
@@ -50,7 +50,7 @@ const painted = CARDS.filter((c) => artOf(c)).length;
           <dd>A specific person, not a kind of person. There is only one
               Shaedra Nyxthorn in the world, so a deck may hold one copy of
               her however common her card is. This is the card’s type, not its
-              rarity — the two are separate.</dd>
+              rarity - the two are separate.</dd>
         </div>
         {Object.entries(KEYWORDS).map(([word, meaning]) => (
           <div><dt>{word}</dt><dd>{meaning}</dd></div>
@@ -106,8 +106,8 @@ const painted = CARDS.filter((c) => artOf(c)).length;
     <div class="sheet" id="sheet">
       {cards.map((c, i) => {
         const art = artOf(c);
-        // The type line reads "[Rarity] — [Type] ([Race])", as on the
-        // prototype. A named individual is a Legendary Character; a spell has
+        // The type line reads "[Rarity] - [Type] ([Race])", as on the
+        // prototype. A named individual is a Legendary Character, and a spell has
         // no race, so it prints its kind alone.
         const kind = typeLineOf(c);
         return (
@@ -131,7 +131,7 @@ const painted = CARDS.filter((c) => artOf(c)).length;
               </span>
 
               <span class="tok-body">
-                <span class="tok-line">{TIERS[c.tier].name} — {kind}</span>
+                <span class="tok-line">{TIERS[c.tier].name} - {kind}</span>
                 <span class="tok-text">{c.text || <em>No ability. It simply fights.</em>}</span>
                 <span class="tok-foot">
                   <span class="tok-no">{numberOf(c)} · {TIERS[c.tier].letter} · LASH</span>
@@ -291,7 +291,7 @@ const painted = CARDS.filter((c) => artOf(c)).length;
             font-variant-numeric: tabular-nums; }
 
   /* Power sits in a shield overhanging the corner of the card, the way a
-     fighting number should — big enough to read across a table. */
+     fighting number should - big enough to read across a table. */
   .tok-power { position: absolute; right: .3em; bottom: .32em;
                display: grid; place-items: center;
                min-width: 2.15em; padding: .08em .3em .16em;
@@ -376,7 +376,7 @@ const painted = CARDS.filter((c) => artOf(c)).length;
 
 <script>
   // ── filtering ────────────────────────────────────────────────────────────
-  // The cards are already in the page; the filters only hide and show them.
+  // The cards are already in the page, and the filters only hide and show them.
   const sheet = document.getElementById('sheet');
   const shown = document.getElementById('shown');
   const toks = [...sheet.querySelectorAll('.tok')];
@@ -469,7 +469,7 @@ const painted = CARDS.filter((c) => artOf(c)).length;
     if (e.target.closest('#lbClose')) return close();
     if (e.target.closest('#lbPrev')) return step(-1);
     if (e.target.closest('#lbNext')) return step(1);
-    // Clicking the card zooms; clicking the space around it closes.
+    // Clicking the card zooms, and clicking the space around it closes.
     if (e.target.closest('.tok')) {
       const wasZoomed = lb.classList.toggle('is-zoom');
       if (wasZoomed) {
@@ -492,7 +492,7 @@ const painted = CARDS.filter((c) => artOf(c)).length;
   });
 
   // Swipe left and right to move between cards, but only when the card is not
-  // zoomed in — once it is, a drag is for panning around the painting.
+  // zoomed in - once it is, a drag is for panning around the painting.
   let x0 = null, y0 = null;
   lbScroll.addEventListener('pointerdown', (e) => { x0 = e.clientX; y0 = e.clientY; });
   lbScroll.addEventListener('pointerup', (e) => {

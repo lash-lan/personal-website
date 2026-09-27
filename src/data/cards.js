@@ -1,13 +1,13 @@
-// Blood of Icetear — the card set.
+// Blood of Icetear - the card set.
 //
 // Every card is defined here as data. Nothing about a card lives in a page or
 // a component, so adding one never means touching the game.
 //
 // Sources, in order of authority:
-//   1. Lash's Canva prototype "Prototype: Card Design" — 58 designed cards,
+//   1. Lash's Canva prototype "Prototype: Card Design" - 58 designed cards,
 //      their names, rarities, lineages, abilities and card numbers. Those
 //      cards keep their printed numbers as ids, e.g. 'LAH.09'.
-//   2. The Foundation Age codex on this site — the World Titans, the avatars,
+//   2. The Foundation Age codex on this site - the World Titans, the avatars,
 //      the mortal progenitors, the elven kings and the artifacts.
 //   3. The bestiary, races, factions and relics in the lore database.
 //   4. The stories: The Squire, The Red Rangers, Last Days of Legends.
@@ -42,7 +42,7 @@ export const MUSTER_CEILING = 10;
 
 /**
  * Cost follows from Power. `bump` is the price of a strong ability, and the
- * total is capped at the Muster ceiling — a card nobody can ever afford is not
+ * total is capped at the Muster ceiling - a card nobody can ever afford is not
  * a card. At the very top the ability is effectively free, which is the whole
  * reason Mythicals feel like Mythicals.
  */
@@ -212,7 +212,7 @@ export const CARDS = [
     'When Sinbad-Sinodess enters the arena, exchange 2 of your characters for 2 of your opponent’s.', 2),
 
   // ───────────────────────── THE ARCHMAGI ─────────────────────────
-  // One wizard per lineage — a cycle that teaches the lineages at a glance.
+  // One wizard per lineage - a cycle that teaches the lineages at a glance.
   c('mag-vault', 'Archmagi Vault', 'tier_5', 19, 'Human Wizard', ['Archmagi'],
     'Quick Attack. Your spells cost 1 less.', 1),
   c('mag-geof', 'Archmagi Geof', 'tier_5', 20, 'Dwarf Wizard', ['Archmagi', 'Dwarf'],
@@ -331,7 +331,7 @@ export const CARDS = [
   // The set is built around named people, so it arrived badly top-heavy: more
   // Legendaries than Commons, which is the wrong shape for a game you open
   // packs of and the wrong shape for a curve. These are the ordinary soldiers
-  // of each faction — the cards you actually play on turns one to three, and
+  // of each faction - the cards you actually play on turns one to three, and
   // the cards the named cast leads.
   c('rf-enclave-farmer', 'Enclave Farmer', 'tier_1', 2, 'Human', ['Humanity'],
     'When Enclave Farmer dies, restore 3 Citadel Mastery.'),
@@ -452,7 +452,7 @@ export const CARDS = [
   s('sp-muster-the-host', 'Muster the Host', 'tier_3', 4,
     'Draw 2 cards, and your Muster rises by 1 this turn.'),
   s('sp-heavens-throat', 'Heaven’s Throat', 'tier_4', 5,
-    'Summon 4 Knights to your side of the arena — the golden statues wake.', ['Gods Blood']),
+    'Summon 4 Knights to your side of the arena - the golden statues wake.', ['Gods Blood']),
   s('sp-abyssal-breach', 'The Abyssal Breach', 'tier_4', 5,
     'Summon 3 Beastlings to your side of the arena. At the end of your turn, lose 3 Citadel Mastery.', ['Corrupted']),
   s('sp-sacred-oath', 'Oath of the Sacred Order', 'tier_4', 5,
@@ -492,8 +492,8 @@ export const CARDS = [
 /**
  * Who is a person and who is a kind of person.
  *
- * A named character is a specific individual — there is one Shaedra Nyxthorn
- * in the world — so her card prints "Legendary Character" and a deck may hold
+ * A named character is a specific individual - there is one Shaedra Nyxthorn
+ * in the world - so her card prints "Legendary Character" and a deck may hold
  * one copy however common she is. A generic character is a type of person: a
  * Red Ranger, an Inquisitor, a Ghoul. There are many, and a deck may hold
  * three.

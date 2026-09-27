@@ -45,7 +45,7 @@ for (const t of TIER_ORDER) {
 section('Cost');
 for (const k of CARDS) {
   if (k.cost > MUSTER_CEILING) {
-    fail(`${k.name} costs ${k.cost}, above the Muster ceiling of ${MUSTER_CEILING} — unplayable`);
+    fail(`${k.name} costs ${k.cost}, above the Muster ceiling of ${MUSTER_CEILING} - unplayable`);
   }
 }
 for (const k of CARDS.filter((k) => k.type === 'character')) {
@@ -94,7 +94,7 @@ console.log(`  ${known.length} keywords: ${known.join(', ')}`);
 // because a Titan is exactly the sort of card that creeps back in.
 for (const k of CARDS) {
   if (k.line === 'World Titan') {
-    fail(`${k.name} is a World Titan; the Law of Divine Distance keeps them out of the arena`);
+    fail(`${k.name} is a World Titan, and the Law of Divine Distance keeps them out of the arena`);
   }
 }
 
@@ -108,14 +108,14 @@ for (const k of namedChars) {
   }
 }
 // A generic character takes its copy limit from its rarity alone. (Some are
-// already limited to one by being Ascendant or Mythical, which is fine — what
+// already limited to one by being Ascendant or Mythical, which is fine - what
 // would be wrong is the named rule quietly applying to them.)
 for (const k of CARDS.filter((c) => c.type === 'character' && !isNamed(c))) {
   if (copiesOf(k) !== TIERS[k.tier].copies) {
     fail(`${k.name} is generic but allows ${copiesOf(k)} copies, not its rarity's ${TIERS[k.tier].copies}`);
   }
 }
-console.log(`  ${namedChars.length} named, one copy each; ` +
+console.log(`  ${namedChars.length} named, one copy each, ` +
             `${CARDS.filter((c) => c.type === 'character').length - namedChars.length} generic`);
 
 // ── art points at files that exist ──────────────────────────────────────────
@@ -142,7 +142,7 @@ if (spells.length < 8) fail('fewer than 8 spells exist, so no legal deck can be 
 const slots = COLLECTIBLE
   .filter((k) => k.tier !== 'tier_6')
   .reduce((n, k) => n + copiesOf(k), 0);
-if (slots < 50) fail(`only ${slots} non-Mythical card slots exist; 50 are needed`);
+if (slots < 50) fail(`only ${slots} non-Mythical card slots exist, and 50 are needed`);
 console.log(`  ${slots} legal slots available below Mythical`);
 
 // ── the curve is playable: enough cheap cards to have a first turn ──────────
@@ -153,7 +153,7 @@ for (const cost of Object.keys(byCost).map(Number).sort((a, b) => a - b)) {
   console.log(`  ${String(cost).padStart(2)} Muster  ${'█'.repeat(byCost[cost])} ${byCost[cost]}`);
 }
 const cheap = COLLECTIBLE.filter((k) => k.cost <= 2).length;
-if (cheap < 8) fail(`only ${cheap} cards cost 2 or less; the first two turns would be dead`);
+if (cheap < 8) fail(`only ${cheap} cards cost 2 or less, so the first two turns would be dead`);
 
 // ── every faction has something to build around ─────────────────────────────
 section('Factions');

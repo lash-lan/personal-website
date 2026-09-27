@@ -1,4 +1,4 @@
-// Writes docs/card-art-prompts.md — one image prompt per card that still
+// Writes docs/card-art-prompts.md - one image prompt per card that still
 // needs art, plus the ones worth redoing at a usable size.
 //
 // Run: node scripts/art-prompts.mjs
@@ -15,7 +15,7 @@ import { CARDS, TIERS, artOf, numberOf } from '../src/data/cards.js';
 const APPEARANCE = {
   'Leviathan': 'A mountain-sized serpentine whale with bioluminescent scars and jaws that bloom like a flower of death.',
   'Barlgowrath': 'Towering, armoured demon with molten cracks in obsidian skin and a crown of bone. Eyes glow like dying stars.',
-  'Bhahamut': 'A massive lion-shaped behemoth with heads emerging from its shoulders — serpent, wolf and hawk.',
+  'Bhahamut': 'A massive lion-shaped behemoth with heads emerging from its shoulders - serpent, wolf and hawk.',
   'Wraith Knight': 'A skeletal figure in cracked ceremonial armour, wielding a blade of translucent grief.',
   'Stormspear': 'Avian humanoid with silver feathers and cloud-wrapped wings. Carries a staff etched with lightning runes.',
   'Goulargz': 'Massive, tusked humanoid with bone armour fused to its flesh, low-frequency growls unnerving everything near it.',
@@ -84,7 +84,18 @@ const settingFor = (card) => {
 const slug = (name) => name.toLowerCase()
   .replace(/[’']/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-// A character is a portrait; a spell is a moment. They want different prompts.
+// How much presence a card should have, by rarity. Keyed on the tier id, not
+// the display name, so renaming a rarity never silently changes the prompts.
+const GRANDEUR = {
+  tier_1: 'an ordinary soldier of their people, plain gear, no grandeur',
+  tier_2: 'an ordinary soldier of their people, plain gear, no grandeur',
+  tier_3: 'someone of rank and note, but not a legend',
+  tier_4: 'someone of real standing, better armed and better dressed than most',
+  tier_5: 'unmistakably one of the great powers of the world, the composition built around them',
+  tier_6: 'unmistakably one of the great powers of the world, the composition built around them',
+};
+
+// A character is a portrait, a spell is a moment. They want different prompts.
 function promptFor(card) {
   const rarity = TIERS[card.tier].name;
   if (card.type === 'spell') {
@@ -97,12 +108,7 @@ function promptFor(card) {
   return `Waist-up portrait of ${who}. `
     + (look ? `${look} ` : '')
     + `Standing in ${settingFor(card)}. `
-    + `${rarity} rarity: ${rarity === 'Common' || rarity === 'Uncommon'
-        ? 'an ordinary soldier of their people, plain gear, no grandeur'
-        : rarity === 'Mythical' || rarity === 'Legendary'
-          ? 'unmistakably one of the great powers of the world, the composition built around them'
-          : 'someone of rank and名 note, but not a legend'}.`
-    .replace('名 ', '');
+    + `${rarity} rarity: ${GRANDEUR[card.tier]}.`;
 }
 
 // ── the document ────────────────────────────────────────────────────────────
@@ -117,7 +123,7 @@ w('## How to use this');
 w('');
 w('**Paste section 1 as your first message in a ChatGPT conversation.** It sets');
 w('the house style. Then paste one card prompt per message. Keep using the same');
-w('conversation so the cards come out looking like they belong together — start a');
+w('conversation so the cards come out looking like they belong together - start a');
 w('new one and the style drifts.');
 w('');
 w('Save each result into `public/images/cards/` under the filename given, then');
@@ -125,7 +131,7 @@ w('tell me and I will wire it up.');
 w('');
 w('---');
 w('');
-w('## 1. The house style — paste this first');
+w('## 1. The house style - paste this first');
 w('');
 w('```');
 w('For this whole conversation you are making character art for a dark fantasy');
@@ -135,7 +141,7 @@ w('');
 w('FORMAT');
 w('- 2:3 portrait, 1024 x 1536 or larger. Never square. Never landscape.');
 w('');
-w('COMPOSITION — the card frame covers parts of the image, so:');
+w('COMPOSITION - the card frame covers parts of the image, so:');
 w('- Put the face in the upper-middle third. NEVER at the very top edge.');
 w('- Leave clear headroom above any crown, helm, horns or halo.');
 w('- Put nothing that matters in the bottom quarter. It will be covered.');
@@ -166,14 +172,14 @@ w('');
 w('## 2. Replace these four first');
 w('');
 w('These are the First Family, the founders of humanity, and they are currently');
-w('photographic headshots on plain white — they look like casting photographs');
+w('photographic headshots on plain white - they look like casting photographs');
 w('beside the rest of the set. They are the highest-value fix in the whole list.');
 w('');
 const REPLACE = [
   ['Adamas, First King of Men', 'adamas',
    'Waist-up portrait of Adamas, the first man and first King of Humanity. A hard, weathered man in his prime with white hair and a short beard, wearing layered leather and furs over dark mail, a heavy travelling cloak clasped at the shoulder. He holds the Sword of Light, a blade of holy steel that glows from within along the fuller. Standing on the walls of his fortified mortal kingdom at dusk, watchfires burning behind him, a storm coming in. He looks like a man who has been fighting for a very long time and has not lost yet. Mortal dignity before gods.'],
   ['Evalon, Mother of Humanity', 'evalon',
-   'Waist-up portrait of Evalon, the first woman and Mother of Humanity. Long dark hair, a calm and tired face, wearing a simple robe of undyed linen with fae embroidery at the collar. Faint abyssal marks trace her forearms and throat like dark veins under the skin — the price she accepted to protect humanity. Standing in the Fae Garden Sanctuary: an ancient timeless forest of enormous pale trees, floating motes of light, deep green shadow. Warmth and grief in the same face. Power gained at personal cost.'],
+   'Waist-up portrait of Evalon, the first woman and Mother of Humanity. Long dark hair, a calm and tired face, wearing a simple robe of undyed linen with fae embroidery at the collar. Faint abyssal marks trace her forearms and throat like dark veins under the skin - the price she accepted to protect humanity. Standing in the Fae Garden Sanctuary: an ancient timeless forest of enormous pale trees, floating motes of light, deep green shadow. Warmth and grief in the same face. Power gained at personal cost.'],
   ['Abel, the Fallen Son', 'abel',
    'Waist-up portrait of Abel, the second son of Adamas and the first human to die. A young man with fair curling hair and open, unguarded features, wearing a plain shepherd’s tunic and a rough wool wrap. He holds a simple staff. Behind him a field at golden hour, long grass, a low stone altar with smoke rising straight up. Light falls on him as though it has picked him out. He does not know what is coming. Sacrifice and grief.'],
   ['Cainan, First Fracture', 'cainan',
@@ -181,7 +187,7 @@ const REPLACE = [
 ];
 for (const [name, file, prompt] of REPLACE) {
   const card = CARDS.find((c) => c.name === name);
-  w(`### ${name} — \`${numberOf(card)}\``);
+  w(`### ${name} - \`${numberOf(card)}\``);
   w(`Save as \`public/images/cards/${file}.webp\` (replaces the current one).`);
   w('');
   w('```');
@@ -195,18 +201,18 @@ w('');
 // ── 3. the ones that exist but are too small ────────────────────────────────
 w('## 3. Regenerate these at a usable size');
 w('');
-w('These eleven are good paintings, but they are 320 x 320 — square, and a');
+w('These eleven are good paintings, but they are 320 x 320 - square, and a');
 w('quarter of the resolution a zoomed card needs. Ask for the same character');
 w('again at 2:3 and full size. Keep the current file: if the new one is worse,');
 w('we keep what we have.');
 w('');
 const REDO = {
   'Hansall, First High King of Elves': 'A severe, ancient High Elf king enthroned in a great chair of pale twisted wood, wearing white and gold layered robes and a spiked white crown, long white hair, red under-robe. An old forest behind the throne. Leave clear space above the crown.',
-  'Tiamel, First Queen of the Elu-Dragar': 'A dragon-elf queen in gold-green scaled armour with vast membranous dragon wings spread behind her, a flared crown of gold spines, long gold hair, fire at her hand. Volcanic mountains and dark cloud behind. Leave clear space above the crown; wings must stay inside the frame.',
+  'Tiamel, First Queen of the Elu-Dragar': 'A dragon-elf queen in gold-green scaled armour with vast membranous dragon wings spread behind her, a flared crown of gold spines, long gold hair, fire at her hand. Volcanic mountains and dark cloud behind. Leave clear space above the crown, and wings must stay inside the frame.',
   'Sederous Lionheart, King of Scraps': 'A leonine half-elf king with a golden mane, in ornate gold armour and a deep blue cloak, holding a great sword point-down. A golden city burning with light behind him. Chest-up, sword hilt visible but the blade out of the bottom quarter.',
   'King Gilgamesh': 'A golden-haired half-elf king in gold and white armour with a blue cloak, holding a radiant gold staff. A white castle and bright sky behind. Waist-up.',
   'Serallion, Matron of the Moon': 'A silver-haired moon elf priestess in a crown set with a crescent sapphire, pale blue gowns, holding a moon-topped staff. A moonlit sea and a huge low moon behind her. Leave clear space above the crown.',
-  'Revendrinn Nyxthorn': 'A black-haired elf in black feathered shadow-armour with a violet sigil glowing at the chest, in a dark wood at night. Low violet light. This one is already the best composition in the set — keep it exactly, just larger.',
+  'Revendrinn Nyxthorn': 'A black-haired elf in black feathered shadow-armour with a violet sigil glowing at the chest, in a dark wood at night. Low violet light. This one is already the best composition in the set - keep it exactly, just larger.',
   'Glorfarsall Elysium': 'A golden-haired high elf paladin in pale blue and gold armour with a sunburst on the breastplate, one hand raised, a sword low in the other. A sunlit hall of pale columns behind. Keep the raised hand well inside the frame.',
   'Captain Hannah Icetear': 'A blonde high elf captain of the Red Rangers in red and gold armour, holding a great sword upright before her. A deep forest with red leaves falling. Centre the blade so it is not cut off at the edge.',
   'Anthurian Icetear': 'Re-generate the existing Anthurian Icetear portrait at 2:3 and full size, same character and same palette.',
@@ -216,7 +222,7 @@ const REDO = {
 for (const [name, prompt] of Object.entries(REDO)) {
   const card = CARDS.find((c) => c.name === name);
   if (!card) continue;
-  w(`### ${name} — \`${numberOf(card)}\``);
+  w(`### ${name} - \`${numberOf(card)}\``);
   w(`Overwrite \`public${artOf(card)}\``);
   w('');
   w('```');
@@ -234,7 +240,7 @@ unpainted.sort((a, b) => ORDER.indexOf(a.tier) - ORDER.indexOf(b.tier) || a.name
 
 w(`## 4. The ${unpainted.length} cards with no art yet`);
 w('');
-w('In order of how much it matters — the rarest cards are the ones people look');
+w('In order of how much it matters - the rarest cards are the ones people look');
 w('at. If you only do some, do them from the top.');
 w('');
 let lastTier = null;
@@ -246,7 +252,7 @@ for (const card of unpainted) {
     w(`### ${TIERS[lastTier].name} (${n})`);
     w('');
   }
-  w(`**${card.name}** — \`${numberOf(card)}\` — save as \`public/images/cards/${slug(card.name)}.webp\``);
+  w(`**${card.name}** - \`${numberOf(card)}\` - save as \`public/images/cards/${slug(card.name)}.webp\``);
   w('');
   w('```');
   w(promptFor(card));
@@ -262,7 +268,7 @@ w('Tokens are summoned rather than drawn, so they are seen constantly. They can'
 w('share art with their parent card or get something simple and generic.');
 w('');
 for (const card of CARDS.filter((c) => (c.tags || []).includes('Token'))) {
-  w(`- **${card.name}** — \`public/images/cards/${slug(card.name)}.webp\` — ${promptFor(card)}`);
+  w(`- **${card.name}** - \`public/images/cards/${slug(card.name)}.webp\` - ${promptFor(card)}`);
 }
 w('');
 

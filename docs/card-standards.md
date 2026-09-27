@@ -1,4 +1,4 @@
-# Blood of Icetear — card standards
+# Blood of Icetear - card standards
 
 You asked me to settle this. Here it is, with the reasoning, so you can
 disagree with the reasoning rather than just the answer.
@@ -10,7 +10,7 @@ a rule from another game.
 
 ## 1. A character has ONE number: Power
 
-Your prototypes use three words — power, attack, health — but not evenly:
+Your prototypes use three words - power, attack, health - but not evenly:
 
 - **power** appears on a dozen cards: "half the power of all your opponents
   characters", "-3 power to this character after every strike", "give it +13
@@ -34,7 +34,7 @@ combat interesting:
 
 And it makes your existing cards *better*, not merely compatible. "Half the
 power of all enemies" now halves what they can hit with and what they can
-survive, in one blow — which is why it sits on a Legendary. Knight Titan
+survive, in one blow - which is why it sits on a Legendary. Knight Titan
 Tyberius losing 3 power after every strike now means he visibly wears out,
 which is exactly what the card is trying to say.
 
@@ -65,7 +65,7 @@ That falls straight out of your own numbers:
 
 ---
 
-## 3. Rarity is a power band — and yours already is one
+## 3. Rarity is a power band - and yours already is one
 
 Your prototype power values sort almost perfectly by rarity. I have made that
 the rule rather than a coincidence:
@@ -83,10 +83,10 @@ Tier 5 was called Legendary until Legendary became a card *type*. It is now
 Ascendant, so the two words never mean two things at once.
 
 **Rarity is stored as `tier_3`, never as "Rare".** The display name can change
-whenever you decide on lore-friendly ones; no data has to move.
+whenever you decide on lore-friendly ones, and no data has to move.
 
 **A standard worth holding to:** rarity should buy *complexity and scarcity*,
-not raw strength. A Mythical is not simply a bigger Common — it does something
+not raw strength. A Mythical is not simply a bigger Common - it does something
 a Common cannot do at all. Otherwise the game becomes "whoever opened more
 packs wins", which is the thing that kills collectible games.
 
@@ -94,7 +94,7 @@ packs wins", which is the thing that kills collectible games.
 
 ## 4. A card's whole worth is its Power
 
-Power is not only the number on the card; it is the budget the card is built
+Power is not only the number on the card, it is the budget the card is built
 from. A character with no ability spends all of it on Power. A character with
 a strong ability spends some of it there instead and is printed weaker.
 
@@ -111,14 +111,14 @@ a problem.
 ## 5. Deck rules
 
 - **50 cards.**
-- **At least 30 characters and at least 8 spells.** You said mix and match;
+- **At least 30 characters and at least 8 spells.** You said mix and match,
   this is what stops someone playing 50 spells or 50 characters.
 - Copy limits by rarity, in the table above.
 - **One Mythical per deck**, at most.
 
 ---
 
-## 6. Keywords — hold the line at a few
+## 6. Keywords - hold the line at a few
 
 You already have these, from your own cards. Adding a keyword is expensive:
 every one is a thing a new player must learn before they can read a card.
@@ -127,15 +127,15 @@ every one is a thing a new player must learn before they can read a card.
 |---|---|
 | **Quick Attack** | May strike the turn it arrives |
 | **Summon** | Put a token character into the arena |
-| **Destroy** | Kill it; it goes to the graveyard |
-| **Exile** | Remove it from the game entirely; it never returns |
+| **Destroy** | Kill it, and it goes to the graveyard |
+| **Exile** | Remove it from the game entirely, it never returns |
 | **Graveyard** | Where dead cards rest, and can be reached |
 
 Five, and it stayed five. A sixth was drafted for the World Titans and died
 with them.
 
 Exile mattering *because* the graveyard is reachable is good design and it is
-already in your cards — Hidden Boss returns a character from the opponent's
+already in your cards - Hidden Boss returns a character from the opponent's
 graveyard, so exiling is how you deny it.
 
 ---
@@ -143,22 +143,22 @@ graveyard, so exiling is how you deny it.
 ## 5a. Named characters are Legendary
 
 Lash's rule, and it is the right one: **a named character is a specific
-person, so a deck may hold one copy of them — however common their card is.**
+person, so a deck may hold one copy of them - however common their card is.**
 
 This is the card's **type**, not its rarity, exactly as on the cards Lash sent
 me: a *Legendary Creature* printed at *Mythic* rarity. Two separate ideas on
 one card.
 
-- **Legendary Character** — a specific individual. Shaedra Nyxthorn, Koschei,
+- **Legendary Character** - a specific individual. Shaedra Nyxthorn, Koschei,
   Leviathan. There is one of them in the world. **One copy per deck.** 69 of
   them.
-- **Character** — a kind of person. A Red Ranger, an Inquisitor, a Ghoul, a
+- **Character** - a kind of person. A Red Ranger, an Inquisitor, a Ghoul, a
   Mersoldier. There are many. **Copy limit from rarity**, so up to three. 75
   of them.
 
 The dividing line is whether the lore describes one of a thing or a kind of
 thing. The bestiary settles most of them on its own: Wraith Knights are "spirits
-bound to defend the boundaries of the dead" — plural, a kind — while Leviathan
+bound to defend the boundaries of the dead" - plural, a kind - while Leviathan
 is "a god-thing, older than tides". The Tylon are a people of the shore
 kingdoms, so the Tylon cards are generic even though they are a closed cycle.
 
@@ -174,7 +174,7 @@ and the middle of the game would have emptied out.
 Law of Divine Distance forbids celestial beings intervening in mortal affairs
 under penalty of mortality, and permits the Elder Gods only to send Avatars.
 
-I had tried to work around that with a keyword — Titans costing less the worse
+I had tried to work around that with a keyword - Titans costing less the worse
 your position got, so the gods arrived only when things were dire. That was
 solving a flavour problem that the lore had already answered with a flat no.
 A rule you have to invent an exception for is usually the rule talking.
@@ -184,13 +184,13 @@ So:
 - **Avatars are cards.** The Morrigan's Avatar, Lucifial's Avatar, the Devil
   Kings Avatar. This is exactly the channel the Law leaves open.
 - **The gods behind them are not.** Hyperion, Lucifial, Thanatos, Hades,
-  Persephone, Selene, The Morrigan, Ra, Oceanus, Freyva, Glorion — and Typhon
+  Persephone, Selene, The Morrigan, Ra, Oceanus, Freyva, Glorion - and Typhon
   and Akidna, who are World Titans too.
 - **Their deeds are spells.** The Cataclysm carries Typhon's painting. The Law
   of Divine Distance carries Hyperion's, since he is the one who enacted it.
 
-Prime Gods from the prototype — Icetear, Child of Winter, and Knight Titan
-Tyberius — stay, because they are Lash's own designed cards rather than mine.
+Prime Gods from the prototype - Icetear, Child of Winter, and Knight Titan
+Tyberius - stay, because they are Lash's own designed cards rather than mine.
 If the same objection applies to them, they come out the same way.
 
 `scripts/cards-selftest.mjs` fails the build if a World Titan reappears as a
@@ -221,7 +221,7 @@ single best thing in the prototype, because it means a turn is never safe.
 
 - Whether a character can strike the Citadel directly while enemy characters
   stand in the arena. I would say **yes**, or nothing ever gets through a
-  board of 50-card decks — and it is what makes "Bulwark" worth inventing
+  board of 50-card decks - and it is what makes "Bulwark" worth inventing
   later.
 - Muster's ceiling. I would start at 10.
 - Whether spells also cost Muster. I would say yes, same curve.
