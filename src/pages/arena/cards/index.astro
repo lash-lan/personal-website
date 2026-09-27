@@ -256,50 +256,54 @@ const painted = CARDS.filter((c) => artOf(c)).length;
      the card's width, so a single design works at a thumbnail in the grid and
      at full size in the lightbox. */
   .tok-frame { position: absolute; inset: 0; display: flex; flex-direction: column;
-               font-size: 5.35cqw; padding: .55em; gap: .5em; }
+               font-size: 4.8cqw; padding: .5em; gap: .45em; }
   .tok-body { position: relative; }   /* the Power shield hangs off this corner */
 
-  .tok-head { display: flex; align-items: center; gap: .45em; flex: none;
-              padding: .34em .5em .34em .62em; border-radius: .42em;
-              background: linear-gradient(180deg, rgba(10, 10, 12, .9), rgba(10, 10, 12, .74));
-              border: 1px solid rgba(255, 255, 255, .13);
-              border-bottom: 1.5px solid var(--tier);
-              box-shadow: 0 2px 10px rgba(0, 0, 0, .5); }
-  .tok-name { flex: 1 1 auto; min-width: 0; font-size: 1.02em; line-height: 1.12;
-              font-weight: 600; color: #f2ece2; letter-spacing: .005em;
-              text-shadow: 0 1px 2px rgba(0, 0, 0, .9); }
+  .tok-head { display: flex; align-items: center; gap: .4em; flex: none;
+              padding: .26em .4em .26em .52em; border-radius: .38em;
+              background: linear-gradient(180deg, rgba(8, 8, 10, .74), rgba(8, 8, 10, .55));
+              border: 1px solid rgba(255, 255, 255, .1);
+              border-bottom: 1.2px solid var(--tier);
+              box-shadow: 0 2px 10px rgba(0, 0, 0, .35); }
+  .tok-name { flex: 1 1 auto; min-width: 0; font-size: .92em; line-height: 1.1;
+              font-weight: 600; color: #f6f1e8; letter-spacing: .005em;
+              /* The plate is see-through now, so the letters carry their own
+                 darkness rather than relying on a solid bar behind them. */
+              text-shadow: 0 1px 3px rgba(0, 0, 0, .95), 0 0 8px rgba(0, 0, 0, .8); }
   .tok-cost { flex: none; display: grid; place-items: center;
-              width: 1.85em; height: 1.85em; border-radius: 50%;
+              width: 1.7em; height: 1.7em; border-radius: 50%;
               background: radial-gradient(circle at 34% 28%, #fff6, transparent 58%), var(--tier);
               color: #0d0c0a; font-size: .95em; font-weight: 700;
               font-variant-numeric: tabular-nums;
               box-shadow: inset 0 -1px 2px rgba(0, 0, 0, .45), 0 1px 4px rgba(0, 0, 0, .6); }
 
   /* the rules plate, pushed to the foot of the card */
-  .tok-body { margin-top: auto; display: flex; flex-direction: column; gap: .3em;
-              padding: .48em .62em .46em; border-radius: .42em;
-              background: linear-gradient(180deg, rgba(8, 8, 10, .82), rgba(8, 8, 10, .93));
-              border: 1px solid rgba(255, 255, 255, .1);
-              box-shadow: 0 2px 12px rgba(0, 0, 0, .6); }
-  .tok-line { font-size: .64em; letter-spacing: .03em; color: var(--tier);
-              text-shadow: 0 1px 2px rgba(0, 0, 0, .8); }
-  .tok-text { font-size: .7em; line-height: 1.34; color: rgba(255, 255, 255, .84);
-              min-height: 4.1em; }
+  .tok-body { margin-top: auto; display: flex; flex-direction: column; gap: .24em;
+              padding: .38em .52em .36em; border-radius: .38em;
+              background: linear-gradient(180deg, rgba(8, 8, 10, .7), rgba(8, 8, 10, .88));
+              border: 1px solid rgba(255, 255, 255, .08);
+              box-shadow: 0 2px 12px rgba(0, 0, 0, .45); }
+  .tok-line { font-size: .58em; letter-spacing: .03em; color: var(--tier);
+              text-shadow: 0 1px 3px rgba(0, 0, 0, .95), 0 0 6px rgba(0, 0, 0, .7); }
+  .tok-text { font-size: .64em; line-height: 1.32; color: rgba(255, 255, 255, .88);
+              min-height: 3.3em;
+              text-shadow: 0 1px 3px rgba(0, 0, 0, .95), 0 0 6px rgba(0, 0, 0, .65); }
   .tok-text em { color: rgba(255, 255, 255, .34); font-style: italic; }
 
-  .tok-foot { display: flex; align-items: flex-end; margin-top: .12em;
-              padding-right: 2.6em; }   /* room for the Power shield */
-  .tok-no { font-size: .52em; letter-spacing: .07em; color: rgba(255, 255, 255, .38);
-            font-variant-numeric: tabular-nums; }
+  .tok-foot { display: flex; align-items: flex-end; margin-top: .08em;
+              padding-right: 2.4em; }   /* room for the Power shield */
+  .tok-no { font-size: .48em; letter-spacing: .07em; color: rgba(255, 255, 255, .45);
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, .9); }
 
   /* Power sits in a shield overhanging the corner of the card, the way a
      fighting number should - big enough to read across a table. */
   .tok-power { position: absolute; right: .3em; bottom: .32em;
                display: grid; place-items: center;
-               min-width: 2.15em; padding: .08em .3em .16em;
+               min-width: 2em; padding: .06em .28em .14em;
                border-radius: .26em .26em .5em .26em;
                background: linear-gradient(170deg, var(--tier) 30%, rgba(0, 0, 0, .45));
-               color: #0f0e0b; font-size: 1.42em; font-weight: 800; line-height: 1.16;
+               color: #0f0e0b; font-size: 1.3em; font-weight: 800; line-height: 1.16;
                font-variant-numeric: tabular-nums;
                text-shadow: 0 1px 0 rgba(255, 255, 255, .3);
                box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35),
