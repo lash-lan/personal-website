@@ -23,12 +23,12 @@
  * for the name, only the tier.
  */
 export const TIERS = {
-  tier_1: { id: 'tier_1', name: 'Common',    power: [2, 4],   copies: 3, weight: 100 },
-  tier_2: { id: 'tier_2', name: 'Uncommon',  power: [5, 7],   copies: 3, weight: 52 },
-  tier_3: { id: 'tier_3', name: 'Rare',      power: [8, 12],  copies: 3, weight: 26 },
-  tier_4: { id: 'tier_4', name: 'Epic',      power: [13, 18], copies: 2, weight: 10 },
-  tier_5: { id: 'tier_5', name: 'Legendary', power: [19, 24], copies: 1, weight: 3.5 },
-  tier_6: { id: 'tier_6', name: 'Mythical',  power: [25, 30], copies: 1, weight: 1 },
+  tier_1: { id: 'tier_1', name: 'Common',    letter: 'C', power: [2, 4],   copies: 3, weight: 100 },
+  tier_2: { id: 'tier_2', name: 'Uncommon',  letter: 'U', power: [5, 7],   copies: 3, weight: 52 },
+  tier_3: { id: 'tier_3', name: 'Rare',      letter: 'R', power: [8, 12],  copies: 3, weight: 26 },
+  tier_4: { id: 'tier_4', name: 'Epic',      letter: 'E', power: [13, 18], copies: 2, weight: 10 },
+  tier_5: { id: 'tier_5', name: 'Legendary', letter: 'L', power: [19, 24], copies: 1, weight: 3.5 },
+  tier_6: { id: 'tier_6', name: 'Mythical',  letter: 'M', power: [25, 30], copies: 1, weight: 1 },
 };
 export const TIER_ORDER = ['tier_1', 'tier_2', 'tier_3', 'tier_4', 'tier_5', 'tier_6'];
 

@@ -37,12 +37,12 @@ const painted = CARDS.filter((c) => artOf(c)).length;
     <section class="primer">
       <h2>How to read a card</h2>
       <p>
-        A character has one number, <strong>Power</strong>, printed bottom left.
-        When two characters fight, each takes the other’s Power off its own;
-        at nought or less it dies. The number bottom right is
-        <strong>Cost</strong> — the Muster you pay to put it in the arena.
-        Cost is always Power divided by three, rounded up, plus a little for a
-        strong ability.
+        A character has one number, <strong>Power</strong>, in the shield at
+        the bottom. When two characters fight, each takes the other’s Power
+        off its own; at nought or less it dies. The number in the ring at the
+        top is <strong>Cost</strong> — the Muster you pay to put it in the
+        arena. Cost is always Power divided by three, rounded up, plus a
+        little for a strong ability.
       </p>
       <dl class="keys">
         {Object.entries(KEYWORDS).map(([word, meaning]) => (
@@ -92,44 +92,48 @@ const painted = CARDS.filter((c) => artOf(c)).length;
           <button class="chip" data-filter="tag" data-value={t}>{t} <em>{n}</em></button>
         ))}
       </div>
-      <p class="shown" id="shown"></p>
+      <p class="shown" id="shown">Tap any card to open it. <span class="nowrap">Tap again to zoom in.</span></p>
     </section>
 
     <!-- ── the cards ────────────────────────────────────────────────────── -->
     <div class="sheet" id="sheet">
-      {cards.map((c) => {
+      {cards.map((c, i) => {
         const art = artOf(c);
-        // The type line on the prototype reads "[Rarity] - [Type] ([Race])".
-        // A spell has no race, so it prints its rarity and kind alone, and
-        // says Instant where that matters.
+        // The type line reads "[Rarity] — [Type] ([Race])", as on the
+        // prototype. A spell has no race, so it prints its kind alone.
         const kind = c.type === 'spell'
           ? (c.instant ? 'Instant Spell' : 'Spell')
           : `Character (${c.line})`;
         return (
-          <article
+          <button
             class="tok"
+            type="button"
+            data-i={i}
             data-tier={c.tier}
             data-type={c.type}
             data-tags={(c.tags || []).join('|')}
+            aria-label={`${c.name}. ${TIERS[c.tier].name} ${kind}.`}
           >
-            <header class="tok-name"><span>{c.name}</span></header>
-            <div class="tok-art">
-              {art
-                ? <img src={art} alt="" loading="lazy" width="378" height="300" />
-                : <span class="tok-unpainted">Awaiting art</span>}
-            </div>
-            <p class="tok-line">
-              {TIERS[c.tier].name} — {kind}
-            </p>
-            <p class="tok-text">{c.text || <em>No ability. It simply fights.</em>}</p>
-            <footer class="tok-foot">
-              <span class="tok-no">{numberOf(c)}</span>
-              <span class="tok-nums">
-                {c.type === 'character' && <b class="pw" title="Power">{c.power}</b>}
-                <b class="cs" title="Cost">{c.cost}</b>
+            {art
+              ? <img class="tok-art" src={art} alt="" loading="lazy" decoding="async" />
+              : <span class="tok-art tok-blank"><em>Awaiting art</em></span>}
+
+            <span class="tok-frame">
+              <span class="tok-head">
+                <span class="tok-name">{c.name}</span>
+                <span class="tok-cost">{c.cost}</span>
               </span>
-            </footer>
-          </article>
+
+              <span class="tok-body">
+                <span class="tok-line">{TIERS[c.tier].name} — {kind}</span>
+                <span class="tok-text">{c.text || <em>No ability. It simply fights.</em>}</span>
+                <span class="tok-foot">
+                  <span class="tok-no">{numberOf(c)} · {TIERS[c.tier].letter} · LASH</span>
+                  {c.type === 'character' && <span class="tok-power">{c.power}</span>}
+                </span>
+              </span>
+            </span>
+          </button>
         );
       })}
     </div>
@@ -138,15 +142,32 @@ const painted = CARDS.filter((c) => artOf(c)).length;
       Cards numbered <code>LAH</code> are the ones already designed in the
       Canva prototype, and keep the number printed on them. Cards numbered
       <code>BOI</code> are new, drawn from the Foundation Age codex, the
-      bestiary and the stories.
-      Nothing here is published to the game yet — this page is the set laid out
-      so it can be argued with.
+      bestiary and the stories. The letter after the number is the rarity.
     </p>
+  </div>
+
+  <!-- ── the lightbox ───────────────────────────────────────────────────── -->
+  <div class="lb" id="lb" hidden>
+    <div class="lb-scroll" id="lbScroll">
+      <div class="lb-stage" id="lbStage"></div>
+    </div>
+    <button class="lb-x" id="lbClose" type="button" aria-label="Close">&times;</button>
+    <button class="lb-nav lb-prev" id="lbPrev" type="button" aria-label="Previous card">&#8249;</button>
+    <button class="lb-nav lb-next" id="lbNext" type="button" aria-label="Next card">&#8250;</button>
+    <p class="lb-hint" id="lbHint"></p>
   </div>
 </SectionLayout>
 
+<style is:global>
+  /* While a card is open the page behind it is frozen and the site header is
+     taken away, so nothing paints over the card or scrolls underneath it. */
+  body.lb-open { overflow: hidden; }
+  body.lb-open .site-header { display: none; }
+</style>
+
 <style>
   .wrap { max-width: 1240px; margin: 0 auto; padding: 0 1.25rem 5rem; }
+  .nowrap { white-space: nowrap; }
 
   /* ── primer ── */
   .primer { border: 1px solid var(--line); background: var(--card); border-radius: 14px;
@@ -173,8 +194,7 @@ const painted = CARDS.filter((c) => artOf(c)).length;
 
   /* ── filters ── */
   .filters { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
-             padding: 1rem 0 .9rem; margin-bottom: 1.75rem;
-             display: grid; gap: .7rem; }
+             padding: 1rem 0 .9rem; margin-bottom: 1.75rem; display: grid; gap: .7rem; }
   .fgroup { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
   .flabel { font-size: .7rem; letter-spacing: .12em; text-transform: uppercase;
             color: var(--textDim); width: 5.5rem; flex: none; }
@@ -187,57 +207,97 @@ const painted = CARDS.filter((c) => artOf(c)).length;
   .chip.is-on em { opacity: .55; }
   .shown { margin: .2rem 0 0; font-size: .8rem; color: var(--textDim); }
 
-  /* ── the card itself: the anatomy from the Canva prototype ── */
-  .sheet { display: grid; gap: 1.1rem;
-           grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); }
-  .tok { --tier: var(--accent);
-         display: flex; flex-direction: column; overflow: hidden;
-         background: #14130f; border: 1px solid var(--line); border-radius: 12px;
-         box-shadow: 0 1px 0 rgba(255, 255, 255, .04) inset, 0 6px 18px rgba(0, 0, 0, .35);
-         aspect-ratio: 378 / 528;
-         /* 195 cards is a tall page. This tells the browser not to lay out or
-            paint the ones that are off screen, which keeps scrolling smooth on
-            a phone. The placeholder size stops the scrollbar from jumping. */
-         content-visibility: auto; contain-intrinsic-size: auto 316px; }
+  /* ═══════════════════════ THE CARD ═══════════════════════
+     Full art: the painting is the whole card, and the name and the rules sit
+     on plates over it. Every size inside a card is in em, and the card's own
+     font-size is a share of its width, so one card design works at a
+     thumbnail in the grid and at full size in the lightbox.               */
+  .sheet { display: grid; gap: 1.05rem;
+           grid-template-columns: repeat(auto-fill, minmax(206px, 1fr)); }
+
+  .tok {
+    --tier: var(--accent);
+    all: unset;                      /* it is a button; it should not look like one */
+    position: relative; display: block; cursor: zoom-in;
+    aspect-ratio: 378 / 528; border-radius: 3.6%; overflow: hidden;
+    background: #0a0a09;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .09), 0 0 0 2px rgba(0, 0, 0, .8),
+                0 8px 22px rgba(0, 0, 0, .55);
+    container-type: inline-size;
+    /* 195 cards is a tall page; the ones off screen are not laid out at all. */
+    content-visibility: auto; contain-intrinsic-size: auto 300px;
+    transition: transform .16s ease, box-shadow .16s ease;
+  }
   .tok[hidden] { display: none; }
+  .tok:hover, .tok:focus-visible {
+    transform: translateY(-3px);
+    box-shadow: 0 0 0 1px var(--tier), 0 0 0 2px rgba(0, 0, 0, .8),
+                0 14px 30px rgba(0, 0, 0, .65);
+  }
 
-  .tok-name { flex: none; padding: .3rem .55rem; min-height: 2.7em;
-              display: flex; align-items: center; justify-content: center; text-align: center;
-              background: linear-gradient(180deg, var(--tier), rgba(0, 0, 0, .35));
-              border-bottom: 1px solid rgba(0, 0, 0, .5); }
-  .tok-name span { font-size: .78rem; line-height: 1.15; font-weight: 700;
-                   color: #0e0d0b; letter-spacing: .005em;
-                   text-shadow: 0 1px 0 rgba(255, 255, 255, .25); }
+  /* the painting */
+  .tok-art { position: absolute; inset: 0; width: 100%; height: 100%;
+             object-fit: cover; display: block; }
+  .tok-blank { display: grid; place-items: center; font-size: 5.35cqw;
+               background: repeating-linear-gradient(45deg, #0d0d0b 0 10px, #121210 10px 20px); }
+  .tok-blank em { font-style: normal; font-size: .62em; letter-spacing: .18em;
+                  text-transform: uppercase; color: rgba(255, 255, 255, .2); }
 
-  .tok-art { flex: 1 1 auto; min-height: 0; position: relative; background: #0a0a09; }
-  .tok-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .tok-unpainted { position: absolute; inset: 0; display: grid; place-items: center;
-                   font-size: .58rem; letter-spacing: .1em; text-transform: uppercase;
-                   color: rgba(255, 255, 255, .22);
-                   background: repeating-linear-gradient(45deg, #0d0d0b 0 8px, #111 8px 16px); }
+  /* everything that sits on top of the painting */
+  /* The one number every other size on the card follows. It is a share of
+     the card's width, so a single design works at a thumbnail in the grid and
+     at full size in the lightbox. */
+  .tok-frame { position: absolute; inset: 0; display: flex; flex-direction: column;
+               font-size: 5.35cqw; padding: .55em; gap: .5em; }
+  .tok-body { position: relative; }   /* the Power shield hangs off this corner */
 
-  .tok-line { flex: none; margin: 0; padding: .34em .6rem .2em;
-              font-size: .6rem; letter-spacing: .02em;
-              color: var(--tier); background: rgba(0, 0, 0, .55);
-              border-top: 1px solid rgba(255, 255, 255, .06); text-align: center; }
-  .tok-text { flex: none; margin: 0; padding: .35em .65rem .5em; min-height: 5.4em;
-              font-size: .64rem; line-height: 1.4;
-              color: rgba(255, 255, 255, .8); background: rgba(0, 0, 0, .55); }
-  .tok-text em { color: rgba(255, 255, 255, .34); }
+  .tok-head { display: flex; align-items: center; gap: .45em; flex: none;
+              padding: .34em .5em .34em .62em; border-radius: .42em;
+              background: linear-gradient(180deg, rgba(10, 10, 12, .9), rgba(10, 10, 12, .74));
+              border: 1px solid rgba(255, 255, 255, .13);
+              border-bottom: 1.5px solid var(--tier);
+              box-shadow: 0 2px 10px rgba(0, 0, 0, .5); }
+  .tok-name { flex: 1 1 auto; min-width: 0; font-size: 1.02em; line-height: 1.12;
+              font-weight: 600; color: #f2ece2; letter-spacing: .005em;
+              text-shadow: 0 1px 2px rgba(0, 0, 0, .9); }
+  .tok-cost { flex: none; display: grid; place-items: center;
+              width: 1.85em; height: 1.85em; border-radius: 50%;
+              background: radial-gradient(circle at 34% 28%, #fff6, transparent 58%), var(--tier);
+              color: #0d0c0a; font-size: .95em; font-weight: 700;
+              font-variant-numeric: tabular-nums;
+              box-shadow: inset 0 -1px 2px rgba(0, 0, 0, .45), 0 1px 4px rgba(0, 0, 0, .6); }
 
-  .tok-foot { flex: none; display: flex; align-items: center; justify-content: space-between;
-              padding: .3em .6rem .38em; background: rgba(0, 0, 0, .78);
-              border-top: 1px solid rgba(255, 255, 255, .07); }
-  .tok-no { font-size: .55rem; letter-spacing: .06em;
-            color: rgba(255, 255, 255, .34); font-variant-numeric: tabular-nums; }
-  .tok-nums { display: flex; gap: .3em; }
-  .tok-nums b { font-size: .85rem; font-variant-numeric: tabular-nums;
-                min-width: 1.9em; text-align: center; border-radius: 4px; padding: .05em .25em; }
-  .pw { background: var(--tier); color: #0e0d0b; }
-  .cs { background: rgba(255, 255, 255, .1); color: rgba(255, 255, 255, .85);
-        border: 1px solid rgba(255, 255, 255, .16); }
+  /* the rules plate, pushed to the foot of the card */
+  .tok-body { margin-top: auto; display: flex; flex-direction: column; gap: .3em;
+              padding: .48em .62em .46em; border-radius: .42em;
+              background: linear-gradient(180deg, rgba(8, 8, 10, .82), rgba(8, 8, 10, .93));
+              border: 1px solid rgba(255, 255, 255, .1);
+              box-shadow: 0 2px 12px rgba(0, 0, 0, .6); }
+  .tok-line { font-size: .64em; letter-spacing: .03em; color: var(--tier);
+              text-shadow: 0 1px 2px rgba(0, 0, 0, .8); }
+  .tok-text { font-size: .7em; line-height: 1.34; color: rgba(255, 255, 255, .84);
+              min-height: 4.1em; }
+  .tok-text em { color: rgba(255, 255, 255, .34); font-style: italic; }
 
-  /* Rarity colours. These are the one place a tier's look is decided. */
+  .tok-foot { display: flex; align-items: flex-end; margin-top: .12em;
+              padding-right: 2.6em; }   /* room for the Power shield */
+  .tok-no { font-size: .52em; letter-spacing: .07em; color: rgba(255, 255, 255, .38);
+            font-variant-numeric: tabular-nums; }
+
+  /* Power sits in a shield overhanging the corner of the card, the way a
+     fighting number should — big enough to read across a table. */
+  .tok-power { position: absolute; right: .3em; bottom: .32em;
+               display: grid; place-items: center;
+               min-width: 2.15em; padding: .08em .3em .16em;
+               border-radius: .26em .26em .5em .26em;
+               background: linear-gradient(170deg, var(--tier) 30%, rgba(0, 0, 0, .45));
+               color: #0f0e0b; font-size: 1.42em; font-weight: 800; line-height: 1.16;
+               font-variant-numeric: tabular-nums;
+               text-shadow: 0 1px 0 rgba(255, 255, 255, .3);
+               box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35),
+                           0 0 0 1px rgba(0, 0, 0, .75), 0 2px 8px rgba(0, 0, 0, .8); }
+
+  /* Rarity colours. The one place a tier's look is decided. */
   [data-tier='tier_1'] { --tier: #9aa3a8; }
   [data-tier='tier_2'] { --tier: #7fae82; }
   [data-tier='tier_3'] { --tier: #6f9dc9; }
@@ -249,36 +309,88 @@ const painted = CARDS.filter((c) => artOf(c)).length;
                color: var(--textDim); max-width: 70ch; }
   .foot-note code { font-size: .95em; color: var(--accentLight); }
 
+  /* ═══════════════════════ THE LIGHTBOX ═══════════════════════ */
+  .lb { position: fixed; inset: 0; z-index: 2000; background: rgba(4, 4, 6, .93);
+        backdrop-filter: blur(6px); }
+  .lb[hidden] { display: none; }
+  .lb-scroll { position: absolute; inset: 0; overflow: auto; overscroll-behavior: contain;
+               display: grid; place-content: safe center; padding: clamp(.6rem, 3vw, 2.5rem); }
+  .lb-stage { display: grid; place-items: center; }
+
+  /* The opened card. --z is the zoom: 1 fits the screen, more overflows and
+     the layer above scrolls, so zooming in can be panned around. */
+  .lb { --z: 1; }
+  .lb .tok {
+    content-visibility: visible; contain-intrinsic-size: none;
+    cursor: zoom-in; transform: none !important;
+    width: calc(min(64vw, 620px, 80vh * 0.716) * var(--z));
+    height: auto;
+    box-shadow: 0 0 0 1px var(--tier), 0 0 0 3px rgba(0, 0, 0, .9),
+                0 30px 70px rgba(0, 0, 0, .8);
+  }
+  .lb.is-zoom { --z: 2.4; }
+  .lb.is-zoom .tok { cursor: zoom-out; }
+  /* Zoomed in, a drag pans the painting rather than turning the page, so the
+     arrows and the hint would only be in the way. */
+  .lb.is-zoom .lb-nav, .lb.is-zoom .lb-hint { display: none; }
+  .lb .tok-text { min-height: 0; }
+
+  .lb-x, .lb-nav { position: absolute; z-index: 2; font: inherit; cursor: pointer;
+                   color: rgba(255, 255, 255, .72); background: rgba(16, 16, 20, .8);
+                   border: 1px solid rgba(255, 255, 255, .16); border-radius: 999px;
+                   display: grid; place-items: center; line-height: 1;
+                   transition: color .15s, background .15s, border-color .15s; }
+  .lb-x:hover, .lb-nav:hover { color: #fff; background: rgba(40, 40, 48, .95);
+                               border-color: rgba(255, 255, 255, .4); }
+  .lb-x { top: max(.7rem, env(safe-area-inset-top)); right: .7rem;
+          width: 2.4rem; height: 2.4rem; font-size: 1.6rem; padding-bottom: .16em; }
+  .lb-nav { top: 50%; transform: translateY(-50%); width: 2.6rem; height: 3.6rem;
+            font-size: 1.9rem; padding-bottom: .1em; }
+  .lb-prev { left: .5rem; } .lb-next { right: .5rem; }
+  .lb-hint { position: absolute; left: 0; right: 0; bottom: max(.55rem, env(safe-area-inset-bottom));
+             margin: 0; text-align: center; font-size: .74rem; letter-spacing: .04em;
+             color: rgba(255, 255, 255, .42); pointer-events: none; }
+
   @media (max-width: 560px) {
-    .sheet { grid-template-columns: repeat(auto-fill, minmax(152px, 1fr)); gap: .6rem; }
+    .sheet { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .65rem; }
     .flabel { width: 100%; }
-    .tok-name span { font-size: .64rem; }
-    .tok-line { font-size: .52rem; }
-    .tok-text { font-size: .56rem; }
-    .tok-nums b { font-size: .72rem; }
+    /* On a phone the card fills the width, so the arrows move off the art
+       and sit either side of the hint at the foot of the screen. */
+    .lb .tok { width: calc(min(92vw, 74vh * 0.716) * var(--z)); }
+    .lb-scroll { padding: 3.2rem .5rem 4.2rem; }
+    .lb-nav { top: auto; transform: none; width: 3rem; height: 2.6rem; font-size: 1.6rem;
+              bottom: max(2.1rem, calc(env(safe-area-inset-bottom) + 1.6rem)); }
+    .lb-prev { left: 1.1rem; } .lb-next { right: 1.1rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tok { transition: none; }
+    .tok:hover, .tok:focus-visible { transform: none; }
   }
 </style>
 
 <script>
-  // The filters hide and show cards that are already in the page. Nothing is
-  // created here, so there is no styling to worry about.
+  // ── filtering ────────────────────────────────────────────────────────────
+  // The cards are already in the page; the filters only hide and show them.
   const sheet = document.getElementById('sheet');
   const shown = document.getElementById('shown');
   const toks = [...sheet.querySelectorAll('.tok')];
   const pick = { tier: '', type: '', tag: '' };
+  const HINT = 'Tap any card to open it. <span class="nowrap">Tap again to zoom in.</span>';
+
+  function visible() { return toks.filter((t) => !t.hidden); }
 
   function apply() {
-    let n = 0;
     for (const t of toks) {
-      const ok =
+      t.hidden = !(
         (!pick.tier || t.dataset.tier === pick.tier) &&
         (!pick.type || t.dataset.type === pick.type) &&
-        (!pick.tag || t.dataset.tags.split('|').includes(pick.tag));
-      t.hidden = !ok;
-      if (ok) n += 1;
+        (!pick.tag || t.dataset.tags.split('|').includes(pick.tag))
+      );
     }
-    const all = Object.values(pick).every((v) => !v);
-    shown.textContent = all ? '' : `Showing ${n} of ${toks.length} cards.`;
+    const n = visible().length;
+    shown.innerHTML = Object.values(pick).every((v) => !v)
+      ? HINT
+      : `Showing ${n} of ${toks.length} cards. ${HINT}`;
   }
 
   document.getElementById('filters').addEventListener('click', (e) => {
@@ -293,4 +405,94 @@ const painted = CARDS.filter((c) => artOf(c)).length;
   });
 
   apply();
+
+  // ── the lightbox ─────────────────────────────────────────────────────────
+  // Opening a card clones the card that is already on the page, so the card
+  // is only designed once and the big one can never drift from the small one.
+  const lb = document.getElementById('lb');
+  const lbScroll = document.getElementById('lbScroll');
+  const lbStage = document.getElementById('lbStage');
+  const lbHint = document.getElementById('lbHint');
+  let list = [];
+  let at = 0;
+  let opener = null;
+
+  function show(i) {
+    at = (i + list.length) % list.length;
+    const card = list[at].cloneNode(true);
+    card.hidden = false;
+    card.removeAttribute('data-i');
+    card.tabIndex = -1;
+    const img = card.querySelector('img');
+    if (img) { img.loading = 'eager'; img.decoding = 'sync'; }
+    lbStage.replaceChildren(card);
+    lbScroll.scrollTo(0, 0);
+    const touch = matchMedia('(hover: none)').matches;
+    lbHint.textContent = touch
+      ? `${at + 1} of ${list.length}  ·  tap to zoom  ·  swipe to browse`
+      : `${at + 1} of ${list.length}  ·  click to zoom  ·  arrow keys to browse  ·  Esc to close`;
+    card.focus({ preventScroll: true });
+  }
+
+  function open(tok) {
+    list = visible();
+    if (!list.length) return;
+    opener = tok;
+    lb.classList.remove('is-zoom');
+    lb.hidden = false;
+    document.body.classList.add('lb-open');
+    show(list.indexOf(tok));
+  }
+
+  function close() {
+    lb.hidden = true;
+    lb.classList.remove('is-zoom');
+    lbStage.replaceChildren();
+    document.body.classList.remove('lb-open');
+    if (opener) { opener.focus({ preventScroll: true }); opener = null; }
+  }
+
+  const step = (d) => { lb.classList.remove('is-zoom'); show(at + d); };
+
+  sheet.addEventListener('click', (e) => {
+    const tok = e.target.closest('.tok');
+    if (tok) open(tok);
+  });
+
+  lb.addEventListener('click', (e) => {
+    if (e.target.closest('#lbClose')) return close();
+    if (e.target.closest('#lbPrev')) return step(-1);
+    if (e.target.closest('#lbNext')) return step(1);
+    // Clicking the card zooms; clicking the space around it closes.
+    if (e.target.closest('.tok')) {
+      const wasZoomed = lb.classList.toggle('is-zoom');
+      if (wasZoomed) {
+        // Keep the middle of the card in view when it grows.
+        lbScroll.scrollTo({
+          left: (lbScroll.scrollWidth - lbScroll.clientWidth) / 2,
+          top: (lbScroll.scrollHeight - lbScroll.clientHeight) / 2,
+        });
+      }
+      return;
+    }
+    close();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (lb.hidden) return;
+    if (e.key === 'Escape') { close(); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { step(-1); e.preventDefault(); }
+    else if (e.key === 'ArrowRight') { step(1); e.preventDefault(); }
+  });
+
+  // Swipe left and right to move between cards, but only when the card is not
+  // zoomed in — once it is, a drag is for panning around the painting.
+  let x0 = null, y0 = null;
+  lbScroll.addEventListener('pointerdown', (e) => { x0 = e.clientX; y0 = e.clientY; });
+  lbScroll.addEventListener('pointerup', (e) => {
+    if (x0 === null || lb.classList.contains('is-zoom')) { x0 = null; return; }
+    const dx = e.clientX - x0, dy = e.clientY - y0;
+    x0 = null;
+    if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.6) step(dx < 0 ? 1 : -1);
+  });
 </script>
