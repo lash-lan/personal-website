@@ -128,9 +128,42 @@ every one is a thing a new player must learn before they can read a card.
 | **Exile** | Remove it from the game entirely; it never returns |
 | **Graveyard** | Where dead cards rest, and can be reached |
 
+Five, and it stayed five. A sixth was drafted for the World Titans and died
+with them.
+
 Exile mattering *because* the graveyard is reachable is good design and it is
 already in your cards — Hidden Boss returns a character from the opponent's
 graveyard, so exiling is how you deny it.
+
+---
+
+## 6a. Who is allowed to be a card
+
+**The World Titans are not cards.** Lash's call, and the lore backs it: the
+Law of Divine Distance forbids celestial beings intervening in mortal affairs
+under penalty of mortality, and permits the Elder Gods only to send Avatars.
+
+I had tried to work around that with a keyword — Titans costing less the worse
+your position got, so the gods arrived only when things were dire. That was
+solving a flavour problem that the lore had already answered with a flat no.
+A rule you have to invent an exception for is usually the rule talking.
+
+So:
+
+- **Avatars are cards.** The Morrigan's Avatar, Lucifial's Avatar, the Devil
+  Kings Avatar. This is exactly the channel the Law leaves open.
+- **The gods behind them are not.** Hyperion, Lucifial, Thanatos, Hades,
+  Persephone, Selene, The Morrigan, Ra, Oceanus, Freyva, Glorion — and Typhon
+  and Akidna, who are World Titans too.
+- **Their deeds are spells.** The Cataclysm carries Typhon's painting. The Law
+  of Divine Distance carries Hyperion's, since he is the one who enacted it.
+
+Prime Gods from the prototype — Icetear, Child of Winter, and Knight Titan
+Tyberius — stay, because they are Lash's own designed cards rather than mine.
+If the same objection applies to them, they come out the same way.
+
+`scripts/cards-selftest.mjs` fails the build if a World Titan reappears as a
+character, because a card that powerful is exactly the sort that creeps back.
 
 ---
 

@@ -88,13 +88,13 @@ for (const k of CARDS) {
 }
 if (strays.size) for (const t of strays) fail(`unlisted keyword: ${t}`);
 console.log(`  ${known.length} keywords: ${known.join(', ')}`);
-// Divine Distance belongs to World Titans alone.
+// The World Titans are not cards. The Law of Divine Distance forbids them
+// intervening in mortal affairs and permits only Avatars, so an Avatar may be
+// a card and the god behind it may not. This is checked rather than trusted,
+// because a Titan is exactly the sort of card that creeps back in.
 for (const k of CARDS) {
-  const has = (k.text || '').includes('Divine Distance');
-  const titan = k.line === 'World Titan';
-  if (has && !titan) fail(`${k.name} uses Divine Distance but is not a World Titan`);
-  if (titan && !has && !(k.tags || []).includes('Corrupted')) {
-    fail(`${k.name} is a World Titan without Divine Distance`);
+  if (k.line === 'World Titan') {
+    fail(`${k.name} is a World Titan; the Law of Divine Distance keeps them out of the arena`);
   }
 }
 

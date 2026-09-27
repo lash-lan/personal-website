@@ -12,6 +12,11 @@
 //   3. The bestiary, races, factions and relics in the lore database.
 //   4. The stories: The Squire, The Red Rangers, Last Days of Legends.
 //
+// The World Titans are deliberately NOT cards. The Law of Divine Distance
+// forbids celestial beings intervening in mortal affairs, and permits them
+// only to send Avatars. So the Avatars are the cards, and the gods behind
+// them are not. Their deeds appear as spells instead.
+//
 // The rules for Power, Cost and rarity are in docs/card-standards.md. In
 // short: a character has one number, Power. When two characters fight, each
 // takes the other's Power off its own. Cost is Power divided by three,
@@ -54,7 +59,6 @@ export const KEYWORDS = {
   'Destroy': 'Kill it. It goes to the graveyard.',
   'Exile': 'Remove it from the game entirely. It never returns.',
   'Graveyard': 'Where dead cards rest, and can be reached.',
-  'Divine Distance': 'Costs 1 less for every 10 Citadel Mastery you have lost. Only on World Titans — the gods do not intervene until things are dire.',
 };
 
 // c() builds a character, s() a spell. Kept terse so the set reads as a list
@@ -275,33 +279,6 @@ export const CARDS = [
   c('tylon-5', 'Tylon (Leviathan)', 'tier_6', 27, 'Tylon', ['Beast', 'Sea'],
     'When Tylon (Leviathan) enters the arena, destroy every Rare or lower character.', 2),
 
-  // ───────────────────────── THE WORLD TITANS ─────────────────────────
-  // Eleven Mythicals, one per domain. Every one carries Divine Distance, so
-  // the gods are unaffordable while you are comfortable and arrive when you
-  // are losing — which is the Law of Divine Distance, turned into a price.
-  c('tit-selene', 'Selene, World Titan of Moon and Cycles', 'tier_6', 25, 'World Titan', ['Divine', 'Titan'],
-    'Divine Distance. At the start of each of your turns, Selene gains 2 Power and you restore 2 Citadel Mastery.', 1),
-  c('tit-persephone', 'Persephone, World Titan of Redemption', 'tier_6', 25, 'World Titan', ['Divine', 'Titan'],
-    'Divine Distance. When Persephone enters the arena, return 2 characters from your graveyard to the arena.', 1),
-  c('tit-freyva', 'Freyva, World Titan of Life and Nature', 'tier_6', 25, 'World Titan', ['Divine', 'Titan'],
-    'Divine Distance. At the end of your turn, restore every friendly character to its printed Power.', 2),
-  c('tit-hades', 'Hades, World Titan of Judgment', 'tier_6', 25, 'World Titan', ['Divine', 'Titan'],
-    'Divine Distance. While Hades is in the arena, no card may leave either graveyard.', 1),
-  c('tit-glorion', 'Glorion, World Titan of Earth and Forge', 'tier_6', 26, 'World Titan', ['Divine', 'Titan'],
-    'Divine Distance. While Glorion is in the arena, your characters cannot lose more than 5 Power from a single strike.', 2),
-  c('tit-oceanus', 'Oceanus, World Titan of the Seas', 'tier_6', 26, 'World Titan', ['Divine', 'Titan', 'Sea'],
-    'Divine Distance. When Oceanus enters the arena, return every other character to its owner’s hand.', 2),
-  c('tit-morrigan', 'The Morrigan, World Titan of Magic', 'tier_6', 26, 'World Titan', ['Divine', 'Titan'],
-    'Divine Distance. While The Morrigan is in the arena, your spells cost 1 less and your opponent’s cost 1 more.', 2),
-  c('tit-thanatos', 'Thanatos, World Titan of Death and Passage', 'tier_6', 26, 'World Titan', ['Divine', 'Titan'],
-    'Divine Distance. When Thanatos enters the arena, destroy every damaged character on both sides.', 2),
-  c('tit-ra', 'Ra, World Titan of Sky, Dragons and Flame', 'tier_6', 27, 'World Titan', ['Divine', 'Titan', 'Dragon'],
-    'Divine Distance. Quick Attack. Your Dragon characters have Quick Attack.', 1),
-  c('tit-lucifial', 'Lucifial, World Titan of Punishment', 'tier_6', 27, 'World Titan', ['Devil', 'Titan', 'Fallen'],
-    'Divine Distance. When Lucifial enters the arena, take control of the strongest enemy character until the end of your next turn.', 2),
-  c('tit-hyperion', 'Hyperion, World Titan of Light and Order', 'tier_6', 28, 'World Titan', ['Divine', 'Titan'],
-    'Divine Distance. When Hyperion enters the arena, exile every enemy character of Epic or lower.', 2),
-
   // ───────────────────────── AVATARS AND THE ABYSS ─────────────────────────
   // Avatars are how the Titans act once the Law forbids them acting
   // themselves, so these have no Divine Distance and cost full price.
@@ -313,10 +290,6 @@ export const CARDS = [
     'When The Devil Kings Avatar enters the arena, summon 4 Demons. After every strike, it loses 6 Power.', 2),
   c('demon-token', 'Demon', 'tier_1', 4, 'Demon', ['Demon', 'Token'],
     'Quick Attack.'),
-  c('aby-akidna', 'Akidna, Mother of Monsters', 'tier_6', 28, 'World Titan', ['Beast', 'Titan', 'Corrupted'],
-    'While Akidna is in the arena, whenever a friendly Beast dies, summon a Beastling.', 2),
-  c('aby-typhon', 'Typhon, Father of Monsters', 'tier_6', 29, 'World Titan', ['Beast', 'Titan', 'Corrupted'],
-    'When Typhon enters the arena, destroy every other character on both sides, then summon 4 Beastlings to your side.', 2),
 
   // ───────────────────────── THE DIVINE HOST ─────────────────────────
   c('div-skyrehaal', 'Archangel Skyrehaal', 'tier_6', 27, 'Angel Lord', ['Divine', 'Angel'],
@@ -539,21 +512,11 @@ const ART = {
   'fa-abel': '/images/cards/abel.webp',
   'fa-cainan': '/images/cards/cainan.webp',
 
-  // The Foundation Age codex paintings.
-  'tit-hyperion': '/images/codex/hyperion.jpg',
-  'tit-lucifial': '/images/codex/lucifial.jpg',
-  'tit-thanatos': '/images/codex/thanatos.jpg',
-  'tit-hades': '/images/codex/hades.jpg',
-  'tit-persephone': '/images/codex/persephone.jpg',
-  'tit-selene': '/images/codex/selene.jpg',
-  'tit-morrigan': '/images/codex/morrigan.jpg',
-  'tit-ra': '/images/codex/ra.jpg',
-  'tit-oceanus': '/images/codex/oceanus.jpg',
-  'tit-freyva': '/images/codex/freyva.jpg',
-  'tit-glorion': '/images/codex/glorion.jpg',
+  // The Foundation Age codex paintings. The World Titans are not cards, so
+  // the three of their paintings used here sit on the deeds they are known
+  // for rather than on the gods themselves.
   'aby-whisperer': '/images/codex/lucifials-avatar.jpg',
-  'aby-typhon': '/images/codex/typhon.jpg',
-  'aby-akidna': '/images/codex/akidna.jpg',
+  'aby-morrigan-avatar': '/images/codex/morrigan.jpg',
   'gb-solomon': '/images/codex/solomon.jpg',
   'gb-lazarus': '/images/codex/lazarus.jpg',
   'gb-caligula': '/images/codex/caligula.jpg',
@@ -600,8 +563,8 @@ const ART = {
   'rel-black-codex': '/images/codex/black-codex.jpg',
   'sp-abyssal-breach': '/images/codex/abyssal-breach.jpg',
   'sp-heavens-throat': '/images/codex/heavens-throat.jpg',
-  'sp-divine-distance': '/images/codex/throned-acropolis.jpg',
-  'sp-the-cataclysm': '/images/codex/shattered-lowlands.jpg',
+  'sp-divine-distance': '/images/codex/hyperion.jpg',
+  'sp-the-cataclysm': '/images/codex/typhon.jpg',
   'sp-deep-reaches': '/images/codex/deep-reaches.jpg',
   'sp-eastern-migration': '/images/codex/eastern-migration-lands.jpg',
   'sp-union-of-beasts': '/images/codex/planes-of-accord.jpg',
