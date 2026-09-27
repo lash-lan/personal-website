@@ -1,0 +1,296 @@
+---
+import SectionLayout from '../../../layouts/SectionLayout.astro';
+import { CARDS, TIERS, TIER_ORDER, KEYWORDS, artOf, numberOf } from '../../../data/cards.js';
+
+// Every card is rendered at build time and the filters only hide and show
+// them. Nothing here is built by a script, so the scoped styles below reach
+// all of it — which is the trap the battlefield fell into.
+const order = { character: 0, spell: 1 };
+const cards = [...CARDS].sort((a, b) =>
+  TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier)
+  || order[a.type] - order[b.type]
+  || (a.cost - b.cost)
+  || a.name.localeCompare(b.name));
+
+const counts = TIER_ORDER.map((t) => ({ ...TIERS[t], n: CARDS.filter((c) => c.tier === t).length }));
+const factions = Object.entries(
+  CARDS.reduce((acc, c) => {
+    for (const t of c.tags || []) if (t !== 'Token') acc[t] = (acc[t] || 0) + 1;
+    return acc;
+  }, {}),
+).filter(([, n]) => n >= 4).sort((a, b) => b[1] - a[1]);
+
+const painted = CARDS.filter((c) => artOf(c)).length;
+---
+<SectionLayout
+  title="The Collection | Blood of Icetear"
+  description="Every card in Blood of Icetear: characters, spells and relics of the world."
+  theme="codex"
+  eyebrow="Blood of Icetear"
+  heading="The Collection"
+  tagline="Every card in the set. One number does the fighting: Power."
+  compact={true}
+>
+  <div class="wrap">
+
+    <!-- ── what a card says ─────────────────────────────────────────────── -->
+    <section class="primer">
+      <h2>How to read a card</h2>
+      <p>
+        A character has one number, <strong>Power</strong>, printed bottom left.
+        When two characters fight, each takes the other’s Power off its own;
+        at nought or less it dies. The number bottom right is
+        <strong>Cost</strong> — the Muster you pay to put it in the arena.
+        Cost is always Power divided by three, rounded up, plus a little for a
+        strong ability.
+      </p>
+      <dl class="keys">
+        {Object.entries(KEYWORDS).map(([word, meaning]) => (
+          <div><dt>{word}</dt><dd>{meaning}</dd></div>
+        ))}
+      </dl>
+    </section>
+
+    <!-- ── the shape of the set ─────────────────────────────────────────── -->
+    <section class="tally">
+      <p class="tally-line">
+        <strong>{CARDS.length}</strong> cards ·
+        <strong>{CARDS.filter((c) => c.type === 'character').length}</strong> characters ·
+        <strong>{CARDS.filter((c) => c.type === 'spell').length}</strong> spells ·
+        <strong>{painted}</strong> painted, {CARDS.length - painted} still waiting on art
+      </p>
+      <ul class="bars">
+        {counts.map((t) => (
+          <li>
+            <span class="bar-name">{t.name}</span>
+            <span class="bar" data-tier={t.id} style={`--w:${(t.n / Math.max(...counts.map((x) => x.n))) * 100}%`}></span>
+            <span class="bar-n">{t.n}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <!-- ── filters ──────────────────────────────────────────────────────── -->
+    <section class="filters" id="filters">
+      <div class="fgroup">
+        <span class="flabel">Rarity</span>
+        <button class="chip is-on" data-filter="tier" data-value="">All</button>
+        {TIER_ORDER.map((t) => (
+          <button class="chip" data-filter="tier" data-value={t} data-tier={t}>{TIERS[t].name}</button>
+        ))}
+      </div>
+      <div class="fgroup">
+        <span class="flabel">Kind</span>
+        <button class="chip is-on" data-filter="type" data-value="">All</button>
+        <button class="chip" data-filter="type" data-value="character">Characters</button>
+        <button class="chip" data-filter="type" data-value="spell">Spells</button>
+      </div>
+      <div class="fgroup">
+        <span class="flabel">Allegiance</span>
+        <button class="chip is-on" data-filter="tag" data-value="">All</button>
+        {factions.map(([t, n]) => (
+          <button class="chip" data-filter="tag" data-value={t}>{t} <em>{n}</em></button>
+        ))}
+      </div>
+      <p class="shown" id="shown"></p>
+    </section>
+
+    <!-- ── the cards ────────────────────────────────────────────────────── -->
+    <div class="sheet" id="sheet">
+      {cards.map((c) => {
+        const art = artOf(c);
+        // The type line on the prototype reads "[Rarity] - [Type] ([Race])".
+        // A spell has no race, so it prints its rarity and kind alone, and
+        // says Instant where that matters.
+        const kind = c.type === 'spell'
+          ? (c.instant ? 'Instant Spell' : 'Spell')
+          : `Character (${c.line})`;
+        return (
+          <article
+            class="tok"
+            data-tier={c.tier}
+            data-type={c.type}
+            data-tags={(c.tags || []).join('|')}
+          >
+            <header class="tok-name"><span>{c.name}</span></header>
+            <div class="tok-art">
+              {art
+                ? <img src={art} alt="" loading="lazy" width="378" height="300" />
+                : <span class="tok-unpainted">Awaiting art</span>}
+            </div>
+            <p class="tok-line">
+              {TIERS[c.tier].name} — {kind}
+            </p>
+            <p class="tok-text">{c.text || <em>No ability. It simply fights.</em>}</p>
+            <footer class="tok-foot">
+              <span class="tok-no">{numberOf(c)}</span>
+              <span class="tok-nums">
+                {c.type === 'character' && <b class="pw" title="Power">{c.power}</b>}
+                <b class="cs" title="Cost">{c.cost}</b>
+              </span>
+            </footer>
+          </article>
+        );
+      })}
+    </div>
+
+    <p class="foot-note">
+      Cards numbered <code>LAH</code> are the ones already designed in the
+      Canva prototype, and keep the number printed on them. Cards numbered
+      <code>BOI</code> are new, drawn from the Foundation Age codex, the
+      bestiary and the stories.
+      Nothing here is published to the game yet — this page is the set laid out
+      so it can be argued with.
+    </p>
+  </div>
+</SectionLayout>
+
+<style>
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 1.25rem 5rem; }
+
+  /* ── primer ── */
+  .primer { border: 1px solid var(--line); background: var(--card); border-radius: 14px;
+            padding: 1.5rem 1.6rem; margin-bottom: 1.5rem; }
+  .primer h2 { margin: 0 0 .6rem; font-size: 1.05rem; letter-spacing: .04em;
+               text-transform: uppercase; color: var(--accentLight); }
+  .primer p { margin: 0 0 1.1rem; color: var(--text); line-height: 1.7; max-width: 62ch; }
+  .keys { display: grid; gap: .5rem 1.6rem; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin: 0; }
+  .keys div { display: flex; gap: .55rem; align-items: baseline; }
+  .keys dt { font-weight: 700; color: var(--accentLight); white-space: nowrap; }
+  .keys dd { margin: 0; color: var(--textDim); font-size: .88rem; line-height: 1.5; }
+
+  /* ── tally ── */
+  .tally { margin-bottom: 1.5rem; }
+  .tally-line { color: var(--textDim); margin: 0 0 .9rem; font-size: .95rem; }
+  .tally-line strong { color: var(--textBright); }
+  .bars { list-style: none; margin: 0; padding: 0; display: grid; gap: .3rem; max-width: 420px; }
+  .bars li { display: grid; grid-template-columns: 5.5rem 1fr 2rem; align-items: center; gap: .6rem;
+             font-size: .82rem; color: var(--textDim); }
+  .bar { height: 9px; border-radius: 5px; background: var(--line); position: relative; }
+  .bar::after { content: ''; position: absolute; inset: 0 auto 0 0; width: var(--w);
+                border-radius: 5px; background: var(--tier, var(--accent)); }
+  .bar-n { text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* ── filters ── */
+  .filters { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+             padding: 1rem 0 .9rem; margin-bottom: 1.75rem;
+             display: grid; gap: .7rem; }
+  .fgroup { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+  .flabel { font-size: .7rem; letter-spacing: .12em; text-transform: uppercase;
+            color: var(--textDim); width: 5.5rem; flex: none; }
+  .chip { font: inherit; font-size: .8rem; cursor: pointer; color: var(--textDim);
+          background: transparent; border: 1px solid var(--line); border-radius: 999px;
+          padding: .28rem .7rem; transition: color .15s, border-color .15s, background .15s; }
+  .chip em { font-style: normal; opacity: .5; font-size: .72em; margin-left: .25rem; }
+  .chip:hover { color: var(--textBright); border-color: var(--accentDim); }
+  .chip.is-on { color: #10100f; background: var(--accentLight); border-color: var(--accentLight); font-weight: 600; }
+  .chip.is-on em { opacity: .55; }
+  .shown { margin: .2rem 0 0; font-size: .8rem; color: var(--textDim); }
+
+  /* ── the card itself: the anatomy from the Canva prototype ── */
+  .sheet { display: grid; gap: 1.1rem;
+           grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); }
+  .tok { --tier: var(--accent);
+         display: flex; flex-direction: column; overflow: hidden;
+         background: #14130f; border: 1px solid var(--line); border-radius: 12px;
+         box-shadow: 0 1px 0 rgba(255, 255, 255, .04) inset, 0 6px 18px rgba(0, 0, 0, .35);
+         aspect-ratio: 378 / 528;
+         /* 195 cards is a tall page. This tells the browser not to lay out or
+            paint the ones that are off screen, which keeps scrolling smooth on
+            a phone. The placeholder size stops the scrollbar from jumping. */
+         content-visibility: auto; contain-intrinsic-size: auto 316px; }
+  .tok[hidden] { display: none; }
+
+  .tok-name { flex: none; padding: .3rem .55rem; min-height: 2.7em;
+              display: flex; align-items: center; justify-content: center; text-align: center;
+              background: linear-gradient(180deg, var(--tier), rgba(0, 0, 0, .35));
+              border-bottom: 1px solid rgba(0, 0, 0, .5); }
+  .tok-name span { font-size: .78rem; line-height: 1.15; font-weight: 700;
+                   color: #0e0d0b; letter-spacing: .005em;
+                   text-shadow: 0 1px 0 rgba(255, 255, 255, .25); }
+
+  .tok-art { flex: 1 1 auto; min-height: 0; position: relative; background: #0a0a09; }
+  .tok-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .tok-unpainted { position: absolute; inset: 0; display: grid; place-items: center;
+                   font-size: .58rem; letter-spacing: .1em; text-transform: uppercase;
+                   color: rgba(255, 255, 255, .22);
+                   background: repeating-linear-gradient(45deg, #0d0d0b 0 8px, #111 8px 16px); }
+
+  .tok-line { flex: none; margin: 0; padding: .34em .6rem .2em;
+              font-size: .6rem; letter-spacing: .02em;
+              color: var(--tier); background: rgba(0, 0, 0, .55);
+              border-top: 1px solid rgba(255, 255, 255, .06); text-align: center; }
+  .tok-text { flex: none; margin: 0; padding: .35em .65rem .5em; min-height: 5.4em;
+              font-size: .64rem; line-height: 1.4;
+              color: rgba(255, 255, 255, .8); background: rgba(0, 0, 0, .55); }
+  .tok-text em { color: rgba(255, 255, 255, .34); }
+
+  .tok-foot { flex: none; display: flex; align-items: center; justify-content: space-between;
+              padding: .3em .6rem .38em; background: rgba(0, 0, 0, .78);
+              border-top: 1px solid rgba(255, 255, 255, .07); }
+  .tok-no { font-size: .55rem; letter-spacing: .06em;
+            color: rgba(255, 255, 255, .34); font-variant-numeric: tabular-nums; }
+  .tok-nums { display: flex; gap: .3em; }
+  .tok-nums b { font-size: .85rem; font-variant-numeric: tabular-nums;
+                min-width: 1.9em; text-align: center; border-radius: 4px; padding: .05em .25em; }
+  .pw { background: var(--tier); color: #0e0d0b; }
+  .cs { background: rgba(255, 255, 255, .1); color: rgba(255, 255, 255, .85);
+        border: 1px solid rgba(255, 255, 255, .16); }
+
+  /* Rarity colours. These are the one place a tier's look is decided. */
+  [data-tier='tier_1'] { --tier: #9aa3a8; }
+  [data-tier='tier_2'] { --tier: #7fae82; }
+  [data-tier='tier_3'] { --tier: #6f9dc9; }
+  [data-tier='tier_4'] { --tier: #a988d0; }
+  [data-tier='tier_5'] { --tier: #d8a054; }
+  [data-tier='tier_6'] { --tier: #d4685e; }
+
+  .foot-note { margin: 2.5rem 0 0; font-size: .85rem; line-height: 1.7;
+               color: var(--textDim); max-width: 70ch; }
+  .foot-note code { font-size: .95em; color: var(--accentLight); }
+
+  @media (max-width: 560px) {
+    .sheet { grid-template-columns: repeat(auto-fill, minmax(152px, 1fr)); gap: .6rem; }
+    .flabel { width: 100%; }
+    .tok-name span { font-size: .64rem; }
+    .tok-line { font-size: .52rem; }
+    .tok-text { font-size: .56rem; }
+    .tok-nums b { font-size: .72rem; }
+  }
+</style>
+
+<script>
+  // The filters hide and show cards that are already in the page. Nothing is
+  // created here, so there is no styling to worry about.
+  const sheet = document.getElementById('sheet');
+  const shown = document.getElementById('shown');
+  const toks = [...sheet.querySelectorAll('.tok')];
+  const pick = { tier: '', type: '', tag: '' };
+
+  function apply() {
+    let n = 0;
+    for (const t of toks) {
+      const ok =
+        (!pick.tier || t.dataset.tier === pick.tier) &&
+        (!pick.type || t.dataset.type === pick.type) &&
+        (!pick.tag || t.dataset.tags.split('|').includes(pick.tag));
+      t.hidden = !ok;
+      if (ok) n += 1;
+    }
+    const all = Object.values(pick).every((v) => !v);
+    shown.textContent = all ? '' : `Showing ${n} of ${toks.length} cards.`;
+  }
+
+  document.getElementById('filters').addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    const { filter, value } = chip.dataset;
+    pick[filter] = value;
+    for (const c of document.querySelectorAll(`.chip[data-filter="${filter}"]`)) {
+      c.classList.toggle('is-on', c === chip);
+    }
+    apply();
+  });
+
+  apply();
+</script>
