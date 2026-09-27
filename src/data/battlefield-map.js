@@ -25,44 +25,50 @@ export const MAPS = {
     image: '/images/battlefield/citadel-wars.webp',
     imageSmall: '/images/battlefield/citadel-wars-900.webp',
     width: 1536,
-    height: 1024,
-    // the bottom of the painting is always the near army; the picture does
+    height: 780,
+    // The painting was supplied as a design mock-up with an interface drawn
+    // into it. The band along the bottom, which carried a row of cards, a
+    // muster meter and an End Phase button, sat below the fortress and has
+    // been cropped away, so the image is 780 tall rather than 1024 and every
+    // y below is measured against that.
+    //
+    // The bottom of the painting is always the near army; the picture does
     // not turn round between turns, so in a two player game the second
-    // player fights from the far end
+    // player fights from the far end.
     nodes: {
-      // ── the near keep ───────────────────────────────────────────────
-      'citadel:0':   { x: 0.500, y: 0.905, type: 'citadel', side: 0, label: 'Your Citadel' },
-      'commander:0': { x: 0.500, y: 0.742, type: 'commander', side: 0, label: 'Commander' },
-      'centre:0':    { x: 0.500, y: 0.655, type: 'gate-great', side: 0, label: 'The Great Gate' },
-      'left:0':      { x: 0.182, y: 0.645, type: 'gate-high', side: 0, label: 'High Gate' },
-      'right:0':     { x: 0.815, y: 0.640, type: 'gate-high', side: 0, label: 'High Gate' },
+      // ── the near keep, set on the gates the painting draws ─────────
+      'citadel:0':   { x: 0.500, y: 0.955, type: 'citadel', side: 0, label: 'Your Citadel' },
+      'commander:0': { x: 0.500, y: 0.895, type: 'commander', side: 0, label: 'Commander' },
+      'centre:0':    { x: 0.500, y: 0.833, type: 'gate-great', side: 0, label: 'The Great Gate' },
+      'left:0':      { x: 0.179, y: 0.827, type: 'gate-high', side: 0, label: 'High Gate' },
+      'right:0':     { x: 0.817, y: 0.827, type: 'gate-high', side: 0, label: 'High Gate' },
 
       // ── the centre: the war zone. Three positions, five a side ──────
-      'centre:1': { x: 0.487, y: 0.560, type: 'ground', lane: 'centre', step: 1, capacity: 5 },
-      'centre:2': { x: 0.487, y: 0.393, type: 'ground', lane: 'centre', step: 2, capacity: 5 },
-      'centre:3': { x: 0.487, y: 0.228, type: 'ground', lane: 'centre', step: 3, capacity: 5 },
+      'centre:1': { x: 0.487, y: 0.735, type: 'ground', lane: 'centre', step: 1, capacity: 5 },
+      'centre:2': { x: 0.487, y: 0.516, type: 'ground', lane: 'centre', step: 2, capacity: 5 },
+      'centre:3': { x: 0.487, y: 0.299, type: 'ground', lane: 'centre', step: 3, capacity: 5 },
 
       // ── the left road: wild, five positions, three of them held by
       //    something, and the middle one worth taking ──────────────────
-      'left:1': { x: 0.156, y: 0.583, type: 'ground', lane: 'left', step: 1, capacity: 3 },
-      'left:2': { x: 0.141, y: 0.519, type: 'ground', lane: 'left', step: 2, capacity: 3, monster: true },
-      'left:3': { x: 0.190, y: 0.367, type: 'ground', lane: 'left', step: 3, capacity: 3, monster: true, control: true },
-      'left:4': { x: 0.196, y: 0.212, type: 'ground', lane: 'left', step: 4, capacity: 3, monster: true },
-      'left:5': { x: 0.266, y: 0.172, type: 'ground', lane: 'left', step: 5, capacity: 3 },
+      'left:1': { x: 0.156, y: 0.765, type: 'ground', lane: 'left', step: 1, capacity: 3 },
+      'left:2': { x: 0.141, y: 0.681, type: 'ground', lane: 'left', step: 2, capacity: 3, monster: true },
+      'left:3': { x: 0.190, y: 0.482, type: 'ground', lane: 'left', step: 3, capacity: 3, monster: true, control: true },
+      'left:4': { x: 0.196, y: 0.278, type: 'ground', lane: 'left', step: 4, capacity: 3, monster: true },
+      'left:5': { x: 0.266, y: 0.226, type: 'ground', lane: 'left', step: 5, capacity: 3 },
 
       // ── the right road ──────────────────────────────────────────────
-      'right:1': { x: 0.845, y: 0.590, type: 'ground', lane: 'right', step: 1, capacity: 3 },
-      'right:2': { x: 0.879, y: 0.527, type: 'ground', lane: 'right', step: 2, capacity: 3, monster: true },
-      'right:3': { x: 0.841, y: 0.381, type: 'ground', lane: 'right', step: 3, capacity: 3, monster: true, control: true },
-      'right:4': { x: 0.807, y: 0.220, type: 'ground', lane: 'right', step: 4, capacity: 3, monster: true },
-      'right:5': { x: 0.736, y: 0.175, type: 'ground', lane: 'right', step: 5, capacity: 3 },
+      'right:1': { x: 0.845, y: 0.775, type: 'ground', lane: 'right', step: 1, capacity: 3 },
+      'right:2': { x: 0.879, y: 0.692, type: 'ground', lane: 'right', step: 2, capacity: 3, monster: true },
+      'right:3': { x: 0.841, y: 0.500, type: 'ground', lane: 'right', step: 3, capacity: 3, monster: true, control: true },
+      'right:4': { x: 0.807, y: 0.289, type: 'ground', lane: 'right', step: 4, capacity: 3, monster: true },
+      'right:5': { x: 0.736, y: 0.230, type: 'ground', lane: 'right', step: 5, capacity: 3 },
 
       // ── the far keep ────────────────────────────────────────────────
-      'centre:4':    { x: 0.485, y: 0.146, type: 'gate-great', side: 1, label: 'The Great Gate' },
-      'left:6':      { x: 0.348, y: 0.148, type: 'gate-high', side: 1, label: 'High Gate' },
-      'right:6':     { x: 0.651, y: 0.148, type: 'gate-high', side: 1, label: 'High Gate' },
-      'commander:1': { x: 0.500, y: 0.075, type: 'commander', side: 1, label: 'Commander' },
-      'citadel:1':   { x: 0.500, y: 0.028, type: 'citadel', side: 1, label: 'Their Citadel' },
+      'centre:4':    { x: 0.500, y: 0.135, type: 'gate-great', side: 1, label: 'The Great Gate' },
+      'left:6':      { x: 0.344, y: 0.135, type: 'gate-high', side: 1, label: 'High Gate' },
+      'right:6':     { x: 0.659, y: 0.135, type: 'gate-high', side: 1, label: 'High Gate' },
+      'commander:1': { x: 0.500, y: 0.081, type: 'commander', side: 1, label: 'Commander' },
+      'citadel:1':   { x: 0.500, y: 0.027, type: 'citadel', side: 1, label: 'Their Citadel' },
     },
   },
 };
