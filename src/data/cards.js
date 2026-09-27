@@ -548,6 +548,10 @@ export const typeLineOf = (card) =>
 const ART = {
   // Painted for the card game already.
   'LAH.16': '/images/cards/anthuriun.webp',
+  'elu-antharaiel': '/images/cards/antharaiel-whitewing.webp',
+  'ice-child-of-winter': '/images/cards/icetear-child-of-winter.webp',
+  'div-tyberius': '/images/cards/knight-titan-tyberius.webp',
+  'LAH.25': '/images/cards/susanna-bruhneville.webp',
   'LAH.06': '/images/cards/hannarial.webp',
   'elu-hansall': '/images/cards/hansall.webp',
   'elu-tiamel': '/images/cards/tiamel.webp',
@@ -580,6 +584,7 @@ const ART = {
   'mon-leviathan': '/images/monsters/serpent-beast.webp',
   'mon-bhahamut': '/images/monsters/dark-dragon.webp',
   'mon-barlgowrath': '/images/monsters/spider-horror.webp',
+  'und-pale-lady': '/images/cards/the-pale-lady.webp',
   'und-wraith-knight': '/images/monsters/winged-lich.webp',
   'div-skyrehaal': '/images/monsters/golden-angel.webp',
   'aby-devil-kings': '/images/monsters/corrupted-angel.webp',
