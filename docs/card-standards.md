@@ -168,6 +168,26 @@ and the middle of the game would have emptied out.
 
 ---
 
+## 5a2. The Ranger orders
+
+Lash's rule, given 30 September 2026:
+
+- **The Red Rangers are all women.**
+- **The Blue Rangers are all men.**
+- **The Emerald Rangers are both.**
+
+This governs the art before it governs anything else. Every Red Ranger prompt
+must say the character is a woman, or the model guesses, and it guessed wrong
+on five of the first six.
+
+**The set currently has 29 Red Rangers cards and none at all for the other two
+orders.** For the faction that the prototype leans on hardest, that is a hole
+rather than a balance: the Blue Rangers and the Emerald Rangers exist in the
+world and not in the game. Worth filling, but it is new cards rather than a
+correction, so it waits on Lash saying so.
+
+---
+
 ## 5b. A character may be drawn more than once
 
 Lash's note: some characters will have more than one version, usually younger
