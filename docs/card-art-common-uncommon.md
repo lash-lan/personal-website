@@ -52,8 +52,11 @@ RENDER IT SIMPLY - this is the rule you are most likely to break
 - Sharp detail on the FACE and one other thing only. Soften everything else.
 - Throw the background out of focus.
 - NO speckling, stippling, grain, noise, scattered dots or spatter.
-- NO fine repeating micro-texture crawling over armour, cloth, skin or
-  foliage. A surface may be plain.
+- ONE material must not spread to everything else. Scale mail belongs on
+  scale mail. Cloth is smooth, skin is smooth, leaves are leaves, sky is
+  sky. If you find yourself putting the same small repeating pattern on
+  two different materials, stop.
+- A surface may be plain. Plain is correct.
 - Do not add straps, buckles, rivets, studs, chains, beads, embroidery or
   filigree that I did not ask for.
 - When in doubt, render less. An over-detailed image turns to mush at the
@@ -76,51 +79,61 @@ Reply "ready" and I will send the first one.
 
 # 2. The Red Rangers (6)
 
-All in the same deep green forest of enormous trees with crimson banners
-hanging between them, light coming down in shafts. Crimson and blackened
-steel. Do these six in one sitting.
+**Every Red Ranger is a woman.** All in the same deep green forest of enormous
+trees with crimson banners hanging between them, light coming down in shafts.
+Crimson and blackened steel.
+
+**Start a new conversation for each of these six.** They came back as the same
+blonde woman six times because the model anchors to whatever it made first.
+Paste the house style again each time. It is worth the extra step: these are
+six different soldiers, not one soldier in six poses.
 
 **Red Ranger** - `red-ranger.webp`
 ```
-A rank and file Red Ranger: a young high elf soldier in plain crimson leather
-and a blackened steel breastplate, a shortbow over the shoulder, hood down.
-Nothing decorated. Standing at watch in the deep green forest of enormous
+A rank and file Red Ranger: a young high elf woman with dark brown skin and
+black hair shaved at one side, in plain crimson leather and a blackened steel
+breastplate, a shortbow over the shoulder, hood down. Nothing decorated. Standing at watch in the deep green forest of enormous
 trees, crimson banners hanging between them.
 ```
 
 **Red Rangers Scout** - `red-rangers-scout.webp`
 ```
-A Red Rangers scout: a wiry high elf in light crimson leathers with no plate
-at all, a hood up, mud to the knees, listening rather than looking. Deep green
+A Red Rangers scout: a small wiry high elf woman, perhaps forty, weathered,
+with short grey-streaked red hair, in light crimson leathers with no plate at
+all, a hood up, mud to the knees, listening rather than looking. Deep green
 forest of enormous trees, crimson banners, mist between the trunks.
 ```
 
 **Red Rangers Archer** - `red-rangers-archer.webp`
 ```
-A Red Rangers archer: a high elf soldier drawing a longbow, crimson leather
-and a worn steel bracer, a quiver of red-fletched arrows. Eyes on something
-past the viewer. Deep green forest of enormous trees, crimson banners.
+A Red Rangers archer: a tall, broad-shouldered high elf woman with copper
+skin and a tight black topknot, drawing a longbow, crimson leather and a worn
+steel bracer, a quiver of red-fletched arrows. Eyes on something past the
+viewer. Deep green forest of enormous trees, crimson banners.
 ```
 
 **Red Rangers Tracker** - `red-rangers-tracker.webp`
 ```
-A Red Rangers tracker: a high elf crouched and rising from reading the ground,
-crimson leathers, a long knife, a coil of rope, twigs caught in the hair. Deep
+A Red Rangers tracker: a young high elf woman with pale freckled skin and
+mousy hair escaping a plait, crouched and rising from reading the ground,
+crimson leathers, a long knife, a coil of rope, twigs caught in her hair. Deep
 green forest of enormous trees, crimson banners, low morning light.
 ```
 
 **Red Rangers Warrior** - `red-rangers-warrior.webp`
 ```
-A Red Rangers warrior: a high elf woman in crimson and battered blackened
-steel, a sword in one hand and a dented round shield in the other, one long streak of
-blood across the breastplate and none of it hers yet. Deep green forest of enormous trees,
+A Red Rangers warrior: a heavyset high elf woman in her fifties with a shaved
+head and an old scar across the mouth, in crimson and battered blackened
+steel, a sword in one hand and a dented round shield in the other, one long
+streak of blood across the breastplate and none of it hers yet. Deep green forest of enormous trees,
 crimson banners, smoke drifting through.
 ```
 
 **Moon Warrior** - `moon-warrior.webp`
 ```
-A Moon Warrior of the Red Rangers: a high elf soldier in crimson armour with
-a silver crescent worked into the breastplate, a spear held upright. Deep
+A Moon Warrior of the Red Rangers: a high elf woman with white-blonde hair
+loose to the waist and a silver crescent worked into her crimson breastplate,
+a spear held upright. Deep
 green forest of enormous trees at night, crimson banners, a huge moon showing
 between the trunks.
 ```
