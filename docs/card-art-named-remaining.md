@@ -27,13 +27,25 @@ COMPOSITION - the card frame covers parts of the image, so:
   right edges.
 
 STYLE
-- Painted, not photographic. Oil and digital painting, visible brushwork.
+- Painted, not photographic. Smooth, confident paint. Soft edges.
 - Dark, rich, low-key colour. One strong light source.
 - Never a plain white, grey or empty studio background. Every character
   stands somewhere real, with depth and atmosphere behind them.
 - Period-accurate: armour, cloth, leather, fur. No modern clothing, no
   modern hair, no studio portrait lighting.
 - It must read instantly at thumbnail size: clear silhouette, strong shape.
+
+RENDER IT SIMPLY - this is the rule you are most likely to break
+- Large, simple shapes. Big areas of flat or softly blended colour.
+- Sharp detail on the FACE and one other thing only. Soften everything else.
+- Throw the background out of focus.
+- NO speckling, stippling, grain, noise, scattered dots or spatter.
+- NO fine repeating micro-texture crawling over armour, cloth, skin or
+  foliage. A surface may be plain.
+- Do not add straps, buckles, rivets, studs, chains, beads, embroidery or
+  filigree that I did not ask for.
+- When in doubt, render less. An over-detailed image turns to mush at the
+  size these are actually seen.
 
 NEVER
 - No text, letters, numbers, signatures, watermarks or borders.
