@@ -416,6 +416,21 @@ button.as-button { background: none; border: 0; text-align: left; cursor: pointe
 
 /* Nothing on this screen should need a careful tap in the dark. */
 .today .btn.small { min-height: 2.25rem; }
+
+/* ─── the daily report page ─────────────────────────────────────────────── */
+.daypick { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
+.daypick input[type='date'] { flex: 1; min-width: 9rem; min-height: 2.5rem; padding: .45rem .6rem;
+                              border-radius: 10px; border: 1px solid var(--line2);
+                              background: var(--panel2); color: var(--text); }
+.domain-line { display: flex; flex-wrap: wrap; gap: .25rem 1rem; }
+.willhave { list-style: none; padding: 0; display: grid; gap: .3rem; }
+.willhave li { display: flex; align-items: baseline; gap: .5rem; font-size: .92rem; }
+.willhave .tickmark { width: .9rem; flex: none; text-align: center; }
+.willhave .has .tickmark { color: var(--green); }
+.willhave .hasnt { color: var(--dim); }
+.toggle { display: flex; align-items: flex-start; gap: .7rem; cursor: pointer; }
+.toggle input { width: 1.25rem; height: 1.25rem; margin-top: .15rem; flex: none; }
+.toggle span { display: grid; gap: .15rem; }
 .small-print { opacity: .85; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 

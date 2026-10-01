@@ -23,6 +23,7 @@ import {
   DAY_CONTEXTS, SUGGEST_EXCUSE, BACK_SUGGESTS, stepBand,
 } from './schema.js';
 import { empty } from './ui.js';
+import { downloadDailyReport } from './views-dailyreport.js';
 
 const ui = { date: null, care: false, quick: null, draft: {}, reflecting: false, context: false };
 
@@ -354,7 +355,19 @@ export function today(a) {
         + (day.excused ? ` · ${day.excused} excused` : ''))) : null,
     h('div', { class: 'spread small' },
       h('span', { class: 'dim' }, 'Consistency, last 7 days'),
-      h('b', {}, a.consistency7?.rate == null ? '—' : `${pct(a.consistency7.rate)} of ${a.consistency7.judged} judged`)));
+      h('b', {}, a.consistency7?.rate == null ? '—' : `${pct(a.consistency7.rate)} of ${a.consistency7.judged} judged`)),
+    // One quiet line, not a form. The report page itself is a tap away for the
+    // days he wants to choose one.
+    h('div', { class: 'row mt' },
+      h('button', { class: 'btn ghost small', type: 'button',
+        onclick: async (e) => {
+          const b = e.currentTarget;
+          b.disabled = true; b.textContent = 'Making it…';
+          try { toast(`Saved ${await downloadDailyReport(a, date)}`); }
+          catch (err) { toast(`The report could not be made: ${err.message}`, 'bad'); }
+          finally { b.disabled = false; b.textContent = 'Save this day as a report'; }
+        } }, 'Save this day as a report'),
+      h('a', { class: 'dim small', href: '/plan/dailyreport' }, 'Another day')));
 
   return h('div', { class: 'stack today' },
     header,

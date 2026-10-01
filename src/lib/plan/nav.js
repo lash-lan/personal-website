@@ -5,6 +5,7 @@ export const NAV = [
     { view: 'dashboard', href: '/plan/dashboard', icon: '◉', label: 'Dashboard', short: 'All', blurb: 'The whole picture, for when you want it.' },
     { view: 'gates', href: '/plan/gates', icon: '⛳', label: 'Phases & Gates', blurb: 'Six phases, six gates. 15 November does not move.' },
     { view: 'scorecard', href: '/plan/scorecard', icon: '🏁', label: '31 Dec Scorecard', blurb: 'The objectives for the end of the year, worked out from everything you record.' },
+    { view: 'dailyreport', href: '/plan/dailyreport', icon: '⤓', label: 'Daily Report', short: 'Daily PDF', blurb: 'One day as a PDF, with your own words and the working behind every number.' },
     { view: 'report', href: '/plan/report', icon: '🖨', label: 'Monthly Report', short: 'Report', blurb: 'One month on one page, ready to save as a PDF.' },
   ] },
   { group: 'Every day', items: [

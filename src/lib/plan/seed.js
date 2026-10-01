@@ -261,6 +261,11 @@ export const VERIFIED = {
 export const SETTINGS = {
   goodDay: 70, staleDays: 7, txDays: 3, valueDays: 35, evidencePerMonth: 2,
   savMin: 750, savTarget: 1000, savExcellent: 1250, livingCap: 4000, recurringCap: 1050, price: 9,
+  // Read by analytics.js and schema.js, which until now fell back to these
+  // numbers in-line because they had never been written down anywhere.
+  stepTarget: 5000, minTracking: 70,
+  // Whether a daily report itemises the day's money or only totals it.
+  dailyPdfFinances: true,
   ...VERIFIED,
 };
 
