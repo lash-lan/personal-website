@@ -5,24 +5,16 @@ import {
   PHASES, PILLARS, HABITS, FUNDS, LINE_ITEMS, ACCOUNTS, MONTHS, SETTINGS,
   PLAN_START, PLAN_END, LAUNCH, RECURRING,
 } from './seed.js';
+import { analyseDay, analyseRange, consistency, streaks, knownMonths, daysInMonth } from './analytics.js';
 
-// ─── dates (always plain YYYY-MM-DD strings, in your own time zone) ───
-const pad = (n) => String(n).padStart(2, '0');
-export const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-export const today = () => iso(new Date());
-const utc = (s) => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); };
-export const daysBetween = (a, b) => Math.round((utc(b) - utc(a)) / 86400000);
-export const addDays = (s, n) => { const d = new Date(utc(s) + n * 86400000); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`; };
-export const monthOf = (s) => (s || '').slice(0, 7);
-export const weekday = (s) => new Date(utc(s)).getUTCDay(); // 0 = Sunday
-const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-export const fmtDay = (s) => (s ? `${Number(s.slice(8))} ${MON[Number(s.slice(5, 7)) - 1]}` : '');
-export const fmtDayLong = (s) => (s ? `${DAY[weekday(s)]} ${fmtDay(s)}` : '');
-export const fmtMonth = (m) => `${MON[Number(m.slice(5, 7)) - 1]} ${m.slice(0, 4)}`;
-export const rm = (n) => `RM${Math.round(Number(n) || 0).toLocaleString('en-MY')}`;
-export const num = (n) => Math.round(Number(n) || 0).toLocaleString('en-MY');
-export const pct = (x) => `${Math.round((Number(x) || 0) * 100)}%`;
+// Dates, formatting and money live in engine-dates.js so analytics.js can
+// share them without the two files importing each other. Re-exported here so
+// every existing `from './engine.js'` keeps working untouched.
+export {
+  iso, today, daysBetween, addDays, monthOf, weekday,
+  fmtDay, fmtDayLong, fmtMonth, rm, num, pct,
+} from './engine-dates.js';
+import { iso, today, daysBetween, addDays, monthOf, weekday, rm, num, pct } from './engine-dates.js';
 
 export const lineItem = (name) => LINE_ITEMS.find((l) => l.name === name);
 export const phaseOf = (date) => PHASES.find((p) => date >= p.start && date <= p.end) ?? (date < PLAN_START ? PHASES[0] : PHASES[PHASES.length - 1]);
@@ -74,6 +66,12 @@ export const savingsRating = (amount, s) =>
 /** Everything, worked out once per render. */
 export function analyse(state, now = today()) {
   const s = { ...SETTINGS, ...(state.settings.find((x) => x.id === 'main') ?? {}) };
+  // The plan no longer ends on 31 December 2026. The daily history runs from
+  // the first day anything was recorded to the later of today and the
+  // programme's end, so 2027 needs no code change.
+  const allMonths = knownMonths(state, now);
+  const firstDay = `${allMonths[0] ?? monthOf(now)}-01` < PLAN_START ? `${allMonths[0]}-01` : PLAN_START;
+  const lastDay = now > PLAN_END ? now : PLAN_END;
   const byId = (coll) => Object.fromEntries(state[coll].map((r) => [r.id, r]));
   const tasks = [...state.tasks].sort((a, b) => a.start.localeCompare(b.start) || a.id.localeCompare(b.id))
     .map((t) => ({ ...t, flag: taskFlag(t, now, s), phase: phaseOf(t.start) }));
@@ -107,12 +105,12 @@ export function analyse(state, now = today()) {
     r.rate = { plan: r.income.plan ? r.savings.plan / r.income.plan : 0, actual: r.income.actual ? r.savings.actual / r.income.actual : 0 };
     r.rating = savingsRating(r.savings.actual, s);
     r.foodSweep = Math.max(0, r.food.plan - r.food.actual);
-    const d = new Date(utc(`${m}-01`)); const last = iso(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)));
-    r.daysInMonth = Number(last.slice(8)); r.lastDay = `${m}-${last.slice(8)}`;
+    r.daysInMonth = daysInMonth(m);
+    r.lastDay = `${m}-${String(r.daysInMonth).padStart(2, '0')}`;
     return r;
   };
-  const months = Object.fromEntries(MONTHS.map((m) => [m, monthMoney(m)]));
-  const curMonth = MONTHS.includes(monthOf(now)) ? monthOf(now) : now < `${MONTHS[0]}-01` ? MONTHS[0] : MONTHS[MONTHS.length - 1];
+  const months = Object.fromEntries(allMonths.map((m) => [m, monthMoney(m)]));
+  const curMonth = monthOf(now);
   const lastTx = tx.find((t) => t.date)?.date ?? '';
   const txGap = lastTx ? Math.max(0, daysBetween(lastTx, now)) : null;
 
@@ -124,7 +122,7 @@ export function analyse(state, now = today()) {
     const spent = sumTx((t) => t.item === `${f.id} (Spend)`);
     const balance = (Number(r.opening) || 0) + added - spent;
     const progress = r.target ? balance / r.target : 0;
-    const planned = MONTHS.reduce((a, m) => a + (Number(budgets[m]?.lines?.[`${f.id} (Add)`]) || 0), 0);
+    const planned = allMonths.reduce((a, m) => a + (Number(budgets[m]?.lines?.[`${f.id} (Add)`]) || 0), 0);
     const status = balance >= r.target ? { label: 'Fully funded', tone: 'green' }
       : balance <= 0 ? { label: 'Not funded', tone: 'red' }
       : balance >= (r.yearEnd || 0) && r.yearEnd ? { label: 'On track', tone: 'blue' }
@@ -153,30 +151,44 @@ export function analyse(state, now = today()) {
   const snapshots = [...state.snapshots].sort((a2, b2) => (b2.id || '').localeCompare(a2.id || ''));
 
   // daily
+  //
+  // Every number here now comes from analytics.js, which is the only place a
+  // day is scored. The shapes the existing pages read are kept exactly, so
+  // nothing breaks while Stage 2 rebuilds the screens on top of the richer
+  // fields that come with them.
   const daily = byId('daily');
-  const days = [];
-  for (let d = PLAN_START; d <= PLAN_END; d = addDays(d, 1)) {
-    days.push({ date: d, rec: daily[d], score: dayScore(daily[d]), status: dayStatus(d, daily[d], now) });
+  const dayList = [];
+  for (let d = firstDay; d <= lastDay; d = addDays(d, 1)) {
+    const a2 = analyseDay(d, daily[d], s);
+    dayList.push({
+      ...a2,
+      // kept for the pages written against the old shape
+      status: d > now ? 'upcoming'
+        : !a2.hasAnything ? (d < now ? 'missed' : 'today')
+        : a2.unrecorded > 0 ? 'partial' : 'logged',
+    });
   }
+  const days = dayList;
   const past = days.filter((d) => d.date <= now);
-  const good = (d) => d.score !== null && d.score * 100 >= s.goodDay;
-  let streak = 0;
-  for (let i = past.length - 1; i >= 0; i--) {
-    const d = past[i];
-    if (good(d)) streak++;
-    else if (d.date === now && d.score === null) continue; // today not logged yet: keep yesterday's run
-    else break;
-  }
+
+  const range = analyseRange(past);
+  const last7 = analyseRange(past.slice(-7));
+  const { current: streak, best: bestStreak } = streaks(past);
+  const consistency7 = consistency(past, 7);
+  const consistency30 = consistency(past, 30);
+
+  // Habit rates come from the one definition now, rather than this page having
+  // its own. `rate` keeps its name so the existing bars keep working.
   const habits = HABITS.map((h) => {
-    const counted = past.filter((d) => d.rec?.marks?.[h.id] && d.rec.marks[h.id] !== 'rest');
-    const yes = counted.filter((d) => d.rec.marks[h.id] === 'yes').length;
-    const eligible = past.filter((d) => d.rec?.marks?.[h.id] !== 'rest').length;
-    return { ...h, rate: eligible ? yes / eligible : 0, yes, logged: counted.length };
+    const r = range.habits[h.id];
+    return r
+      ? { ...h, rate: r.rate ?? 0, yes: r.done, logged: r.counted, ...r }
+      : { ...h, rate: 0, yes: 0, logged: 0, unscored: true };
   });
-  const last7 = past.slice(-7).map((d) => d.score ?? 0);
-  const avg7 = last7.length ? last7.reduce((a, b) => a + b, 0) / last7.length : 0;
-  const avgAll = past.length ? past.reduce((a, d) => a + (d.score ?? 0), 0) / past.length : 0;
-  const familyRate = past.length ? past.filter((d) => d.rec?.marks?.family === 'yes').length / past.length : 0;
+
+  const avg7 = last7.averageScore ?? 0;
+  const avgAll = range.averageScore ?? 0;
+  const familyRate = range.habits.family?.rate ?? 0;
 
   // weekly
   const weeklyRec = byId('weekly');
@@ -200,7 +212,7 @@ export function analyse(state, now = today()) {
 
   // career evidence
   const evidence = [...state.evidence].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-  const evMonths = MONTHS.map((m) => {
+  const evMonths = allMonths.map((m) => {
     const n = evidence.filter((e) => monthOf(e.date) === m).length;
     const lastDay = months[m].lastDay;
     const status = `${m}-01` > now ? 'upcoming' : n >= s.evidencePerMonth ? 'met' : lastDay < now ? 'missed' : Number(now.slice(8)) >= 20 && monthOf(now) === m ? 'behind' : 'going';
@@ -312,7 +324,7 @@ export function analyse(state, now = today()) {
   return {
     now, s, tasks, task, tx, lastTx, txGap, months, curMonth, money: months[curMonth], funds, fund, investStale, investAge,
     assets, snapshots,
-    days, streak, habits, avg7, avgAll, weeks, kpis, evidence, evMonths, gates, phase, nextGate, pillars, overall,
+    days, streak, bestStreak, consistency7, consistency30, range, last7, allMonths, habits, avg7, avgAll, weeks, kpis, evidence, evMonths, gates, phase, nextGate, pillars, overall,
     criticalOpen, accounts, alerts, needs, scorecard,
     daysToLaunch: daysBetween(now, LAUNCH), daysToEnd: daysBetween(now, PLAN_END),
     planDay: Math.min(Math.max(daysBetween(PLAN_START, now) + 1, 0), daysBetween(PLAN_START, PLAN_END) + 1),
