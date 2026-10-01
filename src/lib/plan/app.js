@@ -6,8 +6,9 @@ import { daily, weekly, kpis, career } from './views-log.js';
 import { money, budget, funds, accounts } from './views-money.js';
 import { settings, help } from './views-misc.js';
 import { report } from './views-report.js';
+import { exportView } from './views-export.js';
 
-const VIEWS = { home, gantt, gates, scorecard, report, daily, weekly, kpis, career, money, budget, funds, accounts, settings, help };
+const VIEWS = { home, gantt, gates, scorecard, report, export: exportView, daily, weekly, kpis, career, money, budget, funds, accounts, settings, help };
 
 /** Red counters on the menu, so neglected pages are visible from anywhere. */
 function badges(a) {

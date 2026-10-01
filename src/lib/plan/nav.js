@@ -23,6 +23,7 @@ export const NAV = [
   ] },
   { group: 'Setup', items: [
     { view: 'settings', href: '/plan/settings', icon: '⚙', label: 'Settings', blurb: 'Thresholds that decide when something is flagged.' },
+    { view: 'export', href: '/plan/export', icon: '⤓', label: 'Backup & Export', short: 'Backup', blurb: 'Take everything out as one file, before anything is rebuilt around it.' },
     { view: 'help', href: '/plan/help', icon: '?', label: 'How it works', blurb: 'The rhythm, in plain words.' },
   ] },
 ];
