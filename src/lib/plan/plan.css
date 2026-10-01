@@ -325,3 +325,101 @@ table.budget td.num { white-space: nowrap; }
   a[href]::after { content: ''; }
   @page { margin: 14mm 12mm; }
 }
+
+/* ─── Today ────────────────────────────────────────────────────────────────
+   Built for a thumb at night: big targets, one column, nothing that needs
+   two hands or a careful tap. Desktop gets the same thing, wider. */
+.today .card { padding: 1rem; }
+.today-head h1 { font-size: 1.35rem; margin: .1rem 0 0; }
+.today-head .status { margin: .5rem 0 0; color: var(--text); font-size: 1rem; }
+.today-head .daynav { display: flex; gap: .35rem; align-items: flex-start; }
+
+.domain-head { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; }
+.domain-head h2 { font-size: .82rem; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+.domain-state { display: flex; align-items: center; gap: .5rem; }
+.shape-label { font-size: .82rem; color: var(--dim); }
+.dots { display: inline-flex; gap: .22rem; }
+.dots i { width: .5rem; height: .5rem; border-radius: 50%; background: var(--line2); display: block; }
+.dots i.on { background: var(--green); }
+.d-growth .dots i.on { background: var(--blue); }
+.d-life .dots i.on { background: var(--purple); }
+
+/* minmax(0,1fr) rather than the default auto: without it the grid widens to
+   fit its longest row and the last state button falls off a phone screen. */
+.hrows { margin-top: .5rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: .1rem; }
+.hrow { min-width: 0; padding: .55rem 0; border-top: 1px solid var(--line); }
+.hrow:first-child { border-top: 0; }
+.hrow.unscored { opacity: .9; }
+.hrow-top { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
+.hrow-body { margin-top: .45rem; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.hname { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 .4rem; flex: 1; min-width: 0; }
+.hname .hi { font-size: 1rem; }
+.hname strong { font-weight: 600; }
+/* The target line drops under the name rather than squeezing the buttons. */
+.hname .tiny { flex-basis: 100%; min-width: 0; }
+button.as-button { background: none; border: 0; text-align: left; cursor: pointer; padding: 0; }
+.caret { color: var(--dim); margin-left: .2rem; }
+
+/* The four states. Each has a shape as well as a colour, so the control still
+   reads if colour is lost or hard to tell apart. */
+.mk { display: inline-flex; gap: .25rem; flex: none; }
+.mk-b { min-width: 2.5rem; min-height: 2.5rem; border-radius: 10px; cursor: pointer;
+        border: 1px solid var(--line2); background: var(--panel2); color: var(--dim);
+        font-size: .95rem; line-height: 1; display: grid; place-items: center; transition: none; }
+.mk-b:active { transform: scale(.96); }
+.mk-b.on { color: #10120f; font-weight: 700; }
+.mk-done.on { background: var(--green); border-color: var(--green); }
+.mk-rest.on { background: var(--amber); border-color: var(--amber); }
+.mk-missed.on { background: var(--red); border-color: var(--red); }
+.mk-excused.on { background: var(--grey); border-color: var(--grey); color: var(--bright); }
+.mk-b.nut-good.on { background: var(--green); border-color: var(--green); }
+.mk-b.nut-mixed.on { background: var(--amber); border-color: var(--amber); }
+.mk-b.nut-poor.on { background: var(--red); border-color: var(--red); }
+.mk-b[class*='nut-'] { min-width: 3.7rem; font-size: .8rem; }
+
+.stepfield input { width: 6.5rem; padding: .5rem .6rem; border-radius: 10px;
+                   border: 1px solid var(--line2); background: var(--panel2); }
+.stepband { font-size: .84rem; color: var(--dim); }
+.stepband.at { color: var(--green); }
+.note-flag { font-size: .78rem; color: var(--amber); width: 100%; }
+.notefield { width: 100%; padding: .5rem .6rem; border-radius: 10px;
+             border: 1px solid var(--line2); background: var(--panel2); }
+
+.parts { gap: .4rem; }
+.part { padding: .5rem .7rem; border-radius: 999px; cursor: pointer; font-size: .85rem;
+        border: 1px solid var(--line2); background: var(--panel2); color: var(--dim); }
+.part.on { border-color: var(--green); color: var(--green); }
+.part.off { border-color: var(--red); color: var(--red); }
+
+.ctx-head { width: 100%; display: flex; justify-content: space-between; align-items: center;
+            background: none; border: 0; cursor: pointer; padding: .35rem 0; color: var(--text); }
+.suggest { padding: .7rem; border-radius: 10px; background: var(--panel2); border: 1px solid var(--line2); }
+
+.prios { display: grid; gap: .35rem; }
+.prio { display: flex; align-items: center; gap: .6rem; padding: .5rem 0; border-top: 1px solid var(--line); }
+.prio:first-child { border-top: 0; }
+.prio.done .prio-text { text-decoration: line-through; color: var(--dim); }
+.prio .tick { width: 2.25rem; height: 2.25rem; border-radius: 8px; flex: none; cursor: pointer;
+              border: 1px solid var(--line2); background: var(--panel2); color: var(--green); font-weight: 700; }
+.prio.done .tick { background: var(--green); color: #10120f; border-color: var(--green); }
+.prio-text { flex: 1; }
+.prio .x { background: none; border: 0; color: var(--dim); cursor: pointer; font-size: 1.1rem;
+           min-width: 2.25rem; min-height: 2.25rem; }
+.addprio { display: flex; gap: .4rem; }
+.addprio input { flex: 1; padding: .55rem .7rem; border-radius: 10px;
+                 border: 1px solid var(--line2); background: var(--panel2); }
+
+.quick-row { display: flex; gap: .4rem; flex-wrap: wrap; }
+.quick-b { flex: 1; min-width: 7rem; min-height: 2.75rem; }
+.quick-b.on { border-color: var(--gold); color: var(--gold); }
+.sheet { padding-top: .5rem; border-top: 1px solid var(--line); }
+
+/* Nothing on this screen should need a careful tap in the dark. */
+.today .btn.small { min-height: 2.25rem; }
+.small-print { opacity: .85; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (min-width: 760px) {
+  .today .hrow-top { gap: 1.5rem; }
+  .today-head h1 { font-size: 1.6rem; }
+}
