@@ -274,3 +274,54 @@ table.budget td.num { white-space: nowrap; }
    children default to refusing to shrink, so they are told they may. */
 .stack > *, .grid > *, .card > * { min-width: 0; }
 .scrollx { max-width: 100%; min-width: 0; }
+
+
+/* ─── The monthly report ───────────────────────────────────────────────────
+   The report is read on screen and printed to PDF from the same markup, so
+   these are the on-screen styles and the block below strips the page back to
+   the document when it goes to paper. */
+.rpt { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.rpt th, .rpt td { padding: .3rem .45rem; text-align: left; border-bottom: 1px solid var(--line, #262b34); vertical-align: top; }
+.rpt th { font-weight: 600; font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; opacity: .65; }
+.rpt td.nowrap { white-space: nowrap; }
+.rpt tr.open td { font-weight: 600; }
+.rpt .mark { text-align: center; font-weight: 700; }
+.rpt .mark-yes { color: #56cf8a; }
+.rpt .mark-no { color: #e5674f; }
+.rpt .mark-rest, .rpt .mark-none { opacity: .35; }
+.tablewrap { overflow-x: auto; }
+.rpt-stat { padding: .5rem .2rem; }
+.rpt-stat-v { font-size: 1.3rem; font-weight: 700; line-height: 1.1; }
+.rpt-stat-l { font-size: .74rem; opacity: .7; margin-top: .1rem; }
+.rpt-review { padding: .6rem 0; border-bottom: 1px solid var(--line, #262b34); }
+.rpt-review:last-child { border-bottom: 0; }
+.rpt-dl { margin: .4rem 0 0; display: grid; grid-template-columns: max-content 1fr; gap: .2rem .8rem; font-size: .84rem; }
+.rpt-dl dt { font-weight: 600; opacity: .7; text-transform: capitalize; }
+.rpt-dl dd { margin: 0; }
+.grid4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: .4rem 1rem; }
+.report-head h1 { margin: 0 0 .2rem; }
+
+@media print {
+  /* Everything that is the app rather than the report goes away: the menu,
+     the page header, the month picker and the print button itself. */
+  .side, .pagehead, .noprint, .bottombar, .toast { display: none !important; }
+  .shell, .main { display: block !important; margin: 0 !important; padding: 0 !important; max-width: none !important; }
+  /* Paper is white, and ink is expensive. */
+  :root, body, .card { background: #fff !important; color: #111 !important; }
+  .card { border: 0 !important; box-shadow: none !important; padding: 0 0 .6rem !important; margin: 0 0 .6rem !important; border-radius: 0 !important; }
+  .dim, .rpt th { opacity: 1 !important; color: #555 !important; }
+  .rpt th, .rpt td { border-bottom: 1px solid #ddd !important; }
+  .rpt .mark-yes { color: #167c3c !important; }
+  .rpt .mark-no { color: #a32a16 !important; }
+  .redtext { color: #a32a16 !important; }
+  .greentext { color: #167c3c !important; }
+  .tablewrap { overflow: visible !important; }
+  /* Each big section starts a new sheet, and a table never breaks across one
+     in a way that leaves a heading stranded at the foot of a page. */
+  .page-break { break-before: page; }
+  .rpt tr, .rpt-review { break-inside: avoid; }
+  .rpt thead { display: table-header-group; }
+  h1, h2, h3 { break-after: avoid; }
+  a[href]::after { content: ''; }
+  @page { margin: 14mm 12mm; }
+}

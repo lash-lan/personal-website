@@ -4,6 +4,7 @@ export const NAV = [
     { view: 'home', href: '/plan', icon: '◉', label: 'Dashboard', short: 'Home', blurb: 'Where you stand today, and what needs you.' },
     { view: 'gates', href: '/plan/gates', icon: '⛳', label: 'Phases & Gates', blurb: 'Six phases, six gates. 15 November does not move.' },
     { view: 'scorecard', href: '/plan/scorecard', icon: '🏁', label: '31 Dec Scorecard', blurb: 'The objectives for the end of the year, worked out from everything you record.' },
+    { view: 'report', href: '/plan/report', icon: '🖨', label: 'Monthly Report', short: 'Report', blurb: 'One month on one page, ready to save as a PDF.' },
   ] },
   { group: 'Every day', items: [
     { view: 'daily', href: '/plan/daily', icon: '✓', label: 'Daily Check-in', short: 'Today', blurb: 'Two minutes. Tap Done, Missed or Rest for each habit. Rest never counts against you.' },
