@@ -1,0 +1,271 @@
+---
+/**
+ * Swipe sideways to turn to the next chapter, on a phone.
+ *
+ * Two things worth knowing about how this is built.
+ *
+ * It does not drag the page itself. One part of The Last Days of Legends runs
+ * to eighteen thousand words, so `main` is tens of thousands of pixels tall.
+ * Promoting that to a compositor layer so a finger can slide it is how you run
+ * a phone out of memory. Instead a single viewport-sized leaf slides over the
+ * top, which costs the same whether the chapter is one page or ninety.
+ *
+ * And the turn is split across two documents. Each chapter is its own static
+ * page, so the first half of the animation runs here, the browser navigates
+ * behind the covered screen, and the second half runs on arrival. The two
+ * halves are joined by a note left in sessionStorage, which is also what makes
+ * a back-button return feel like turning back rather than jumping.
+ *
+ * Scrolling always wins. The gesture only commits once it is clearly sideways,
+ * and a touch that starts on a control, a link or the chapter drawer is left
+ * alone entirely.
+ */
+const { prev = null, next = null, unit = 'Chapter' } = Astro.props;
+---
+
+<div
+  id="pageturn"
+  data-prev={prev?.href ?? ''}
+  data-next={next?.href ?? ''}
+  data-prev-label={prev?.label ?? ''}
+  data-next-label={next?.label ?? ''}
+  data-unit={unit}
+>
+  <div class="pt-leaf" aria-hidden="true"><span class="pt-edge"></span></div>
+  <div class="pt-peek" aria-hidden="true"><span class="pt-peek-label"></span></div>
+  <div class="pt-coach" hidden>
+    <span>Swipe to turn the page</span>
+  </div>
+</div>
+
+<style is:global>
+  /* Everything here is inert until a finger starts moving sideways, so the
+     reader never has a layer sitting between them and the words. */
+  #pageturn { position: fixed; inset: 0; z-index: 200; pointer-events: none; display: none; }
+  #pageturn.pt-armed { display: block; }
+
+  .pt-leaf {
+    position: absolute; inset: 0;
+    background: var(--ground, #07070a);
+    transform: translate3d(100%, 0, 0);
+    visibility: hidden;
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.75);
+  }
+  #pageturn.pt-moving .pt-leaf,
+  #pageturn.pt-settling .pt-leaf { visibility: visible; }
+  #pageturn.pt-settling .pt-leaf {
+    transition: transform 420ms cubic-bezier(.22, .61, .36, 1);
+  }
+
+  /* The lit edge of the turning sheet. It sits on whichever side is leading,
+     which is what stops the leaf reading as a plain sliding panel. */
+  .pt-edge {
+    position: absolute; top: 0; bottom: 0; width: 46px;
+    pointer-events: none;
+  }
+  #pageturn[data-dir="next"] .pt-edge {
+    left: -46px;
+    background: linear-gradient(90deg,
+      transparent, rgba(0, 0, 0, .34) 58%, color-mix(in srgb, var(--accent, #8a6a4a) 42%, transparent));
+  }
+  #pageturn[data-dir="prev"] .pt-edge {
+    right: -46px;
+    background: linear-gradient(270deg,
+      transparent, rgba(0, 0, 0, .34) 58%, color-mix(in srgb, var(--accent, #8a6a4a) 42%, transparent));
+  }
+
+  /* What is on the other side, named, so the reader knows where the swipe goes
+     before they commit to it. */
+  .pt-peek {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    opacity: 0; transition: opacity 160ms ease;
+    font-family: 'Cormorant SC', Georgia, serif;
+    font-size: .64rem; letter-spacing: .24em; text-transform: uppercase;
+    color: var(--text-bright, #e8e2d8);
+    max-width: 9rem; line-height: 1.5;
+  }
+  #pageturn[data-dir="next"] .pt-peek { right: 1.3rem; text-align: right; }
+  #pageturn[data-dir="prev"] .pt-peek { left: 1.3rem; text-align: left; }
+  #pageturn.pt-moving .pt-peek { opacity: var(--pt-peek, 0); }
+
+  /* Said once, the first time, then never again. */
+  .pt-coach {
+    position: absolute; left: 50%; bottom: 5.5rem; transform: translateX(-50%);
+    font-family: 'Cormorant SC', Georgia, serif;
+    font-size: .6rem; letter-spacing: .26em; text-transform: uppercase;
+    color: var(--text-bright, #e8e2d8);
+    background: rgba(8, 6, 6, .82);
+    border: 1px solid color-mix(in srgb, var(--accent, #8a6a4a) 34%, transparent);
+    border-radius: 999px; padding: .6rem 1.1rem;
+    backdrop-filter: blur(6px);
+    opacity: 0; transition: opacity 600ms ease;
+    white-space: nowrap;
+  }
+  .pt-coach.pt-show { opacity: 1; }
+
+  /* The incoming half: the new chapter settles in from under the leaf. */
+  @keyframes pt-settle-next {
+    from { transform: translate3d(5%, 0, 0); opacity: .55; }
+    to   { transform: none; opacity: 1; }
+  }
+  @keyframes pt-settle-prev {
+    from { transform: translate3d(-5%, 0, 0); opacity: .55; }
+    to   { transform: none; opacity: 1; }
+  }
+  body.pt-arrive-next main { animation: pt-settle-next 460ms cubic-bezier(.22, .61, .36, 1) both; }
+  body.pt-arrive-prev main { animation: pt-settle-prev 460ms cubic-bezier(.22, .61, .36, 1) both; }
+
+  @media (prefers-reduced-motion: reduce) {
+    #pageturn { display: none !important; }
+    body.pt-arrive-next main, body.pt-arrive-prev main { animation: none; }
+  }
+</style>
+
+<script>
+  const root = document.getElementById('pageturn');
+  if (root) {
+    const leaf = root.querySelector('.pt-leaf') as HTMLElement;
+    const peek = root.querySelector('.pt-peek') as HTMLElement;
+    const peekLabel = root.querySelector('.pt-peek-label') as HTMLElement;
+    const coach = root.querySelector('.pt-coach') as HTMLElement;
+
+    const targets = {
+      next: { href: root.dataset.next || '', label: root.dataset.nextLabel || '' },
+      prev: { href: root.dataset.prev || '', label: root.dataset.prevLabel || '' },
+    };
+    const unit = root.dataset.unit || 'Chapter';
+
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // A phone, or anything driven by a finger. A mouse keeps the plain page.
+    const touchy = matchMedia('(pointer: coarse)').matches && innerWidth <= 900;
+
+    // ── the incoming half, played on arrival ──────────────────────────────
+    try {
+      const came = sessionStorage.getItem('pt:dir');
+      sessionStorage.removeItem('pt:dir');
+      if (came === 'next' || came === 'prev') {
+        document.body.classList.add(`pt-arrive-${came}`);
+        root.dataset.dir = came;
+        root.classList.add('pt-armed');
+        leaf.style.transition = 'none';
+        leaf.style.transform = 'translate3d(0,0,0)';
+        root.classList.add('pt-moving');
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          root.classList.remove('pt-moving');
+          root.classList.add('pt-settling');
+          leaf.style.transition = '';
+          leaf.style.transform = `translate3d(${came === 'next' ? -100 : 100}%,0,0)`;
+          setTimeout(() => {
+            root.classList.remove('pt-settling');
+            document.body.classList.remove(`pt-arrive-${came}`);
+            if (!touchy) root.classList.remove('pt-armed');
+          }, 460);
+        }));
+      }
+    } catch { /* private mode: the turn simply does not animate */ }
+
+    if (touchy && !reduced && (targets.next.href || targets.prev.href)) {
+      root.classList.add('pt-armed');
+
+      // A touch that begins on something interactive, or inside the chapter
+      // drawer or the read-aloud bar, is not a page turn.
+      const KEEP_OUT = 'a, button, input, textarea, select, summary, video, audio, ' +
+        'label, [role="button"], [data-no-swipe], #readaloud, #chapters, #chapbtn, ' +
+        'header, .nav-panel, .scene-video';
+
+      let sx = 0, sy = 0, t0 = 0, dir: 'next' | 'prev' | null = null;
+      let locked: 'x' | 'y' | null = null, dragging = false;
+      const W = () => innerWidth;
+
+      const show = (dx: number) => {
+        const d: 'next' | 'prev' = dx < 0 ? 'next' : 'prev';
+        if (d !== dir) {
+          dir = d;
+          root.dataset.dir = d;
+          const t = targets[d];
+          peekLabel.textContent = t.href ? t.label : `No ${unit.toLowerCase()} this way`;
+        }
+        const t = targets[dir];
+        // Without anywhere to go the sheet barely lifts, which is the whole
+        // message: it is the end, and nothing is broken.
+        const travel = t.href ? Math.abs(dx) : Math.min(Math.abs(dx) * 0.22, 64);
+        const frac = Math.min(travel / W(), 1);
+        const off = dir === 'next' ? 100 - frac * 100 : -100 + frac * 100;
+        leaf.style.transform = `translate3d(${off}%,0,0)`;
+        peek.style.setProperty('--pt-peek', String(Math.min(frac * 2.4, 1)));
+      };
+
+      const settle = (toOpen: boolean) => {
+        root.classList.remove('pt-moving');
+        root.classList.add('pt-settling');
+        const t = dir ? targets[dir] : null;
+        if (toOpen && t?.href) {
+          leaf.style.transform = 'translate3d(0,0,0)';
+          try { sessionStorage.setItem('pt:dir', dir!); } catch { /* ignore */ }
+          // Navigate once the sheet has covered the screen, so the join is hidden.
+          setTimeout(() => { location.href = t.href; }, 330);
+        } else {
+          leaf.style.transform = `translate3d(${dir === 'next' ? 100 : -100}%,0,0)`;
+          setTimeout(() => {
+            root.classList.remove('pt-settling');
+            leaf.style.transform = '';
+            dir = null;
+          }, 440);
+        }
+      };
+
+      addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        if ((e.target as Element)?.closest?.(KEEP_OUT)) return;
+        if (getSelection()?.toString()) return;
+        sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+        t0 = performance.now(); locked = null; dragging = true;
+      }, { passive: true });
+
+      addEventListener('touchmove', (e) => {
+        if (!dragging || e.touches.length !== 1) return;
+        const dx = e.touches[0].clientX - sx;
+        const dy = e.touches[0].clientY - sy;
+        if (!locked) {
+          if (Math.abs(dy) > 9 && Math.abs(dy) >= Math.abs(dx)) { dragging = false; return; }
+          // Clearly sideways before it counts, so reading never stutters.
+          if (Math.abs(dx) > 13 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+            locked = 'x';
+            root.classList.add('pt-moving');
+            leaf.style.transition = 'none';
+          } else return;
+        }
+        e.preventDefault();          // the page must not scroll under the turn
+        show(dx);
+      }, { passive: false });
+
+      const end = (e: TouchEvent) => {
+        if (!dragging) return;
+        dragging = false;
+        if (locked !== 'x') return;
+        leaf.style.transition = '';
+        const dx = (e.changedTouches[0]?.clientX ?? sx) - sx;
+        const far = Math.abs(dx);
+        const speed = far / Math.max(1, performance.now() - t0);
+        // A long drag turns the page, and so does a flick, but a flick still
+        // has to cover ground. Without the floor, a fast thumb brushing 20
+        // pixels across the text counts as a page turn, which is maddening.
+        settle(far > W() * 0.26 || (far > 56 && speed > 0.55));
+        locked = null;
+      };
+      addEventListener('touchend', end, { passive: true });
+      addEventListener('touchcancel', end, { passive: true });
+
+      // Told once, to the reader who has not met this before.
+      try {
+        if (!localStorage.getItem('pt:coached')) {
+          localStorage.setItem('pt:coached', '1');
+          coach.hidden = false;
+          setTimeout(() => coach.classList.add('pt-show'), 1400);
+          setTimeout(() => coach.classList.remove('pt-show'), 6000);
+          setTimeout(() => { coach.hidden = true; }, 6800);
+        }
+      } catch { /* ignore */ }
+    }
+  }
+</script>
