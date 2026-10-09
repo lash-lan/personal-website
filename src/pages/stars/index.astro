@@ -1,0 +1,443 @@
+---
+import SiteHeader from '../../components/SiteHeader.astro';
+import { PLACES } from '../../data/kp-places.js';
+import { SUB_TABLE } from '../../data/kp.js';
+
+// Everything on this page is computed in the reader's own browser, like the
+// Workshop. Birth data is the most personal thing on this site, so there is no
+// server to send it to and no record of it anywhere.
+const places = PLACES;
+const subCount = SUB_TABLE.length;
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Observatory | LASH</title>
+  <meta name="description" content="A Krishnamurti Paddhati chart engine. Real astronomy, an old symbolic tradition, and an honest account of the difference. Computed entirely in your own browser." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Cormorant+SC:wght@300;400;500&display=swap" rel="stylesheet" />
+  <!-- Global, not scoped: the report is built by the script below, so those
+       elements never receive Astro's scoping attribute and scoped rules would
+       silently skip them. -->
+  <style is:global>
+    :root {
+      --ink:#06080c; --panel:#0c1016; --text:#a9b2bd; --bright:#e8edf3; --dim:#6a7380;
+      --gold:#c9a227; --steel:#5d7f9e; --line:rgba(201,162,39,0.18);
+      --ok:#4f8a6b; --warn:#b8862f; --bad:#9e4040;
+    }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    [hidden]{display:none !important}
+    html{scroll-behavior:smooth}
+    body{
+      background:var(--ink); color:var(--text);
+      font-family:'EB Garamond',Georgia,serif; font-size:18px; line-height:1.7;
+      overflow-x:hidden; min-height:100vh;
+    }
+    body::before{
+      content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+      background:
+        radial-gradient(1px 1px at 20% 30%, rgba(232,237,243,0.5) 50%, transparent 50%),
+        radial-gradient(1px 1px at 70% 15%, rgba(232,237,243,0.4) 50%, transparent 50%),
+        radial-gradient(1px 1px at 45% 70%, rgba(232,237,243,0.35) 50%, transparent 50%),
+        radial-gradient(1px 1px at 85% 55%, rgba(232,237,243,0.4) 50%, transparent 50%),
+        radial-gradient(1px 1px at 12% 80%, rgba(232,237,243,0.3) 50%, transparent 50%),
+        radial-gradient(900px 600px at 50% -10%, rgba(93,127,158,0.10), transparent 70%);
+      background-size:40% 40%, 55% 55%, 48% 48%, 62% 62%, 35% 35%, 100% 100%;
+    }
+    main{position:relative; z-index:1; max-width:980px; margin:0 auto; padding:0 1.4rem 7rem}
+
+    .hero{padding:9rem 0 3rem; text-align:center}
+    .eyebrow{
+      font-family:'Cormorant SC',serif; font-size:.82rem; letter-spacing:.42em;
+      text-transform:uppercase; color:var(--gold); opacity:.85;
+    }
+    h1{
+      font-family:'Cinzel',serif; font-weight:700; color:var(--bright);
+      font-size:clamp(2.2rem,6vw,3.6rem); line-height:1.1; margin:.8rem 0 1rem;
+    }
+    .tagline{max-width:40rem; margin:0 auto; color:var(--text)}
+    .tagline em{color:var(--bright); font-style:italic}
+
+    h2{
+      font-family:'Cinzel',serif; font-weight:600; color:var(--bright);
+      font-size:1.35rem; letter-spacing:.02em; margin:0 0 1rem;
+    }
+    h3{
+      font-family:'Cormorant SC',serif; font-weight:500; color:var(--gold);
+      font-size:.92rem; letter-spacing:.24em; text-transform:uppercase; margin:0 0 .6rem;
+    }
+    p + p{margin-top:.9rem}
+
+    .panel{
+      background:linear-gradient(180deg, rgba(12,16,22,.95), rgba(6,8,12,.95));
+      border:1px solid var(--line); border-radius:3px;
+      padding:2rem; margin:2rem 0;
+      box-shadow:0 1px 0 rgba(232,237,243,.04) inset;
+    }
+
+    /* ── the form ── */
+    .grid{display:grid; gap:1.1rem; grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+    label{display:block}
+    .lbl{
+      display:block; font-family:'Cormorant SC',serif; font-size:.78rem;
+      letter-spacing:.2em; text-transform:uppercase; color:var(--dim); margin-bottom:.35rem;
+    }
+    input,select{
+      width:100%; background:#070a0e; color:var(--bright);
+      border:1px solid rgba(93,127,158,.28); border-radius:2px;
+      padding:.62rem .7rem; font-family:'EB Garamond',serif; font-size:1rem;
+    }
+    input:focus,select:focus{outline:none; border-color:var(--gold)}
+    .hint{display:block; font-size:.86rem; color:var(--dim); margin-top:.3rem}
+    .row-actions{display:flex; gap:1rem; align-items:center; flex-wrap:wrap; margin-top:1.6rem}
+    button{
+      font-family:'Cinzel',serif; font-size:.9rem; letter-spacing:.14em; text-transform:uppercase;
+      background:transparent; color:var(--gold); border:1px solid var(--gold);
+      padding:.7rem 1.6rem; border-radius:2px; cursor:pointer; transition:.25s;
+    }
+    button:hover:not(:disabled){background:var(--gold); color:#06080c}
+    button:disabled{opacity:.45; cursor:default}
+    button.quiet{color:var(--steel); border-color:rgba(93,127,158,.4); letter-spacing:.1em}
+    button.quiet:hover{background:rgba(93,127,158,.14); color:var(--bright)}
+
+    /* ── output ── */
+    .meta{list-style:none; display:grid; gap:.45rem; margin:0}
+    .meta li{display:grid; grid-template-columns:minmax(7.5rem,auto) 1fr; gap:1rem; font-size:.95rem}
+    .meta b{
+      font-family:'Cormorant SC',serif; font-weight:400; color:var(--dim);
+      letter-spacing:.14em; text-transform:uppercase; font-size:.76rem; padding-top:.18rem;
+    }
+    .meta span{color:var(--bright)}
+
+    .verdict{border-left:3px solid var(--warn); padding-left:1.2rem}
+    .verdict.stable{border-color:var(--ok)}
+    .verdict.usable{border-color:var(--steel)}
+    .verdict.fragile{border-color:var(--warn)}
+    .verdict.borderline{border-color:var(--bad)}
+    .grade{
+      font-family:'Cormorant SC',serif; letter-spacing:.24em; text-transform:uppercase;
+      font-size:.8rem; color:var(--bright);
+    }
+
+    .tbl{width:100%; border-collapse:collapse; font-size:.92rem; margin-top:.4rem}
+    .tbl th{
+      text-align:left; font-family:'Cormorant SC',serif; font-weight:400;
+      letter-spacing:.14em; text-transform:uppercase; font-size:.72rem;
+      color:var(--dim); border-bottom:1px solid var(--line); padding:.5rem .55rem;
+    }
+    .tbl td{padding:.5rem .55rem; border-bottom:1px solid rgba(93,127,158,.1); color:var(--text)}
+    .tbl td.b{color:var(--bright)}
+    .tbl .retro{color:var(--gold); font-size:.78rem}
+    .scroller{overflow-x:auto; -webkit-overflow-scrolling:touch}
+
+    .house{padding:1.1rem 0; border-bottom:1px solid rgba(93,127,158,.12)}
+    .house:last-child{border-bottom:none}
+    .house-head{display:flex; gap:.8rem; align-items:baseline; flex-wrap:wrap}
+    .house-n{
+      font-family:'Cinzel',serif; color:var(--gold); font-size:1.05rem; min-width:2.4rem;
+    }
+    .house-matter{font-family:'Cinzel',serif; color:var(--bright); font-size:1.05rem}
+    .house-pos{color:var(--dim); font-size:.88rem; margin-left:auto}
+    .lords{font-size:.88rem; color:var(--dim); margin-top:.3rem}
+    .lords b{color:var(--steel); font-weight:400}
+    .house-q{margin-top:.5rem; font-size:.95rem}
+    .house-q em{color:var(--bright); font-style:italic}
+
+    .caveat{border-top:1px solid var(--line); margin-top:3rem; padding-top:2rem; font-size:.95rem}
+    .caveat p{color:var(--dim)}
+    .caveat p:last-child{color:var(--text)}
+
+    /* the report is scrolled to after casting, and the site header is fixed,
+       so the first panel needs room or its title hides underneath it */
+    #out{scroll-margin-top:5.5rem}
+
+    .err{border-left:3px solid var(--bad); padding-left:1.2rem; color:var(--bright)}
+    .working{color:var(--gold); font-family:'Cormorant SC',serif; letter-spacing:.2em; text-transform:uppercase; font-size:.8rem}
+
+    footer{
+      text-align:center; padding:3rem 1.4rem; color:var(--dim); font-size:.85rem;
+      border-top:1px solid rgba(93,127,158,.12);
+    }
+    @media (max-width:640px){
+      body{font-size:17px}
+      .hero{padding:7rem 0 2rem}
+      .panel{padding:1.3rem}
+      .meta li{grid-template-columns:1fr; gap:.1rem}
+      .house-pos{margin-left:0}
+    }
+  </style>
+</head>
+<body>
+  <SiteHeader back={{ href: '/', label: 'LASH' }} />
+
+  <main>
+    <section class="hero">
+      <p class="eyebrow">Krishnamurti Paddhati</p>
+      <h1>The Observatory</h1>
+      <p class="tagline">
+        An instrument of two halves. The arithmetic is real astronomy and can be
+        checked against any ephemeris in the world. The meanings are a
+        twentieth-century Indian tradition, recorded faithfully and <em>not</em>
+        presented as fact. You are told which is which.
+      </p>
+    </section>
+
+    <form class="panel" id="form">
+      <h2>Cast a chart</h2>
+      <p style="color:var(--dim); font-size:.95rem; margin-bottom:1.4rem">
+        Nothing here is uploaded. The whole calculation runs on your own
+        machine, and closing this page is the end of it.
+      </p>
+
+      <div class="grid">
+        <label>
+          <span class="lbl">Name (optional)</span>
+          <input type="text" id="name" autocomplete="off" placeholder="Left blank, the report stays impersonal" />
+        </label>
+        <label>
+          <span class="lbl">Date of birth</span>
+          <input type="date" id="date" required min="1800-01-01" max="2100-12-31" />
+        </label>
+        <label>
+          <span class="lbl">Time of birth</span>
+          <input type="time" id="time" required step="60" />
+          <span class="hint">To the minute. KP is unusually sensitive to this.</span>
+        </label>
+      </div>
+
+      <div class="grid" style="margin-top:1.1rem">
+        <label style="grid-column:1/-1">
+          <span class="lbl">Place of birth</span>
+          <select id="place">
+            <option value="">Choose a place, or enter coordinates below</option>
+            {places.map((p) => (
+              <option value={`${p.lat}|${p.lon}|${p.zone}`}>{p.name}</option>
+            ))}
+            <option value="manual">Somewhere else — I will enter coordinates</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="grid" id="manual" hidden style="margin-top:1.1rem">
+        <label>
+          <span class="lbl">Latitude</span>
+          <input type="number" id="lat" step="0.0001" min="-90" max="90" placeholder="e.g. 6.9271" />
+          <span class="hint">North positive, south negative. KP cannot be cast beyond about 66 degrees.</span>
+        </label>
+        <label>
+          <span class="lbl">Longitude</span>
+          <input type="number" id="lon" step="0.0001" min="-180" max="180" placeholder="e.g. 79.8612" />
+          <span class="hint">East positive, west negative.</span>
+        </label>
+        <label>
+          <span class="lbl">Time zone</span>
+          <select id="zone"></select>
+          <span class="hint">Historical rules are applied automatically.</span>
+        </label>
+      </div>
+
+      <div class="row-actions">
+        <button type="submit" id="go">Cast the chart</button>
+        <button type="button" class="quiet" id="copy" hidden>Copy as text</button>
+        <span class="working" id="working" hidden>Computing…</span>
+      </div>
+      <p class="err" id="error" hidden style="margin-top:1.2rem"></p>
+    </form>
+
+    <div id="out"></div>
+
+    <section class="panel">
+      <h3>How this works</h3>
+      <p>
+        Your birth moment is converted to Universal Time using the time zone
+        rules that were actually in force then, not the ones in force now. The
+        nine bodies KP uses are computed from standard astronomical models, the
+        twelve house cusps from Placidus’s own geometry, and the whole chart is
+        then shifted into the sidereal zodiac by subtracting the Krishnamurti
+        ayanamsa.
+      </p>
+      <p>
+        Each resulting longitude is read against KP’s table of {subCount} cells
+        — the twenty-seven lunar mansions cut into nine subs apiece, then cut
+        again wherever a sub crosses a sign boundary — which is what yields a
+        sign lord, a star lord and a sub lord for every planet and every cusp.
+      </p>
+      <p>
+        The report tells you, before it tells you anything else, how many
+        minutes of error your birth time can absorb before the reading changes.
+        That number is measured by recasting the chart minute by minute, not
+        estimated.
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    Computed in your browser. Nothing is stored, nothing is sent.
+  </footer>
+
+  <script>
+    import { buildReading } from '../../lib/kp-report.js';
+
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+    const ordinal = (n) => {
+      const r = n % 100;
+      if (r >= 11 && r <= 13) return n + 'th';
+      return n + (['th','st','nd','rd'][n % 10] ?? 'th');
+    };
+
+    // The zone list comes from the browser's own database, so it is complete
+    // and stays current without us shipping a copy of it.
+    const zones = typeof Intl.supportedValuesOf === 'function'
+      ? Intl.supportedValuesOf('timeZone')
+      : ['UTC'];
+    $('zone').innerHTML = zones.map((z) => `<option value="${esc(z)}">${esc(z)}</option>`).join('');
+    try {
+      const here = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (zones.includes(here)) $('zone').value = here;
+    } catch { /* a browser without a resolvable zone simply gets the first */ }
+
+    $('place').addEventListener('change', (e) => {
+      $('manual').hidden = e.target.value !== 'manual';
+    });
+
+    let lastText = '';
+
+    $('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      $('error').hidden = true;
+      $('working').hidden = false;
+      $('go').disabled = true;
+      $('copy').hidden = true;
+      $('out').innerHTML = '';
+
+      try {
+        const place = $('place').value;
+        let latitude, longitude, zone, placeName;
+        if (place === 'manual' || place === '') {
+          if (place === '') throw new Error('Choose a place of birth, or pick "Somewhere else" and enter coordinates.');
+          latitude = parseFloat($('lat').value);
+          longitude = parseFloat($('lon').value);
+          zone = $('zone').value;
+          if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+            throw new Error('Enter both a latitude and a longitude.');
+          }
+          placeName = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+        } else {
+          const [la, lo, z] = place.split('|');
+          latitude = parseFloat(la); longitude = parseFloat(lo); zone = z;
+          placeName = $('place').selectedOptions[0].textContent;
+        }
+
+        const dv = $('date').value;
+        const tv = $('time').value;
+        if (!dv || !tv) throw new Error('A date and a time of birth are both needed.');
+        const [year, month, day] = dv.split('-').map(Number);
+        const [hour, minute] = tv.split(':').map(Number);
+
+        const reading = await buildReading(
+          { local: { year, month, day, hour, minute }, zone, latitude, longitude, place: placeName },
+          $('name').value,
+        );
+        render(reading);
+        $('copy').hidden = false;
+        $('out').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (err) {
+        $('error').hidden = false;
+        $('error').textContent = err && err.message ? err.message : String(err);
+      } finally {
+        $('working').hidden = true;
+        $('go').disabled = false;
+      }
+    });
+
+    $('copy').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(lastText);
+        $('copy').textContent = 'Copied';
+        setTimeout(() => { $('copy').textContent = 'Copy as text'; }, 1800);
+      } catch {
+        $('error').hidden = false;
+        $('error').textContent = 'Your browser would not let the page write to the clipboard. Select the text and copy it by hand.';
+      }
+    });
+
+    function render(r) {
+      const plain = [];
+      const out = [];
+      plain.push(r.title, '');
+
+      out.push(`<section class="panel"><h2>${esc(r.title)}</h2><ul class="meta">`);
+      for (const [k, v] of r.meta) {
+        out.push(`<li><b>${esc(k)}</b><span>${esc(v)}</span></li>`);
+        plain.push(`${k}: ${v}`);
+      }
+      out.push('</ul></section>');
+      plain.push('');
+
+      for (const s of r.sections) {
+        plain.push('', s.heading.toUpperCase(), '');
+        if (s.kind === 'note') {
+          out.push(`<section class="panel"><div class="verdict ${esc(s.tone)}">`
+            + `<p class="grade">${esc(s.tone)}</p><h2 style="margin-top:.4rem">${esc(s.heading)}</h2>`
+            + s.body.map((b) => `<p>${esc(b)}</p>`).join('') + '</div></section>');
+          plain.push(...s.body);
+        } else if (s.kind === 'prose') {
+          out.push(`<section class="panel"><h2>${esc(s.heading)}</h2>`
+            + s.body.map((b) => `<p>${esc(b)}</p>`).join('') + '</section>');
+          plain.push(...s.body);
+        } else if (s.kind === 'houses') {
+          out.push(`<section class="panel"><h2>${esc(s.heading)}</h2><p style="color:var(--dim)">${esc(s.intro)}</p>`);
+          plain.push(s.intro, '');
+          for (const h of s.rows) {
+            out.push('<div class="house">'
+              + `<div class="house-head"><span class="house-n">${ordinal(h.house)}</span>`
+              + `<span class="house-matter">${esc(h.matter)}</span>`
+              + `<span class="house-pos">${esc(h.position)}</span></div>`
+              + `<p class="lords">sign <b>${esc(h.signLord)}</b> · star <b>${esc(h.starLord)}</b> · sub <b>${esc(h.subLord)}</b>`
+              + (h.occupants.length ? ` · holding ${esc(h.occupants.join(', '))}` : '') + '</p>'
+              + `<p class="house-q">${esc(h.holds)}.</p>`
+              + `<p class="house-q">KP asks <em>${esc(h.question)}</em>, and hands that to ${esc(h.subLord)}: ${esc(h.verdict)}.</p>`
+              + '</div>');
+            plain.push(`${ordinal(h.house)} — ${h.matter} — ${h.position}`,
+              `   sign ${h.signLord}, star ${h.starLord}, sub ${h.subLord}`
+              + (h.occupants.length ? `, holding ${h.occupants.join(', ')}` : ''),
+              `   ${h.holds}.`,
+              `   KP asks ${h.question}, and hands that to ${h.subLord}: ${h.verdict}.`, '');
+          }
+          out.push('</section>');
+        } else if (s.kind === 'planets') {
+          out.push(`<section class="panel"><h2>${esc(s.heading)}</h2><p style="color:var(--dim)">${esc(s.intro)}</p>`
+            + '<div class="scroller"><table class="tbl"><thead><tr>'
+            + '<th>Planet</th><th>Sidereal position</th><th>Star</th><th>Pada</th>'
+            + '<th>Sign lord</th><th>Star lord</th><th>Sub lord</th><th>House</th><th>Sub no.</th>'
+            + '</tr></thead><tbody>');
+          plain.push(s.intro, '');
+          for (const p of s.rows) {
+            out.push('<tr>'
+              + `<td class="b">${esc(p.name)}${p.retrograde ? ' <span class="retro">R</span>' : ''}</td>`
+              + `<td class="b">${esc(p.position)}</td><td>${esc(p.nakshatra)}</td><td>${p.pada}</td>`
+              + `<td>${esc(p.signLord)}</td><td>${esc(p.starLord)}</td><td class="b">${esc(p.subLord)}</td>`
+              + `<td>${ordinal(p.house)}</td><td>${p.subNumber}</td></tr>`);
+            plain.push(`${p.name.padEnd(8)}${p.retrograde ? 'R ' : '  '}${p.position.padEnd(16)}`
+              + `${p.nakshatra.padEnd(18)}pada ${p.pada}  `
+              + `sign ${p.signLord}, star ${p.starLord}, sub ${p.subLord}, ${ordinal(p.house)} house, cell ${p.subNumber}`);
+          }
+          out.push('</tbody></table></div></section>');
+        } else if (s.kind === 'caveat') {
+          out.push(`<section class="caveat"><h2>${esc(s.heading)}</h2>`
+            + s.body.map((b) => `<p>${esc(b)}</p>`).join('') + '</section>');
+          plain.push(...s.body);
+        }
+      }
+
+      $('out').innerHTML = out.join('');
+      lastText = plain.join('\n');
+    }
+  </script>
+</body>
+</html>
